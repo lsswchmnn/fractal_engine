@@ -1,0 +1,290 @@
+import os
+import psutil
+import torch
+import time
+import threading
+import sys
+import tkinter as tk
+from typing import Iterable, Callable, Optional
+from tqdm import tqdm
+from tkinter import messagebox
+from tkinter import simpledialog
+#=========================================================================
+'''
+Libraries, die installiert sein müssen: psutil, torch, tqdm (über pip install)
+'''
+#=========================================================================
+# Klasse für Ladescreen (Spinner)
+class Spinner:
+    def __init__(self, symbols="|/-\\", delay=0.1):
+        self.symbols = symbols
+        self.delay = delay
+        self.running = False
+        self.thread = None
+
+    def start(self, message="Loading"):
+        self.running = True
+        self.thread = threading.Thread(target=self._spin, args=(message,), daemon=True)
+        self.thread.start()
+
+    def _spin(self, message):
+        idx = 0
+        while self.running:
+            sys.stdout.write(f"\r{message} {self.symbols[idx % len(self.symbols)]}")
+            sys.stdout.flush()
+            idx += 1
+            time.sleep(self.delay)
+        sys.stdout.write("\r" + " " * (len(message) + 2) + "\r")  # Clear line
+
+    def stop(self):
+        self.running = False
+        if self.thread:
+            self.thread.join()
+#=========================================================================
+# Error-Utilities
+
+# Zentralisierte Fehlermeldungen
+def show_error(graphic: bool=True, title: str="Error", text: str="An unknown error occurred."):
+    print(f"\n ⚠️ {title}: {text}\n")
+    if graphic:
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showerror(title, text)
+        root.destroy()
+
+#=========================================================================
+# CLI-Utilities
+
+# Trennlinien im Terminal für saubere CLI-Abschnitte
+def print_separation(length: int=50, linebreak: bool=True):
+    if linebreak:
+        print(f"\n{length*'='}")
+    else:
+        print(f"{length*'='}")
+
+def print_thin_separation(length: int=50, linebreak: bool=True):
+    if linebreak:
+        print(f"\n{length*'-'}")
+    else:
+        print(f"{length*'-'}")
+
+def print_heading(title: str="HEADING", length: int=50, clear: bool=True, linebreak: bool=True):
+    if clear:
+        clear_cli()
+    print_separation(length, linebreak=False)
+    print(title)
+    print_separation(length, linebreak=False)
+    if linebreak:
+        print()
+
+# Mit Enter fortfahren
+def enter_continue(msg: str="Press Enter to continue...", seperation: bool=True, linebreak: bool=True):
+    if seperation:
+        print_thin_separation()
+    if linebreak:
+        input(f"\n{msg}")
+    else:
+        input(f"{msg}")
+
+# Leert das CLI komplett
+def clear_cli():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+# Fortschritts-Iterator mit tqdm; funktioniert bei for-Schleifen
+def printProgressBar(iteration, 
+                     total, 
+                     prefix = '', 
+                     suffix = '', 
+                     decimals = 1, 
+                     length = 100, 
+                     fill = '█',
+                     printEnd = "\r"):
+    """
+    Ein Iterator, der über einen iterierbaren Prozess läuft,
+    dabei eine Fortschrittsleiste anzeigt und optional eine Callback-Funktion
+    auf jedes Element anwenden kann.
+
+    Parameter:
+    - iterable: Ein iterierbares Objekt (z.B. range, Liste, Generator).
+    - desc: Beschreibung, die links von der Leiste angezeigt wird.
+    - unit: Einheit für die Leiste (standard: "it" für Iterationen).
+    - total: Gesamtzahl der Schritte (falls tqdm sie nicht automatisch bestimmen kann).
+    - callback: Optionale Funktion, die auf jedes Element angewendet wird.
+
+    Rückgabe:
+    - Liste mit Ergebnissen der Callback-Verarbeitung (falls callback gesetzt),
+    sonst eine Liste der Elemente selbst.
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    
+    
+    sys.stdout.write(
+        f"\r{prefix} |{bar}| {percent}% {suffix}"
+    )
+
+    if iteration == total:
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
+#=========================================================================
+# Hardware-Utilities
+
+# Grundlegende Hardware-Specs ermitteln
+def get_hardware_specs() -> dict:
+    ram_gb = psutil.virtual_memory().total / 1e9
+    cpu_cores = psutil.cpu_count(logical=True)
+
+    if torch.cuda.is_available():
+        device = "cuda"
+        gpu_name = torch.cuda.get_device_name(0)
+        total_memory = torch.cuda.get_device_properties(0).total_memory / 1e9
+    else:
+        device = "cpu"
+        gpu_name = None
+        total_memory = 0.0
+
+    specs = {
+        "RAM_GB": ram_gb,
+        "CPU_Cores": cpu_cores,
+        "GPU_Name": gpu_name,
+        "GPU_Memory_GB": total_memory,
+        "Device": device
+    }
+    return specs
+
+# Heuristische Schätzung der Leistung
+def estimate_power() -> int:
+    specs = get_hardware_specs()
+    score = 0
+
+    # RAM-Bewertung
+    if specs["RAM_GB"] >= 64:
+        score += 5
+    elif specs["RAM_GB"] >= 32:
+        score += 4
+    elif specs["RAM_GB"] >= 16:
+        score += 2
+    else:
+        score += 1
+
+    # CPU-Bewertung
+    if specs["CPU_Cores"] >= 16:
+        score += 3
+    elif specs["CPU_Cores"] >= 8:
+        score += 2
+    else:
+        score += 1
+
+    # GPU-Bewertung
+    if specs["GPU_Memory_GB"] >= 24:
+        score += 3
+    elif specs["GPU_Memory_GB"] >= 12:
+        score += 2
+    elif specs["GPU_Memory_GB"] > 0:
+        score += 1
+    # keine GPU → 0 Punkte
+
+    power_level = min(score, 10)    # Maximal 10 Punkte
+    return power_level
+
+#=========================================================================
+# Input-Utilities
+
+# Um Integer abzufragen
+def input_int(min_value: int=0, max_value: int=10000, default: int=100, msg: str="value", cli: bool=True) -> int | None:
+    if cli:
+        raw = input(f"{msg} (min: {min_value}, max: {max_value}): ").strip()
+    else:
+        root = tk.Tk()
+        root.withdraw()
+        raw = tk.simpledialog.askinteger("Input Value", f"Enter {msg}:", minvalue=min_value, maxvalue=max_value, initialvalue=default)
+        root.destroy()
+
+    if raw == '':
+        return default
+
+    try:
+        value = int(raw)
+    except ValueError:
+        show_error(True, "Input Error", f"'{raw}' is not a valid integer.")
+        return default
+
+    if value > max_value:
+        show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}.")
+        return max_value
+    
+    elif value < min_value:
+        show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}.")
+        return min_value
+    
+    return value
+
+# Um Float abzufragen
+def input_float(min_value: float=0, max_value: float=10000, default: float=100, msg: str="value", cli: bool=True) -> float:
+    if cli:
+        raw = input(f"{msg} (min: {min_value}, max: {max_value}): ").strip()
+    else:
+        root = tk.Tk()
+        root.withdraw()
+        raw = tk.simpledialog.askinteger("Input Value", f"Enter {msg}:", minvalue=min_value, maxvalue=max_value, initialvalue=default)
+        root.destroy()
+
+    if raw == '':
+        show_error(True, "InputError", "Input is empty. Returning Default")
+        return default
+
+    try:
+        value = float(raw)
+    except ValueError:
+        show_error(True, "Input Error", f"'{raw}' is not a valid Float. Returning Default")
+        return default
+
+    if value > max_value:
+        show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}.")
+        return max_value
+    
+    elif value < min_value:
+        show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}.")
+        return min_value
+    
+    return value
+
+# Um Strings abzufragen
+def input_str(msg: str="value", cli: bool=True) -> str:
+    if cli:
+        value = input(f"{msg}: ").strip()
+    else:
+        root = tk.Tk()
+        root.withdraw()
+        # raw = tk.simpledialog.askstring("Input data", f"Enter {msg}:"initialvalue=default)
+        root.destroy()
+
+    if value == '':
+        return None
+    
+    return value
+
+# Ja/Nein Abfrage
+def input_confirm(msg: str="Are you sure?", cli: bool=True) -> True:
+    if cli:
+        choice = input(f"{msg} (y/n): ").strip().lower()
+        return choice == 'y'
+    else:
+        root = tk.Tk()
+        root.withdraw()
+        result = messagebox.askyesno("Confirm", msg)
+        root.destroy()
+        return result

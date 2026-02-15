@@ -1,0 +1,52 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.3.6 Chrome/140.0.7339.249 Electron/38.8.0 Safari/537.36" version="29.3.6">
+  <diagram name="Page-1" id="e7e014a7-5840-1c2e-5031-d8a46d1fe8dd">
+    <mxGraphModel dx="1188" dy="729" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" background="none" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="98pNYWaq1vUlHuN9DML7-56" parent="1" style="text;strokeColor=#6c8ebf;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=4;spacingRight=4;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" value="" vertex="1">
+          <mxGeometry height="333" width="360" x="30" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-41" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="Fractal" vertex="1">
+          <mxGeometry height="114" width="170" x="120" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-42" parent="98pNYWaq1vUlHuN9DML7-41" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="max_iterations&lt;div&gt;escape_radius&lt;/div&gt;" vertex="1">
+          <mxGeometry height="44" width="170" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-43" parent="98pNYWaq1vUlHuN9DML7-41" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="18" width="170" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-44" parent="98pNYWaq1vUlHuN9DML7-41" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="iterate()" vertex="1">
+          <mxGeometry height="26" width="170" y="88" as="geometry" />
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-45" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="MandelbrotFractal" vertex="1">
+          <mxGeometry height="90" width="120" x="70" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-47" parent="98pNYWaq1vUlHuN9DML7-45" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="64" width="120" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-51" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="JuilaFractal" vertex="1">
+          <mxGeometry height="84" width="120" x="220" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-53" parent="98pNYWaq1vUlHuN9DML7-51" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" value="k" vertex="1">
+          <mxGeometry height="24" width="120" y="26" as="geometry" />
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-52" parent="98pNYWaq1vUlHuN9DML7-51" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" value="" vertex="1">
+          <mxGeometry height="34" width="120" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-54" edge="1" parent="1" source="98pNYWaq1vUlHuN9DML7-41" style="endArrow=classic;html=1;rounded=0;" target="98pNYWaq1vUlHuN9DML7-45" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="20" y="170" as="sourcePoint" />
+            <mxPoint x="70" y="120" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="98pNYWaq1vUlHuN9DML7-55" edge="1" parent="1" source="98pNYWaq1vUlHuN9DML7-41" style="endArrow=classic;html=1;rounded=0;" target="98pNYWaq1vUlHuN9DML7-51" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="20" y="210" as="sourcePoint" />
+            <mxPoint x="70" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

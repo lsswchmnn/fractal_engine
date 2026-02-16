@@ -7,7 +7,7 @@ import fractal
 class CLI():
     def __init__(self):
         self.fractal                 = None
-        self.visualizer              = Visualizer()
+        self.visualizer              = None
         self.fractal_loaded : bool   = False
 
 #------------------------------------------------------------
@@ -18,7 +18,6 @@ class CLI():
             print_heading("FRACTAL-SIMULATION")
             print("1 - Load fractal")
             print("2 - Visualize")
-            print("...")
             print("H - Help")
             print("C - Close program")
             print_thin_separation(linebreak=False)
@@ -37,7 +36,8 @@ class CLI():
                 continue
 
             elif choice == "h":
-                pass
+                self.menu_help()
+                continue
 
             elif choice == "c":
                 clear_cli()
@@ -81,7 +81,8 @@ class CLI():
                 class_name = keys[idx - 1]
 
                 try:
-                    self.fractal = getattr(fractal, class_name)
+                    name_class = getattr(fractal, class_name)
+                    self.fractal = name_class()
                 except AttributeError:
                     show_error(True, "TransitionError", f"Function {class_name} not found in Dictionary.")
                     continue
@@ -90,5 +91,13 @@ class CLI():
 
     # Menüpunkt 2: Fraktal graphisch visualisieren
     def menu_visualize(self):
+        self.visualizer = Visualizer(self.fractal)
         self.visualizer.start(self.fractal)    # CLI startet nur das Visualisierungfenster und spielt danach keine aktive Rolle mehr.
         return
+    
+    # Menü: Hilfe
+    def menu_help(self):
+        print_heading("HELP MENU")
+        print("...")
+
+        enter_continue("Press enter to return to main menu.")

@@ -9,10 +9,10 @@ Zustände.
 '''
 class Visualizer():
     def __init__(self, fractal):
-        self.renderer   : Renderer    = Renderer()      # Numerische Berechnung
         self.colormap   : ColorMap    = ColorMap()      # Management der Färbung
         self.viewport   : Viewport    = Viewport()      # Aktueller Ausschnitt, mit dem gearbeitet wird
         self.fractal                  = fractal         # Aktuelles Fraktal
+        self.renderer   : Renderer    = Renderer(self.fractal.max_iterations)      # Numerische Berechnung
         self.gui        : GUI         = None            # Graphische Schnittstelle zum User
 
 # ------------------------------------------------------------
@@ -36,6 +36,8 @@ Renderer iteriert über alle Pixel im Viewport. Er färbt diese
 mit Colormap. Er darf nicht selbst berechnen.
 '''
 class Renderer():
+    def __init__(self, iterations: int):
+        self.max_iterations = iterations
 
     def render(self, fractal, viewport, colormap):
         image = np.zeros(
@@ -43,12 +45,22 @@ class Renderer():
             dtype=np.uint8
         )
 
+            # ALTERNATIVEN:
+        # image = np.full(
+        #     (viewport.height_px, viewport.width_px, 3),
+        #     fill_value=255, # Weißer Hintergrund
+        #     dtype=np.uint8
+        # )
+
+        #image = np.ones((viewport.height_px, viewport.width_px, 3), dtype=np.uint8) * 255
+
+
         for y in range(viewport.height_px):
             for x in range(viewport.width_px):
 
                 c = viewport.pixel_to_complex(x, y)
                 value = fractal.iterate(c)      # Mathematik
-                color = colormap.map(value)     # Darstellung
+                color = colormap.map(value, self.max_iterations)     # Darstellung
                 image[y,x] = color
         
         return image

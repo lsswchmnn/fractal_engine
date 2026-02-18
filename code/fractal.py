@@ -21,7 +21,7 @@ class Fractal(ABC):
     def iterate(self, c:complex) -> int:
         pass    # bleibt leer
 
-#============================================================
+#============================================================^+ 
 class MandelbrotFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         super().__init__(max_iterations, escape_radius)

@@ -2,6 +2,7 @@ from utils import print_heading, enter_continue, clear_cli, print_thin_separatio
 from fractal import MandelbrotFractal, JuliaFractal
 from visualize import Visualizer
 from mapping import fractals_map
+from color import PALETTES
 import fractal
 #============================================================
 class CLI():
@@ -17,8 +18,9 @@ class CLI():
         while True:
             print_heading("FRACTAL-SIMULATION")
             print("1 - Load fractal")
-            print("2 - Visualize")
+            print("2 - Start visualizer")
             print("H - Help")
+            print("S - Settings")
             print("C - Close program")
             print_thin_separation(linebreak=False)
             choice = input("> ").lower().strip()
@@ -37,6 +39,13 @@ class CLI():
 
             elif choice == "h":
                 self.menu_help()
+                continue
+
+            elif choice == "s":
+                if not self.fractal:
+                    show_error(True, "AttributeError", "No Fractal loaded.")
+
+                self.menu_settings()
                 continue
 
             elif choice == "c":
@@ -87,12 +96,16 @@ class CLI():
                     show_error(True, "TransitionError", f"Function {class_name} not found in Dictionary.")
                     continue
 
+            self.visualizer = Visualizer(self.fractal)  # Visualizer bereits hier erstellen
             enter_continue("Press enter to return to main menu.")
+            return
 
-    # Menüpunkt 2: Fraktal graphisch visualisieren
+    # Menüpunkt 2: Fraktal graphisch visualisieren | Visualizer bereit in load_fractal instanziiert
     def menu_visualize(self):
-        self.visualizer = Visualizer(self.fractal)
+        clear_cli()
+        print("Loading Visualizer...")
         self.visualizer.start(self.fractal)    # CLI startet nur das Visualisierungfenster und spielt danach keine aktive Rolle mehr.
+        clear_cli()
         return
     
     # Menü: Hilfe
@@ -101,3 +114,57 @@ class CLI():
         print("...")
 
         enter_continue("Press enter to return to main menu.")
+
+    # Menü: Einstellungen
+    def menu_settings(self):
+        while True:
+            print_heading("SETTINGS")
+            print("1 - Color settings")
+            print("C - Close")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "1":
+                self.cli_load_palette()
+                continue
+
+            elif choice == "c":
+                break
+
+#------------------------------------------------------------
+# EINSTELLUNGEN
+
+    def cli_load_palette(self):
+        while True:
+            print_heading("LOAD PALETTE")
+
+            keys = list(PALETTES.keys())
+
+            print("Choose Palette:")
+            for i, key in enumerate(keys, start=1):
+                print(f"{i} - {key}")
+
+            print("C - Cancel")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "c":
+                return
+            
+            try:
+                idx = int(choice)
+            except:
+                show_error(True, "InputError", "Input must be 'C' or Integer")
+                continue
+
+            if 1 <= idx <= len(keys):
+                name = keys[idx - 1]
+
+                try:
+                    self.visualizer.colormap.set_palette(f"{name}")
+                except ValueError as e:
+                    show_error(True, "TransitionError", f"{e}")
+                    continue
+
+            enter_continue("Press enter to return to main menu.")
+            return

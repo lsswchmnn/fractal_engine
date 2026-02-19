@@ -1,6 +1,10 @@
-fractals_map =  {
+FRACTALS_MAP =  {
     "MandelbrotFractal": {
         "name": "Mandelbrot-Set",
         "desc": ("..."),
     }
+}
+
+COLOR_MAP = {
+    "col_rect": "white"
 }

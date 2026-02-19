@@ -1,7 +1,7 @@
 from utils import print_heading, enter_continue, clear_cli, print_thin_separation, show_error
 from fractal import MandelbrotFractal, JuliaFractal
 from visualize import Visualizer
-from mapping import fractals_map
+from mapping import FRACTALS_MAP
 from color import PALETTES
 import fractal
 #============================================================
@@ -66,11 +66,11 @@ class CLI():
         while True:
             print_heading("LOAD FRACTAL")
             
-            keys = list(fractals_map.keys())
+            keys = list(FRACTALS_MAP.keys())
 
             print("Choose Fractal:")
             for i, key in enumerate(keys, start=1):
-                meta = fractals_map[key]
+                meta = FRACTALS_MAP[key]
                 print(f"{i} - {meta['name']}")
 
             print("C - Cancel")
@@ -97,14 +97,13 @@ class CLI():
                     continue
 
             self.visualizer = Visualizer(self.fractal)  # Visualizer bereits hier erstellen
-            enter_continue("Press enter to return to main menu.")
             return
 
     # Menüpunkt 2: Fraktal graphisch visualisieren | Visualizer bereit in load_fractal instanziiert
     def menu_visualize(self):
         clear_cli()
         print("Loading Visualizer...")
-        self.visualizer.start(self.fractal)    # CLI startet nur das Visualisierungfenster und spielt danach keine aktive Rolle mehr.
+        self.visualizer.start()    # CLI startet nur das Visualisierungfenster und spielt danach keine aktive Rolle mehr.
         clear_cli()
         return
     

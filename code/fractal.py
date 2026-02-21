@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from numba import njit
 #============================================================
 '''
 Die Fractal-Klassen sind Blackboxes und kennen keinerlei Kontext.
@@ -10,6 +11,28 @@ instanziiert wird. Es gibt nur konkrete Fraktale. Jedes konkrete
 Fraktal ist als eigene Klasse definiert, die per CLI geladen werden
 kann.
 '''
+#============================================================
+# NUMBA-FUNKTION (für Performance in der Iteration)
+@njit
+def _mandelbrot_kernel(c_real, c_imag, max_iterations, escape_radius):
+    z_real = 0.0
+    z_imag = 0.0
+
+    for i in range(max_iterations):
+        # z = z^2 + c
+        # (a+bi)^2 = (a^2 - b^2) + 2abi
+
+        z_real_sq = z_real * z_real
+        z_imag_sq = z_imag * z_imag
+
+        if z_real_sq + z_imag_sq > escape_radius * escape_radius:
+            return i, True, z_real, z_imag
+        
+        z_imag = 2.0 * z_real * z_imag + c_imag
+        z_real = z_real_sq - z_imag_sq + c_real
+
+    return max_iterations, False, z_real, z_imag
+
 #============================================================
 # KLASSE FÜR ERGEBNIS
 @dataclass(frozen=True)
@@ -34,25 +57,20 @@ class Fractal(ABC):
 class MandelbrotFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         super().__init__(max_iterations, escape_radius)
-    
-    # Ergebnis als Instanz von 
-    def iterate(self, c: complex) -> int:
-        z = 0 + 0j  # Startwert ist im Mandelbrot-Set immer 0
 
-        for iteration in range(self.max_iterations):
-            z = z * z + c   # Iterationsvorschrift
+    # Iterater: ruft njit-Funktion auf
+    def iterate(self, c: complex) -> IterationResult:
+        iterations, escaped, zr, zi = _mandelbrot_kernel(
+            c.real,
+            c.imag,
+            self.max_iterations,
+            self.escape_radius
+        )
 
-            if abs(z) > self.escape_radius: # Betrag größer als Escape-Radius?
-                return IterationResult(
-                    iterations=iteration,
-                    escaped=True,
-                    last_z=z
-                )
-            
         return IterationResult(
-            iterations=self.max_iterations,
-            escaped=False,
-            last_z=z
+            iterations=iterations,
+            escaped=escaped,
+            last_z=complex(zr, zi)
         )
 
 #------------------------------------------------------------

@@ -1,7 +1,50 @@
 from color import ColorMap
 from gui import GUI
 from utils import printProgressBar, clear_cli
+from numba import njit
 import numpy as np
+#============================================================
+# NUMBA-FUNKTION (für Performance in der Iteration); später anbinden, wenn klar ist, wie
+@njit
+def _render_mandelbrot(
+    xmin, xmax, ymin, ymax,
+    width, height,
+    max_iterations,
+    escape_radius
+):
+    iterations = np.zeros((height, width), dtype=np.int32)
+    escaped = np.zeros((height, width), dtype=np.uint8)
+
+    escape_sq = escape_radius * escape_radius
+
+    for y in range(height):
+        imag = ymax - (y / (height - 1)) * (ymax - ymin)
+
+        for x in range(width):
+            real = xmin + (x / (width - 1)) * (xmax - xmin)
+
+            zr = 0.0
+            zi = 0.0
+
+            for i in range(max_iterations):
+                zr2 = zr * zr
+                zi2 = zi * zi
+
+                if zr2 + zi2 > escape_sq:
+                    iterations[y, x] = i
+                    escaped[y, x] = 1
+                    break
+
+                zi = 2.0 * zr * zi + imag
+                zr = zr2 - zi2 + real
+            else:
+                iterations[y, x] = max_iterations
+                escaped[y, x] = 0
+        
+        #printProgressBar(y, height, prefix="Loading Viewer")    # Ladeleiste, wo kann ich die implementieren?
+
+    return iterations, escaped
+
 #============================================================
 '''
 Der Visualizer orchestriert nur. Er ist kein Renderer und keine GUI, 
@@ -79,12 +122,26 @@ class Renderer():
                 color = colormap.map(result, fractal.max_iterations)     # Darstellung
                 image[y,x] = color
 
-            printProgressBar(y, viewport.height_px, suffix="Loading Viewer")    # Ladeleiste
-
         clear_cli()
         return image
 
-#============================================================
+
+#     def render(self, fractal, viewport, colormap):
+
+#         iterations, escaped = _render_mandelbrot(
+#             viewport.xmin,
+#             viewport.xmax,
+#             viewport.ymin,
+#             viewport.ymax,
+#             viewport.width_px,
+#             viewport.height_px,
+#             fractal.max_iterations,
+#             fractal.escape_radius
+#         )
+
+#         return colormap.apply(iterations, escaped, fractal.max_iterations)
+    
+# #============================================================
 '''
 Viewport definiert den sichtbaren (berechneten) Ausschnitt der
 komplexen Zahlenebene.

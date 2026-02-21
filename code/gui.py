@@ -17,6 +17,7 @@ class GUI():
 
         # Hauptfenster
         self.root = tk.Tk()
+        self.root.resizable(False, False)   # Fenster NICHT vergrößerbar 
         self.root.title("Fractal Viewer")
 
         # Canvas
@@ -69,11 +70,11 @@ class GUI():
         self._photo = ImageTk.PhotoImage(image)                         # PIL -> Tkinter-Image
         self.canvas.create_image(0, 0, anchor="nw", image=self._photo)  # Bild anzeigen
 
+# ------------------------------------------------------------
+# ZOOM-FUNKTIONALITÄT
+
     def set_zoom_callback(self, callback):
         self._zoom_callback = callback
-
-# ------------------------------------------------------------
-# EVENT-METHODEN (Zoom-Funktinonalität)
 
     def _on_mouse_press(self, event):
         self._start_x = event.x
@@ -84,7 +85,7 @@ class GUI():
             self._start_x,
             self._start_y,
             outline=COLOR_MAP["col_rect"],
-            width=5.0
+            width=3.0
         )
 
     def _on_mouse_drag(self, event):
@@ -126,7 +127,7 @@ class GUI():
         self._rect = None
 
 # ------------------------------------------------------------
-# BUTTON (Zurück zu Standardansicht)
+# RESET-BUTTON (Zurück zu Standardansicht)
 
     def set_reset_callback(self, callback):
         self._reset_callback = callback

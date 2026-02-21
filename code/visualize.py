@@ -1,5 +1,6 @@
 from color import ColorMap
 from gui import GUI
+from utils import printProgressBar, clear_cli
 import numpy as np
 #============================================================
 '''
@@ -19,9 +20,8 @@ class Visualizer():
 
     def start(self):
         self.gui = GUI(self.viewport.width_px, self.viewport.height_px)     # GUI erzeugen
-        self.gui.set_zoom_callback(self._handle_zoom)   # Für Zoom
-        self.gui.set_reset_callback(self._handle_reset) # Für Reset-Button
-
+        self.gui.set_zoom_callback(self._handle_zoom)       # Für Zoom
+        self.gui.set_reset_callback(self._handle_reset)     # Für Reset-Button
 
         # Bild berechnen
         pixels = self.renderer.render(
@@ -78,7 +78,10 @@ class Renderer():
                 result = fractal.iterate(c)      # Mathematik
                 color = colormap.map(result, fractal.max_iterations)     # Darstellung
                 image[y,x] = color
-        
+
+            printProgressBar(y, viewport.height_px, suffix="Loading Viewer")    # Ladeleiste
+
+        clear_cli()
         return image
 
 #============================================================

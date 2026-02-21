@@ -102,7 +102,7 @@ class CLI():
     # Menüpunkt 2: Fraktal graphisch visualisieren | Visualizer bereit in load_fractal instanziiert
     def menu_visualize(self):
         clear_cli()
-        print("Loading Visualizer...")
+        print()
         self.visualizer.start()    # CLI startet nur das Visualisierungfenster und spielt danach keine aktive Rolle mehr.
         clear_cli()
         return

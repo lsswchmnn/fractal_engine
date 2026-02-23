@@ -165,5 +165,4 @@ class CLI():
                     show_error(True, "TransitionError", f"{e}")
                     continue
 
-            enter_continue("Press enter to return to main menu.")
             return

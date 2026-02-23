@@ -11,7 +11,8 @@ def _render_mandelbrot(
     width, height,
     max_iterations,
     escape_radius
-):
+    ):
+    
     iterations = np.zeros((height, width), dtype=np.int32)
     escaped = np.zeros((height, width), dtype=np.uint8)
 
@@ -41,7 +42,6 @@ def _render_mandelbrot(
                 iterations[y, x] = max_iterations
                 escaped[y, x] = 0
         
-        #printProgressBar(y, height, prefix="Loading Viewer")    # Ladeleiste, wo kann ich die implementieren?
 
     return iterations, escaped
 
@@ -122,6 +122,8 @@ class Renderer():
                 color = colormap.map(result, fractal.max_iterations)     # Darstellung
                 image[y,x] = color
 
+            printProgressBar(y, viewport.height_px, prefix="Loading Viewer")    # Ladeleiste, wo kann ich die implementieren?
+
         clear_cli()
         return image
 
@@ -165,6 +167,7 @@ class Viewport():
     
     # Für Zoom in GUI
     def zoom_to_pixels(self, x0, y0, x1, y1):
+
         x_min_px = min(x0, x1)
         x_max_px = max(x0, x1)
         y_min_px = min(y0, y1)

@@ -5,9 +5,11 @@ PALETTES = {
 
     "default": [ 
         (255, 255, 255),    # Erste Farbe IMMER weiß für Hintergrund
-        (180, 200, 255), 
+        (210, 150, 100),
+        (255, 255, 0),
         (50, 80, 200), 
-        (0, 0, 0) ], 
+        (0, 0, 0) 
+    ], 
 
     "fire": [
         (255, 255, 255),
@@ -139,7 +141,10 @@ class ColorMap():
 
         if modulus == 0:
             return float(result.iterations)
-        
+
+        if modulus <= 1.0:
+            return result.iterations
+
         return (
             result.iterations
             + 1

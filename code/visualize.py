@@ -53,18 +53,18 @@ Zustände.
 '''
 class Visualizer():
     def __init__(self, fractal):
-        self.colormap   : ColorMap    = ColorMap()      # Management der Färbung
-        self.viewport   : Viewport    = Viewport()      # Aktueller Ausschnitt, mit dem gearbeitet wird
-        self.renderer   : Renderer    = Renderer()      # Numerische Berechnung
-        self.fractal                  = fractal         # Aktuelles Fraktal
-        self.gui        : GUI         = None            # Graphische Schnittstelle zum User
+        self.fractal                  = fractal                                     # Aktuelles Fraktal
+        self.colormap   : ColorMap    = ColorMap()                                  # Management der Färbung
+        self.viewport   : Viewport    = Viewport(self.fractal._default_bounds)      # Aktueller Ausschnitt, mit dem gearbeitet wird
+        self.renderer   : Renderer    = Renderer()                                  # Numerische Berechnung
+        self.gui        : GUI         = None                                        # Graphische Schnittstelle zum User
 
 # ------------------------------------------------------------
 
     def start(self):
         self.gui = GUI(self.viewport.width_px, self.viewport.height_px)     # GUI erzeugen
-        self.gui.set_zoom_callback(self._handle_zoom)       # Für Zoom
-        self.gui.set_reset_callback(self._handle_reset)     # Für Reset-Button
+        self.gui.set_zoom_callback(self._handle_zoom)           # Für Zoom
+        self.gui.set_reset_callback(self._handle_reset)         # Für Reset-Button
 
         # Bild berechnen
         pixels = self.renderer.render(
@@ -149,15 +149,16 @@ Viewport definiert den sichtbaren (berechneten) Ausschnitt der
 komplexen Zahlenebene.
 '''
 class Viewport():
-    def __init__(self):
-        self._default_bounds = (-2.0, 1.0, -1.5, 1.5)   # Default
+    def __init__(self, bounds:tuple):
+        #self._default_bounds = (-2.0, 1.0, -1.5, 1.5)   # zu Fraktal
+        self.bounds = bounds
         self.reset()
         self.width_px  : int    = 800
         self.height_px : int    = 600
 
 # ------------------------------------------------------------
     def reset(self):
-        self.xmin, self.xmax, self.ymin, self.ymax = self._default_bounds
+        self.xmin, self.xmax, self.ymin, self.ymax = self.bounds
 
     def pixel_to_complex(self, x, y) -> complex:
         real = self.xmin + (x / (self.width_px - 1)) * (self.xmax - self.xmin)

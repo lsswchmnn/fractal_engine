@@ -47,6 +47,7 @@ class Fractal(ABC):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         self.max_iterations = max_iterations     # Wie lange prüft man, ob der Wert "ausbricht"?
         self.escape_radius = escape_radius       # Für Mandelbrot z.B. 2
+        self._default_bounds = (-2.0, 1.0, -1.5, 1.5)   # zu Fraktal
 
     # Berechnet die Iterationszahl für einen Punkt c in der komplexen Ebene. Zentrale Kernemthode.
     @abstractmethod # muss implementiert sien
@@ -57,12 +58,39 @@ class Fractal(ABC):
 class MandelbrotFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         super().__init__(max_iterations, escape_radius)
+        self._default_bounds = (-2.0, 1.0, -1.5, 1.5)   # zu Fraktal
 
     # Iterater: ruft njit-Funktion auf
     def iterate(self, c: complex) -> IterationResult:
         iterations, escaped, zr, zi = _mandelbrot_kernel(
             c.real,
             c.imag,
+            self.max_iterations,
+            self.escape_radius
+        )
+
+        return IterationResult(
+            iterations=iterations,
+            escaped=escaped,
+            last_z=complex(zr, zi)
+        )
+    
+#------------------------------------------------------------
+class InvertedMandelbrotFractal(Fractal):
+    def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
+        super().__init__(max_iterations, escape_radius)
+        self._default_bounds = (-2, 4.5, -2.4, 2.4)   # zu Fraktal
+
+    def iterate(self, c: complex) -> IterationResult:
+        # Singularität vermeiden (Division durch 0)
+        if c == 0:
+            c_inv = complex(1e10, 0)  # praktisch "unendlich"
+        else:
+            c_inv = 1 / c
+
+        iterations, escaped, zr, zi = _mandelbrot_kernel(
+            c_inv.real,
+            c_inv.imag,
             self.max_iterations,
             self.escape_radius
         )
@@ -80,4 +108,3 @@ class JuliaFractal(Fractal):
         self.k : complex = 0
 
     # ...
-

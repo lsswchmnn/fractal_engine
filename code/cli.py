@@ -10,6 +10,7 @@ class CLI():
         self.fractal                 = None
         self.visualizer              = None
         self.fractal_loaded : bool   = False
+        self.fractal_name   : str    = None     # Name für Anzeige
 
 #------------------------------------------------------------
 # HAUPTMENÜ
@@ -17,6 +18,7 @@ class CLI():
     def run(self):
         while True:
             print_heading("FRACTAL-SIMULATION")
+            print(f"Current Fractal: {self.fractal_name if self.fractal_name else "None"}\n")
             print("1 - Load fractal")
             print("2 - Start visualizer")
             print("H - Help")
@@ -97,6 +99,10 @@ class CLI():
                     continue
 
             self.visualizer = Visualizer(self.fractal)  # Visualizer bereits hier erstellen
+            self.fractal_name = class_name
+
+            print_heading("FRACTAL LOADED")
+            enter_continue(f"Fractal {class_name} loaded. Press enter to continue.", seperation=False)
             return
 
     # Menüpunkt 2: Fraktal graphisch visualisieren | Visualizer bereit in load_fractal instanziiert

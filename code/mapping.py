@@ -2,6 +2,11 @@ FRACTALS_MAP =  {
     "MandelbrotFractal": {
         "name": "Mandelbrot-Set",
         "desc": ("..."),
+    },
+
+    "InvertedMandelbrotFractal": {
+        "name": "Inverted Mandelbrot-Set",
+        "desc": ("..."),
     }
 }
 

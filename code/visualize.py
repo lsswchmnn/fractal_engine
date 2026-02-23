@@ -2,18 +2,18 @@ from color import ColorMap
 from gui import GUI
 from utils import printProgressBar, clear_cli
 from numba import njit
+from fractal import MandelbrotFractal, InvertedMandelbrotFractal
 import numpy as np
 #============================================================
-# NUMBA-FUNKTION (für Performance in der Iteration); später anbinden, wenn klar ist, wie
+# NUMBA-FUNKTIONEN (für Performance in der Iteration)
 @njit
 def _render_mandelbrot(
     xmin, xmax, ymin, ymax,
     width, height,
     max_iterations,
     escape_radius
-    ):
-    
-    iterations = np.zeros((height, width), dtype=np.int32)
+):
+    iterations = np.zeros((height, width), dtype=np.float64)
     escaped = np.zeros((height, width), dtype=np.uint8)
 
     escape_sq = escape_radius * escape_radius
@@ -32,7 +32,10 @@ def _render_mandelbrot(
                 zi2 = zi * zi
 
                 if zr2 + zi2 > escape_sq:
-                    iterations[y, x] = i
+                    # Smooth Coloring berechnen
+                    mod_z = zr2 + zi2
+                    nu = i + 1 - np.log(np.log(mod_z))/np.log(2.0)
+                    iterations[y, x] = nu
                     escaped[y, x] = 1
                     break
 
@@ -41,10 +44,58 @@ def _render_mandelbrot(
             else:
                 iterations[y, x] = max_iterations
                 escaped[y, x] = 0
-        
 
     return iterations, escaped
 
+@njit
+def _render_inverted_mandelbrot(
+    xmin, xmax, ymin, ymax,
+    width, height,
+    max_iterations,
+    escape_radius
+):
+    iterations = np.zeros((height, width), dtype=np.float64)
+    escaped = np.zeros((height, width), dtype=np.uint8)
+
+    escape_sq = escape_radius * escape_radius
+
+    for y in range(height):
+        imag = ymax - (y / (height - 1)) * (ymax - ymin)
+
+        for x in range(width):
+            real = xmin + (x / (width - 1)) * (xmax - xmin)
+
+            # Inverse Koordinate
+            if real == 0.0 and imag == 0.0:
+                c_real = 1e10
+                c_imag = 0.0
+            else:
+                denom = real*real + imag*imag
+                c_real = real / denom
+                c_imag = -imag / denom
+
+            zr = 0.0
+            zi = 0.0
+
+            for i in range(max_iterations):
+                zr2 = zr * zr
+                zi2 = zi * zi
+
+                if zr2 + zi2 > escape_sq:
+                    mod_z = zr2 + zi2
+                    nu = i + 1 - np.log(np.log(mod_z))/np.log(2.0)
+                    iterations[y, x] = nu
+                    escaped[y, x] = 1
+                    break
+
+                # klassische Mandelbrot-Iteration
+                zi = 2.0 * zr * zi + c_imag
+                zr = zr2 - zi2 + c_real
+            else:
+                iterations[y, x] = max_iterations
+                escaped[y, x] = 0
+
+    return iterations, escaped
 #============================================================
 '''
 Der Visualizer orchestriert nur. Er ist kein Renderer und keine GUI, 
@@ -108,41 +159,41 @@ mit Colormap. Er darf nicht selbst berechnen.
 class Renderer():
 
     def render(self, fractal, viewport, colormap):
-        image = np.zeros(
-            (viewport.height_px, viewport.width_px, 3),
-            dtype=np.uint8
+
+        if isinstance(fractal, MandelbrotFractal):
+            iterations, escaped = _render_mandelbrot(
+                viewport.xmin,
+                viewport.xmax,
+                viewport.ymin,
+                viewport.ymax,
+                viewport.width_px,
+                viewport.height_px,
+                fractal.max_iterations,
+                fractal.escape_radius
+            )
+        
+        elif isinstance(fractal, InvertedMandelbrotFractal):
+            iterations, escaped = _render_inverted_mandelbrot(
+                viewport.xmin,
+                viewport.xmax,
+                viewport.ymin,
+                viewport.ymax,
+                viewport.width_px,
+                viewport.height_px,
+                fractal.max_iterations,
+                fractal.escape_radius
+            )
+            
+        # Farbzuweisung (beliebige apply-methode nutzen)
+        image = colormap.apply_basic(
+            iterations,
+            escaped,
+            fractal.max_iterations
         )
-
-        # Wird irgendwann zu langsam; später z.B. mit NumPy machen:
-        for y in range(viewport.height_px):
-            for x in range(viewport.width_px):
-
-                c = viewport.pixel_to_complex(x, y)
-                result = fractal.iterate(c)      # Mathematik
-                color = colormap.map(result, fractal.max_iterations)     # Darstellung
-                image[y,x] = color
-
-            printProgressBar(y, viewport.height_px, prefix="Loading Viewer")    # Ladeleiste, wo kann ich die implementieren?
 
         clear_cli()
         return image
 
-
-#     def render(self, fractal, viewport, colormap):
-
-#         iterations, escaped = _render_mandelbrot(
-#             viewport.xmin,
-#             viewport.xmax,
-#             viewport.ymin,
-#             viewport.ymax,
-#             viewport.width_px,
-#             viewport.height_px,
-#             fractal.max_iterations,
-#             fractal.escape_radius
-#         )
-
-#         return colormap.apply(iterations, escaped, fractal.max_iterations)
-    
 # #============================================================
 '''
 Viewport definiert den sichtbaren (berechneten) Ausschnitt der
@@ -150,7 +201,6 @@ komplexen Zahlenebene.
 '''
 class Viewport():
     def __init__(self, bounds:tuple):
-        #self._default_bounds = (-2.0, 1.0, -1.5, 1.5)   # zu Fraktal
         self.bounds = bounds
         self.reset()
         self.width_px  : int    = 800

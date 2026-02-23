@@ -1,68 +1,7 @@
 from fractal import IterationResult
+from mapping import PALETTES
+import numpy as np
 import math
-#============================================================
-PALETTES = {
-
-    "default": [ 
-        (255, 255, 255),    # Erste Farbe IMMER weiß für Hintergrund
-        (210, 150, 100),
-        (255, 255, 0),
-        (50, 80, 200), 
-        (0, 0, 0) 
-    ], 
-
-    "fire": [
-        (255, 255, 255),
-        (255, 170, 60),
-        (220, 60, 0),
-        (40, 0, 0)
-    ],
-
-    "ice": [
-        (255, 255, 255),
-        (180, 230, 255),
-        (70, 150, 220),
-        (0, 30, 80)
-    ],
-
-    "forest": [
-        (255, 255, 255),
-        (140, 210, 140),
-        (40, 120, 60),
-        (0, 30, 10)
-    ],
-
-    "sunset": [
-        (255, 255, 255),
-        (255, 160, 120),
-        (200, 70, 140),
-        (30, 0, 40)
-    ],
-
-    "neon": [
-        (255, 255, 255),
-        (0, 255, 200),
-        (180, 0, 255),
-        (10, 10, 20)
-    ],
-
-    "rainbow": [
-        (255, 255, 255),
-        (138, 43, 226), # violett
-        (28,134,238),  # blau
-        (0,191,255), # Indigo
-        (0, 238, 118), # Grün
-        (238,201,0), # gelb
-        (255,127,0), # Orange
-        (255,127,80) # rot
-    ],
-
-    "grayscale": [
-        (255, 255, 255),
-        (211, 211, 211),
-        (3, 3, 3)
-    ]
-}
 #============================================================
 class ColorMap():
     def __init__(self):
@@ -101,7 +40,7 @@ class ColorMap():
         return (r, g, b)
 
 #------------------------------------------------------------
-# INTERPOLATION UND LOGIK
+# INTERPOLATION UND FÄRBUNG
 
     # sauber interpolieren
     def _interpolate_palette(self, key_colors, size):
@@ -125,28 +64,98 @@ class ColorMap():
 
         return palette
 
-    # Iterationszahl in RGB-Wert umwandeln
-    def map(self, result: IterationResult, max_iterations: int) -> tuple:
-        if not result.escaped:
-            return (0,0,0)
-        
-        smooth_value = self._compute_smooth_value(result)   # Smooth iteration count
-        normalized = smooth_value / max_iterations          # Normalisierung auf [0,1]
-        return self._sample_palette(normalized)             # Palette kontinuierlich abtasten
+    # Klassiche Färbung
+    def apply_basic(self, iterations: np.ndarray,
+                    escaped: np.ndarray,
+                    max_iterations: int) -> np.ndarray:
 
-    # Smooth-Wert berechnen
-    def _compute_smooth_value(self, result: IterationResult) -> float:
-        z = result.last_z
-        modulus = abs(z)
+        height, width = iterations.shape
+        image = np.zeros((height, width, 3), dtype=np.uint8)
 
-        if modulus == 0:
-            return float(result.iterations)
+        palette_size = len(self.palette)
 
-        if modulus <= 1.0:
-            return result.iterations
+        for y in range(height):
+            for x in range(width):
 
-        return (
-            result.iterations
-            + 1
-            - math.log(math.log(modulus)) / math.log(2)
-        )
+                if not escaped[y, x]:
+                    # Punkt liegt in der Menge
+                    image[y, x] = (0, 0, 0)
+                else:
+                    iteration = iterations[y, x]
+
+                    # klassische Modulo-Färbung
+                    index = int(iteration) % palette_size
+                    #index = iteration % palette_size
+                    image[y, x] = self.palette[index]
+
+        return image
+
+    # Histogramm-basierte Färbung
+    def apply_histogram(self, iterations: np.ndarray,
+                        escaped: np.ndarray,
+                        max_iterations: int) -> np.ndarray:
+
+        height, width = iterations.shape
+        image = np.zeros((height, width, 3), dtype=np.uint8)
+
+        # Histogramm der Iterationszahlen
+        histogram = np.zeros(max_iterations + 1, dtype=np.int64)
+        for y in range(height):
+            for x in range(width):
+                if escaped[y, x]:
+                    histogram[iterations[y, x]] += 1
+
+        # Kumulative Verteilung
+        total = histogram.sum()
+        if total == 0:
+            total = 1  # verhindert Division durch Null
+        cumulative = np.cumsum(histogram) / total  # Werte zwischen 0 und 1
+
+        palette_size = len(self.palette)
+
+        # Farbzuweisung
+        for y in range(height):
+            for x in range(width):
+                if not escaped[y, x]:
+                    image[y, x] = (0, 0, 0)
+                else:
+                    iter_value = int(iterations[y, x])
+                    t = cumulative[iter_value]  # 0..1
+                    index = int(t * (palette_size - 1))
+                    image[y, x] = self.palette[index]
+
+        return image
+
+    # Smooth-Färbung
+    def apply_smooth(self, iterations: np.ndarray,
+                    escaped: np.ndarray,
+                    max_iterations: int) -> np.ndarray:
+        """
+        Smooth Coloring mit linearer Interpolation in der Palette
+        """
+        height, width = iterations.shape
+        image = np.zeros((height, width, 3), dtype=np.uint8)
+        palette_size = len(self.palette)
+
+        for y in range(height):
+            for x in range(width):
+                if not escaped[y, x]:
+                    image[y, x] = (0, 0, 0)
+                else:
+                    # float Iteration → interpolate Palette
+                    t = iterations[y, x] / max_iterations  # 0..1
+                    idx = t * (palette_size - 1)
+                    i0 = int(np.floor(idx))
+                    i1 = min(i0 + 1, palette_size - 1)
+                    frac = idx - i0
+
+                    c0 = self.palette[i0]
+                    c1 = self.palette[i1]
+
+                    r = int(c0[0] + frac * (c1[0] - c0[0]))
+                    g = int(c0[1] + frac * (c1[1] - c0[1]))
+                    b = int(c0[2] + frac * (c1[2] - c0[2]))
+
+                    image[y, x] = (r, g, b)
+
+        return image

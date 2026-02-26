@@ -159,7 +159,18 @@ mit Colormap. Er darf nicht selbst berechnen.
 class Renderer():
 
     def render(self, fractal, viewport, colormap):
+        span = viewport.xmax - viewport.xmin
+        base_iter = fractal.max_iterations
+        k = 40  # Feintuning-Faktor
 
+        if span > 0:
+            adaptive_iter = int(base_iter + k * np.log10(1.0 / span))
+        else:
+            adaptive_iter = base_iter
+
+        adaptive_iter = max(base_iter, adaptive_iter)
+
+        # Kernel-Aufruf je nach Fraktaltyp
         if isinstance(fractal, MandelbrotFractal):
             iterations, escaped = _render_mandelbrot(
                 viewport.xmin,
@@ -168,7 +179,7 @@ class Renderer():
                 viewport.ymax,
                 viewport.width_px,
                 viewport.height_px,
-                fractal.max_iterations,
+                adaptive_iter,
                 fractal.escape_radius
             )
         
@@ -180,15 +191,15 @@ class Renderer():
                 viewport.ymax,
                 viewport.width_px,
                 viewport.height_px,
-                fractal.max_iterations,
+                adaptive_iter,
                 fractal.escape_radius
             )
             
         # Farbzuweisung (beliebige apply-methode nutzen)
-        image = colormap.apply_basic(
+        image = colormap.apply_smooth(
             iterations,
             escaped,
-            fractal.max_iterations
+            adaptive_iter
         )
 
         clear_cli()

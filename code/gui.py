@@ -1,13 +1,8 @@
-from mapping import COLOR_MAP
+from mapping import GUI_MAP
 from PIL import Image, ImageTk
 import tkinter as tk
 import numpy as np
 #============================================================
-'''
-GUI soll ein Fenster erzeugen, in dem das Fraktal abgebildet ist.
-Der Nutzer kann nun ein Fenster ziehen, um den Ausschnitt zu ver-
-kleinern. Anschließend wird das Bild neu berechnet.
-'''
 class GUI():
     def __init__(self, width=800, height=600):
         # Höhe und Breite
@@ -20,9 +15,23 @@ class GUI():
         self.root.resizable(False, False)   # Fenster NICHT vergrößerbar 
         self.root.title("Fractal Viewer")
 
-        # Canvas
-        self.canvas = tk.Canvas(self.root, width=self.width, height=self.height)
-        self.canvas.pack()
+        # Hauptlayout-Frames
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(fill="both", expand=True)
+
+        self.canvas_frame = tk.Frame(self.main_frame)
+        self.canvas_frame.pack(fill="both", expand=True)
+
+        self.control_bar = tk.Frame(self.main_frame, height=40, bg=GUI_MAP["canvas_bg"])
+        self.control_bar.pack(fill="x", side="bottom")
+
+        # Canvas in Frame setzen
+        self.canvas = tk.Canvas(
+            self.canvas_frame,
+            width=self.width,
+            height=self.height
+        )
+        self.canvas.pack(fill="both", expand=True)
 
         # Referenz auf das aktuelle Bild
         self._photo = None
@@ -39,24 +48,68 @@ class GUI():
 
         self._reset_callback = None
 
+# ------------------------------------------------------------
+# BUTTONS in der Control Bar (Zoom-Interaktion links, Farbwechsel rechts)
+
         # Button für Reset
         self.reset_button = tk.Button(
-            self.root,
+            self.control_bar,
             text="⟳",
             font=("Arial", 12, "bold"),
-            width=3,
-            bg="white",
+            width=GUI_MAP["button_width"],
+            bg=GUI_MAP["button_bg"],
             relief="raised",
             command=self._on_reset_clicked
         )
+        self.reset_button.pack(side="left", padx=10, pady=5)
 
-        self.reset_button.place(
-            relx=1.0,
-            rely=0.0,
-            anchor="ne",
-            x=-10,
-            y=10
+        # Button für Schritt zurück im Zoom-Verlauf
+        self.back_step_button = tk.Button(
+            self.control_bar,
+            text="←",
+            font=("Arial", 12, "bold"),
+            width=GUI_MAP["button_width"],
+            bg=GUI_MAP["button_bg"],
+            relief="raised",
+            command=self._on_back_step_clicked
         )
+        self.back_step_button.pack(side="left", padx=10, pady=5)
+
+        # Button für Schritt vorwärts im Zoom-Verlauf
+        self.forward_step_button = tk.Button(
+            self.control_bar,
+            text="→",
+            font=("Arial", 12, "bold"),
+            width=GUI_MAP["button_width"],
+            bg=GUI_MAP["button_bg"],
+            relief="raised",
+            command=self._on_forward_step_clicked
+        )
+        self.forward_step_button.pack(side="left", padx=10, pady=5)
+
+        # Farbpalette des Fraktals wechseln
+        self.change_color_button = tk.Button(
+            self.control_bar,
+            text="🎨",
+            font=("Arial", 12, "bold"),
+            width=GUI_MAP["button_width"],
+            bg=GUI_MAP["button_bg"],
+            relief="raised",
+            command=self._on_change_color_clicked
+        )
+        self.change_color_button.pack(side="right", padx=10, pady=5)
+
+        # Färbungsmethode wechseln
+        self.change_coloring_button = tk.Button(
+            self.control_bar,
+            text="🌈",
+            font=("Arial", 12, "bold"),
+            width=GUI_MAP["button_width"],
+            bg=GUI_MAP["button_bg"],
+            relief="raised",
+            command=self._on_change_coloring_clicked
+        )
+        self.change_coloring_button.pack(side="right", padx=10, pady=5)
 
 # ------------------------------------------------------------
 # VERSCHIEDENES
@@ -84,7 +137,7 @@ class GUI():
             self._start_y,
             self._start_x,
             self._start_y,
-            outline=COLOR_MAP["col_rect"],
+            outline=GUI_MAP["col_rect"],
             width=3.0
         )
 
@@ -135,3 +188,37 @@ class GUI():
     def _on_reset_clicked(self):
         if self._reset_callback:
             self._reset_callback()
+
+# ------------------------------------------------------------
+# STEP-BUTTONS (Schritt zurück/vorwärts im Zoom-Verlauf)
+
+    def set_back_step_callback(self, callback):
+        self._back_step_callback = callback
+
+    def _on_back_step_clicked(self):
+        if self._back_step_callback:
+            self._back_step_callback()
+
+    def set_forward_step_callback(self, callback):
+        self._forward_step_callback = callback
+
+    def _on_forward_step_clicked(self):
+        if self._forward_step_callback:
+            self._forward_step_callback()
+
+#------------------------------------------------------------
+# COLOR-BUTTON (Farbpalette und Coloring wechseln)
+
+    def set_change_color_callback(self, callback):
+        self._change_color_callback = callback
+
+    def _on_change_color_clicked(self):
+        if self._change_color_callback:
+            self._change_color_callback()
+
+    def set_change_coloring_callback(self, callback):
+        self._change_coloring_callback = callback
+
+    def _on_change_coloring_clicked(self):
+        if self._change_coloring_callback:
+            self._change_coloring_callback()

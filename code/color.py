@@ -40,7 +40,7 @@ class ColorMap():
         return (r, g, b)
 
 #------------------------------------------------------------
-# INTERPOLATION UND FÄRBUNG
+# INTERPOLATION für Palette
 
     # sauber interpolieren
     def _interpolate_palette(self, key_colors, size):
@@ -64,6 +64,9 @@ class ColorMap():
 
         return palette
 
+#------------------------------------------------------------
+# FÄRBUNGSMETHODEN für Iterationsergebnisse
+
     # Klassiche Färbung
     def apply_basic(self, iterations: np.ndarray,
                     escaped: np.ndarray,
@@ -85,7 +88,6 @@ class ColorMap():
 
                     # klassische Modulo-Färbung
                     index = int(iteration) % palette_size
-                    #index = iteration % palette_size
                     image[y, x] = self.palette[index]
 
         return image
@@ -103,7 +105,7 @@ class ColorMap():
         for y in range(height):
             for x in range(width):
                 if escaped[y, x]:
-                    histogram[iterations[y, x]] += 1
+                    histogram[int(iterations[y, x])] += 1
 
         # Kumulative Verteilung
         total = histogram.sum()

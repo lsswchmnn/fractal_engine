@@ -45,9 +45,9 @@ class IterationResult:
 # KLASSEN FÜR FRAKTALE
 class Fractal(ABC):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
-        self.max_iterations = max_iterations     # Wie lange prüft man, ob der Wert "ausbricht"?
-        self.escape_radius = escape_radius       # Für Mandelbrot z.B. 2
-        self._default_bounds = (-2.0, 1.0, -1.5, 1.5)   # zu Fraktal
+        self.max_iterations = max_iterations                # Wie lange prüft man, ob der Wert "ausbricht"?
+        self.escape_radius = escape_radius                  # Für Mandelbrot z.B. 2
+        self._default_bounds = (-2.0, 1.0, -1.2, 1.2)       # Standard-Ausschnitt der komplexen Ebene, mit dem gearbeitet wird. Kann von Fraktal zu Fraktal unterschiedlich sein.
 
     # Berechnet die Iterationszahl für einen Punkt c in der komplexen Ebene. Zentrale Kernemthode.
     @abstractmethod # muss implementiert sien
@@ -58,7 +58,7 @@ class Fractal(ABC):
 class MandelbrotFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         super().__init__(max_iterations, escape_radius)
-        self._default_bounds = (-2.0, 1.0, -1.5, 1.5)   # zu Fraktal
+        self._default_bounds = (-2.0, 1.0, -1.2, 1.2)
 
     # Iterater: ruft njit-Funktion auf
     def iterate(self, c: complex) -> IterationResult:

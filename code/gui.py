@@ -111,6 +111,17 @@ class GUI():
         )
         self.change_coloring_button.pack(side="right", padx=10, pady=5)
 
+        # Als Hochauflöndes Bild speichern (exp)
+        self.save_button = tk.Button(
+            self.control_bar,
+            text="💾",
+            font=("Arial", 12, "bold"),
+            width=GUI_MAP["button_width"],
+            bg=GUI_MAP["button_bg"],
+            relief="raised",
+            command=self._on_save_clicked
+        )
+        self.save_button.pack(side="right", padx=10, pady=5)
 # ------------------------------------------------------------
 # VERSCHIEDENES
 
@@ -222,3 +233,13 @@ class GUI():
     def _on_change_coloring_clicked(self):
         if self._change_coloring_callback:
             self._change_coloring_callback()
+
+#------------------------------------------------------------
+# EXPORT-BUTTON (Hochauflösendes Bild speichern)
+
+    def set_save_callback(self, callback):
+        self._save_callback = callback
+
+    def _on_save_clicked(self):
+        if self._save_callback:
+            self._save_callback()

@@ -3,6 +3,7 @@ from gui import GUI
 from utils import printProgressBar, clear_cli
 from numba import njit
 from fractal import MandelbrotFractal, InvertedMandelbrotFractal
+from mapping import PALETTES
 import numpy as np
 #============================================================
 # NUMBA-FUNKTIONEN (für Performance in der Iteration)
@@ -109,47 +110,88 @@ class Visualizer():
         self.viewport   : Viewport    = Viewport(self.fractal._default_bounds)      # Aktueller Ausschnitt, mit dem gearbeitet wird
         self.renderer   : Renderer    = Renderer()                                  # Numerische Berechnung
         self.gui        : GUI         = None                                        # Graphische Schnittstelle zum User
+        self.history    : list        = []                                          # Für Zoom-History
+        self.history_index            = -1
+
+        # exp
+        self.palette_names = list(PALETTES.keys())
+        self.palette_index = self.palette_names.index("default")  # Start mit "default"-Palette
 
 # ------------------------------------------------------------
 
+    # STARTING POINT
     def start(self):
+        # GUI erzeugen und Callbacks setzen
         self.gui = GUI(self.viewport.width_px, self.viewport.height_px)     # GUI erzeugen
-        self.gui.set_zoom_callback(self._handle_zoom)           # Für Zoom
-        self.gui.set_reset_callback(self._handle_reset)         # Für Reset-Button
+        self.gui.set_zoom_callback(self._handle_zoom)                       # Zoom
+        self.gui.set_reset_callback(self._handle_reset)                     # Reset-Button
+        self.gui.set_back_step_callback(self._handle_back)                  # Zoom-History
+        self.gui.set_forward_step_callback(self._handle_forward)            # Zoom-History
+        self.gui.set_change_color_callback(self._handle_change_color)       # Farbwechsel-Button
 
-        # Bild berechnen
-        pixels = self.renderer.render(
-            self.fractal,
-            self.viewport,
-            self.colormap
-        )
-
-        self.gui.display_image(pixels)      # Bild anzeigen
+        self._push_history()                                   
+        self._rerender()                      # Erstes Bild rendern (inkl. Anzeige)
         self.gui.run()                      # Eventloop starten
 
-    # Für Zoom in GUI
+    # Callback: Für Zoom in GUI
     def _handle_zoom(self, x0, y0, x1, y1):
         self.viewport.zoom_to_pixels(x0, y0, x1, y1)
+        self._push_history()    # Aktuellen Viewport in History speichern
+        self._rerender()
 
-        pixels = self.renderer.render(
-            self.fractal,
-            self.viewport,
-            self.colormap
-        )
+#------------------------------------------------------------
+# Zoom-History: Back, Forward, Reset
 
-        self.gui.display_image(pixels)
-
-    # Für Reset-Button in GUI
+    # Callback: Für Reset-Button in GUI
     def _handle_reset(self):
         self.viewport.reset()
+        self._rerender()
 
+    # Callback: Für Zoom-History
+    def _push_history(self):
+        bounds = (self.viewport.xmin, self.viewport.xmax, self.viewport.ymin, self.viewport.ymax)
+        self.history = self.history[:self.history_index + 1]  # Alle "vorwärts"-Einträge löschen
+        self.history.append(bounds)
+        self.history_index += 1
+
+    def _handle_back(self):
+        if self.history_index > 0:
+            self.history_index -= 1
+            self._apply_history()
+
+    def _handle_forward(self):
+        if self.history_index < len(self.history) - 1:
+            self.history_index += 1
+            self._apply_history()
+
+    # Hilfsfunktion: Aktuellen Viewport aus History anwenden
+    def _apply_history(self):
+        xmin, xmax, ymin, ymax = self.history[self.history_index]
+        self.viewport.xmin = xmin
+        self.viewport.xmax = xmax
+        self.viewport.ymin = ymin
+        self.viewport.ymax = ymax
+
+        self._rerender()
+
+    # Hilfsfunktion: Aktuelles Bild rendern und in GUI anzeigen
+    def _rerender(self):
         pixels = self.renderer.render(
             self.fractal,
             self.viewport,
             self.colormap
         )
-
         self.gui.display_image(pixels)
+
+#------------------------------------------------------------
+# Handling von Farbwechsel
+
+    def _handle_change_color(self):
+        self.palette_index = (self.palette_index + 1) % len(self.palette_names)
+        new_name = self.palette_names[self.palette_index]
+        self.colormap.set_palette(new_name)     # Palette wechseln
+        self.gui.root.title(f"Fractal Viewer | Current Palette: {new_name}")
+        self._rerender()
 
 #============================================================
 '''
@@ -158,6 +200,7 @@ mit Colormap. Er darf nicht selbst berechnen.
 '''
 class Renderer():
 
+    # Render-Funktion: Berechnet die Iterationen und wendet die Colormap an
     def render(self, fractal, viewport, colormap):
         span = viewport.xmax - viewport.xmin
         base_iter = fractal.max_iterations
@@ -195,8 +238,8 @@ class Renderer():
                 fractal.escape_radius
             )
             
-        # Farbzuweisung (beliebige apply-methode nutzen)
-        image = colormap.apply_smooth(
+        # Farbzuweisung (beliebige apply-methode nutzbar)
+        image = colormap.apply_histogram(
             iterations,
             escaped,
             adaptive_iter

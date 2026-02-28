@@ -14,9 +14,9 @@ kann.
 #============================================================
 # NUMBA-FUNKTION (für Performance in der Iteration)
 @njit
-def _mandelbrot_kernel(c_real, c_imag, max_iterations, escape_radius):
-    z_real = 0.0
-    z_imag = 0.0
+def _mandelbrot_kernel(c_real, c_imag, max_iterations, escape_radius, z_real=0.0, z_imag=0.0):
+    z_real = z_real    # Startwert z=0
+    z_imag = z_imag    # Startwert z=0
 
     for i in range(max_iterations):
         # z = z^2 + c
@@ -66,7 +66,9 @@ class MandelbrotFractal(Fractal):
             c.real,
             c.imag,
             self.max_iterations,
-            self.escape_radius
+            self.escape_radius,
+            z_imag=0.04,   # Startwert z=0.03+0.4i
+            z_real=0.03
         )
 
         return IterationResult(

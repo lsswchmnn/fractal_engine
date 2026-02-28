@@ -34,7 +34,6 @@ def _render_mandelbrot(
                 zi2 = zi * zi
 
                 if zr2 + zi2 > escape_sq:
-                    # Smooth Coloring berechnen
                     mod_z = zr2 + zi2
                     nu = i + 1 - np.log(np.log(mod_z))/np.log(2.0)
                     iterations[y, x] = nu

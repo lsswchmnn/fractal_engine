@@ -1,5 +1,6 @@
 from mapping import GUI_MAP
 from PIL import Image, ImageTk
+from tkinter import filedialog
 import tkinter as tk
 import numpy as np
 #============================================================
@@ -119,7 +120,7 @@ class GUI():
             width=GUI_MAP["button_width"],
             bg=GUI_MAP["button_bg"],
             relief="raised",
-            command=self._on_save_clicked
+            command=self._on_export_clicked
         )
         self.save_button.pack(side="right", padx=10, pady=5)
 # ------------------------------------------------------------
@@ -237,9 +238,16 @@ class GUI():
 #------------------------------------------------------------
 # EXPORT-BUTTON (Hochauflösendes Bild speichern)
 
-    def set_save_callback(self, callback):
-        self._save_callback = callback
+    def set_export_callback(self, callback):
+        self._export_callback = callback
 
-    def _on_save_clicked(self):
-        if self._save_callback:
-            self._save_callback()
+    def _on_export_clicked(self):
+        if self._export_callback:
+            self._export_callback()
+
+    def ask_save_path(self, default_name="fractal.png"):
+        return filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG Image", "*.png")],
+            initialfile=default_name
+        )

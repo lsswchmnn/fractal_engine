@@ -124,13 +124,18 @@ class CLI():
     def menu_settings(self):
         while True:
             print_heading("SETTINGS")
-            print("1 - Color settings")
+            print("1 - Change color palette")
+            print("2 - Change coloring method")
             print("C - Close")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
             if choice == "1":
                 self.cli_load_palette()
+                continue
+
+            elif choice == "2":
+                self.cli_load_coloring()
                 continue
 
             elif choice == "c":
@@ -172,3 +177,31 @@ class CLI():
                     continue
 
             return
+
+    def cli_load_coloring(self):
+        while True:
+            print_heading("SET COLORING MODE")
+
+            modes = self.visualizer.coloring_modes
+
+            for i, mode in enumerate(modes, start=1):
+                print(f"{i} - {mode}")
+
+            print("C - Cancel")
+            print_thin_separation(linebreak=False)
+
+            choice = input("> ").strip().lower()
+
+            if choice == "c":
+                return
+
+            try:
+                idx = int(choice)
+            except:
+                show_error(True, "InputError", "Input must be 'C' or Integer")
+                continue
+
+            if 1 <= idx <= len(modes):
+                self.visualizer.coloring_index = idx - 1
+                self.visualizer.coloring_mode = modes[idx - 1]
+                return

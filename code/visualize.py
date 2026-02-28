@@ -4,6 +4,7 @@ from utils import printProgressBar, clear_cli
 from numba import njit
 from fractal import MandelbrotFractal, InvertedMandelbrotFractal
 from mapping import PALETTES
+from export import PNGExporter
 import numpy as np
 #============================================================
 # NUMBA-FUNKTIONEN (für Performance in der Iteration)
@@ -109,11 +110,10 @@ class Visualizer():
         self.colormap   : ColorMap    = ColorMap()                                  # Management der Färbung
         self.viewport   : Viewport    = Viewport(self.fractal._default_bounds)      # Aktueller Ausschnitt, mit dem gearbeitet wird
         self.renderer   : Renderer    = Renderer()                                  # Numerische Berechnung
+        self.exporter   : PNGExporter = PNGExporter()                               # Export-Funktionalität
         self.gui        : GUI         = None                                        # Graphische Schnittstelle zum User
         self.history    : list        = []                                          # Für Zoom-History
         self.history_index            = -1
-
-        # exp
         self.palette_names = list(PALETTES.keys())
         self.palette_index = self.palette_names.index("default")  # Start mit "default"-Palette
 
@@ -122,12 +122,18 @@ class Visualizer():
     # STARTING POINT
     def start(self):
         # GUI erzeugen und Callbacks setzen
-        self.gui = GUI(self.viewport.width_px, self.viewport.height_px)     # GUI erzeugen
-        self.gui.set_zoom_callback(self._handle_zoom)                       # Zoom
-        self.gui.set_reset_callback(self._handle_reset)                     # Reset-Button
-        self.gui.set_back_step_callback(self._handle_back)                  # Zoom-History
-        self.gui.set_forward_step_callback(self._handle_forward)            # Zoom-History
-        self.gui.set_change_color_callback(self._handle_change_color)       # Farbwechsel-Button
+        self.gui = GUI(self.viewport.width_px, self.viewport.height_px)         # GUI erzeugen
+        self.gui.set_zoom_callback(self._handle_zoom)                           # Zoom
+        self.gui.set_reset_callback(self._handle_reset)                         # Reset-Button
+        self.gui.set_back_step_callback(self._handle_back)                      # Zoom-History
+        self.gui.set_forward_step_callback(self._handle_forward)                # Zoom-History
+        self.gui.set_change_color_callback(self._handle_change_color)           # Farbwechsel-Button
+        self.gui.set_change_coloring_callback(self._handle_change_coloring)     # Coloring-Method wechseln
+        self.gui.set_export_callback(self._handle_export)                       # Export-Button 
+
+        self.coloring_modes = ["basic", "smooth", "histogram"]     # Verfügbare Coloring-Methoden
+        self.coloring_index = 1                                             # Start mit "smooth"-Coloring
+        self.coloring_mode = self.coloring_modes[self.coloring_index]       # Aktuelle Coloring-Methode
 
         self._push_history()                                   
         self._rerender()                      # Erstes Bild rendern (inkl. Anzeige)
@@ -179,19 +185,56 @@ class Visualizer():
         pixels = self.renderer.render(
             self.fractal,
             self.viewport,
-            self.colormap
+            self.colormap,
+            coloring_mode=self.coloring_mode
         )
         self.gui.display_image(pixels)
 
 #------------------------------------------------------------
-# Handling von Farbwechsel
+# HANDLING (Farbwechsel, Coloring-Methode wechseln, Exportieren)
 
     def _handle_change_color(self):
         self.palette_index = (self.palette_index + 1) % len(self.palette_names)
         new_name = self.palette_names[self.palette_index]
-        self.colormap.set_palette(new_name)     # Palette wechseln
-        self.gui.root.title(f"Fractal Viewer | Current Palette: {new_name}")
+        self.colormap.set_palette(new_name)
         self._rerender()
+        print(f"Switched to palette: {new_name}")   # vorrübergehende Ausgabe im CLI
+
+    def _handle_change_coloring(self):
+        self.coloring_index = (self.coloring_index + 1) % len(self.coloring_modes)
+        self.coloring_mode = self.coloring_modes[self.coloring_index]
+        self._rerender()
+        print(f"Switched to coloring method: {self.coloring_mode}")  # vorrübergehende Ausgabe im CLI
+
+    def _handle_export(self):
+        # Hochauflösende Größe definieren (z.B. 4K)
+        factor = 4
+        highres_width = 800 * factor
+        highres_height = 600 * factor
+
+        # Neues Viewport für Export
+        export_viewport = self.viewport.copy()  # wir nehmen den gleichen Ausschnitt
+        export_viewport.width_px = highres_width
+        export_viewport.height_px = highres_height
+
+        # Adaptive Iterationen für mehr Detail
+        scale_factor = highres_width / self.viewport.width_px
+        max_iter = int(self.fractal.max_iterations * scale_factor)
+
+        # Neues Rendering
+        pixels = self.renderer.render(
+            self.fractal,
+            export_viewport,
+            self.colormap,
+            coloring_mode=self.coloring_mode,
+        )
+
+        # Speicherort
+        default_name = self.exporter.generate_default_filename()
+        path = self.gui.ask_save_path(default_name)
+
+        if path:
+            self.exporter.save(pixels, path)
 
 #============================================================
 '''
@@ -201,7 +244,7 @@ mit Colormap. Er darf nicht selbst berechnen.
 class Renderer():
 
     # Render-Funktion: Berechnet die Iterationen und wendet die Colormap an
-    def render(self, fractal, viewport, colormap):
+    def render(self, fractal, viewport, colormap, coloring_mode="smooth"):
         span = viewport.xmax - viewport.xmin
         base_iter = fractal.max_iterations
         k = 40  # Feintuning-Faktor
@@ -239,11 +282,33 @@ class Renderer():
             )
             
         # Farbzuweisung (beliebige apply-methode nutzbar)
-        image = colormap.apply_histogram(
-            iterations,
-            escaped,
-            adaptive_iter
-        )
+        if coloring_mode == "basic":
+            image = colormap.apply_basic(
+                iterations,
+                escaped,
+                adaptive_iter
+            )
+
+        elif coloring_mode == "histogram":
+            image = colormap.apply_histogram(
+                iterations,
+                escaped,
+                adaptive_iter
+            )
+
+        elif coloring_mode == "smooth":  # smooth
+            image = colormap.apply_smooth(
+                iterations,
+                escaped,
+                adaptive_iter
+            )
+
+        elif coloring_mode == "ultra":  # ultra, später implementieren
+            image = colormap.apply_ultra(
+                iterations,
+                escaped,
+                adaptive_iter
+            )
 
         clear_cli()
         return image
@@ -285,3 +350,11 @@ class Viewport():
         self.xmax = c2.real
         self.ymin = c2.imag
         self.ymax = c1.imag
+
+    # Für Export: Kopie des Viewports mit neuer Pixelgröße, um GUI nicht zu beeinflussen
+    def copy(self):
+        new_vp = Viewport(self.bounds)
+        new_vp.xmin, new_vp.xmax, new_vp.ymin, new_vp.ymax = self.xmin, self.xmax, self.ymin, self.ymax
+        new_vp.width_px = self.width_px
+        new_vp.height_px = self.height_px
+        return new_vp

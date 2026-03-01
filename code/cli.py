@@ -2,7 +2,7 @@ from utils import print_heading, enter_continue, clear_cli, print_thin_separatio
 from fractal import MandelbrotFractal, JuliaFractal
 from visualize import Visualizer
 from mapping import FRACTALS_MAP
-from color import PALETTES
+#from color import PALETTES
 import fractal
 #============================================================
 class CLI():
@@ -20,9 +20,10 @@ class CLI():
             print_heading("FRACTAL-SIMULATION")
             print(f"Current Fractal: {self.fractal_name if self.fractal_name else "None"}\n")
             print("1 - Load fractal")
-            print("2 - Start visualizer")
+            if self.fractal:
+                print("2 - Start visualizer")
+                print("S - Settings")
             print("H - Help")
-            print("S - Settings")
             print("C - Close program")
             print_thin_separation(linebreak=False)
             choice = input("> ").lower().strip()
@@ -105,7 +106,7 @@ class CLI():
             enter_continue(f"Fractal {class_name} loaded. Press enter to continue.", seperation=False)
             return
 
-    # Menüpunkt 2: Fraktal graphisch visualisieren | Visualizer bereit in load_fractal instanziiert
+    # Menüpunkt 2: Fraktal graphisch visualisieren (Visualizer bereit in load_fractal instanziiert)
     def menu_visualize(self):
         clear_cli()
         print()
@@ -125,12 +126,17 @@ class CLI():
         while True:
             print_heading("SETTINGS")
             print("1 - Manipulate Formula")
+            print("2 - Change iteration settings")
             print("C - Close")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
             if choice == "1":
                 self.cli_manipulate_formula()
+                continue
+
+            elif choice == "2":
+                self.cli_change_iterations()
                 continue
 
             elif choice == "c":
@@ -155,10 +161,11 @@ class CLI():
                 if choice == "1":
                     print_heading("CHANGE STARTVALUE")
                     print(f"Current startvalue: z0 = {self.fractal.start_real} + {self.fractal.start_imag}i\n")
+                    print("Recommended: Startvalue close to the critical point (0 for Mandelbrot) for more interesting results, but feel free to experiment!\n")
 
                     try:
-                        real = float(input("Enter new real part of startvalue z0: "))
-                        imag = float(input("Enter new imaginary part of startvalue z0: "))
+                        real = float(input("Enter real part of startvalue z0: "))
+                        imag = float(input("Enter imaginary part of startvalue z0: "))
                         self.fractal.start_real = real
                         self.fractal.start_imag = imag
                         enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue.", seperation=False)
@@ -173,66 +180,25 @@ class CLI():
                 elif choice == "c":
                     break
 
-    # Erstmal abgekoppelt, da Wechsel in GUI möglich
-
-    def cli_load_palette(self):
+    def cli_change_iterations(self):
         while True:
-            print_heading("LOAD PALETTE")
 
-            keys = list(PALETTES.keys())
-
-            print("Choose Palette:")
-            for i, key in enumerate(keys, start=1):
-                print(f"{i} - {key}")
-
+            print_heading("CHANGE ITERATION SETTINGS")
+            print("1 - Change adaptive iteration factor 'k'")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
-            if choice == "c":
-                return
-            
-            try:
-                idx = int(choice)
-            except:
-                show_error(True, "InputError", "Input must be 'C' or Integer")
-                continue
-
-            if 1 <= idx <= len(keys):
-                name = keys[idx - 1]
-
+            if choice == "1":
+                print_heading("CHANGE ADAPTIVE ITERATION FACTOR")
+                print(f"Current adaptive iteration factor k: {self.visualizer.iterate_factor_k}\n")
                 try:
-                    self.visualizer.colormap.set_palette(f"{name}")
-                except ValueError as e:
-                    show_error(True, "TransitionError", f"{e}")
+                    k = int(input("Enter new adaptive iteration factor k: "))
+                    self.visualizer.iterate_factor_k = k
+                    enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
+                except ValueError:
+                    show_error(True, "InputError", "Invalid input. Please enter a valid number.")
                     continue
 
-            return
-
-    def cli_load_coloring(self):
-        while True:
-            print_heading("SET COLORING MODE")
-
-            modes = self.visualizer.coloring_modes
-
-            for i, mode in enumerate(modes, start=1):
-                print(f"{i} - {mode}")
-
-            print("C - Cancel")
-            print_thin_separation(linebreak=False)
-
-            choice = input("> ").strip().lower()
-
-            if choice == "c":
-                return
-
-            try:
-                idx = int(choice)
-            except:
-                show_error(True, "InputError", "Input must be 'C' or Integer")
-                continue
-
-            if 1 <= idx <= len(modes):
-                self.visualizer.coloring_index = idx - 1
-                self.visualizer.coloring_mode = modes[idx - 1]
-                return
+            elif choice == "c":
+                break

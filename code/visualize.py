@@ -1,31 +1,29 @@
 from color import ColorMap
 from gui import GUI
-from utils import printProgressBar, clear_cli
+from utils import printProgressBar, clear_cli, print_thin_separation
 from numba import njit
-from fractal import MandelbrotFractal, InvertedMandelbrotFractal, mandelbrot_kernel, inverted_mandelbrot_kernel
+from fractal import Fractal, MandelbrotFractal, InvertedMandelbrotFractal, mandelbrot_kernel, inverted_mandelbrot_kernel
 from mapping import PALETTES
 from export import PNGExporter
 import numpy as np
 #============================================================
-
-#============================================================
-'''
-Der Visualizer orchestriert nur. Er ist kein Renderer und keine GUI, 
-sondern Session-Controller - er steuert den Ablauf und verwaltet 
-Zustände.
-'''
+# VISUALIZER: Verbindet Komponenten und steuert Ablauf der Visualisierung
 class Visualizer():
     def __init__(self, fractal):
-        self.fractal                  = fractal                                     # Aktuelles Fraktal
-        self.colormap   : ColorMap    = ColorMap()                                  # Management der Färbung
-        self.viewport   : Viewport    = Viewport(self.fractal._default_bounds)      # Aktueller Ausschnitt, mit dem gearbeitet wird
-        self.renderer   : Renderer    = Renderer()                                  # Numerische Berechnung
-        self.exporter   : PNGExporter = PNGExporter()                               # Export-Funktionalität
-        self.gui        : GUI         = None                                        # Graphische Schnittstelle zum User
-        self.history    : list        = []                                          # Für Zoom-History
-        self.history_index            = -1
-        self.palette_names = list(PALETTES.keys())
-        self.palette_index = self.palette_names.index("default")  # Start mit "default"-Palette
+        # Klasseninstanzen
+        self.fractal          : Fractal      = fractal                                     # Aktuelles Fraktal
+        self.colormap         : ColorMap     = ColorMap()                                  # Management der Färbung
+        self.viewport         : Viewport     = Viewport(self.fractal._default_bounds)      # Aktueller Ausschnitt, mit dem gearbeitet wird
+        self.renderer         : Renderer     = Renderer()                                  # Numerische Berechnung
+        self.exporter         : PNGExporter  = PNGExporter()                               # Export-Funktionalität
+        self.gui              : GUI          = None                                        # Graphische Schnittstelle zum User
+        
+        # Zustände und Settings
+        self.history          : list         = []                                          # Für Zoom-History
+        self.history_index    : int          = -1                                          # Aktuelle Position in der Zoom-History
+        self.palette_names    : list         = list(PALETTES.keys())                       # Verfügbare Paletten
+        self.palette_index    : int          = self.palette_names.index("default")         # Start mit "default"-Palette
+        self.iterate_factor_k : int          = 40                                          # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
 
 # ------------------------------------------------------------
 
@@ -96,7 +94,8 @@ class Visualizer():
             self.fractal,
             self.viewport,
             self.colormap,
-            coloring_mode=self.coloring_mode
+            coloring_mode=self.coloring_mode,
+            k = self.iterate_factor_k
         )
         self.gui.display_image(pixels)
 
@@ -108,13 +107,11 @@ class Visualizer():
         new_name = self.palette_names[self.palette_index]
         self.colormap.set_palette(new_name)
         self._rerender()
-        print(f"Switched to palette: {new_name}")   # vorrübergehende Ausgabe im CLI
 
     def _handle_change_coloring(self):
         self.coloring_index = (self.coloring_index + 1) % len(self.coloring_modes)
         self.coloring_mode = self.coloring_modes[self.coloring_index]
         self._rerender()
-        print(f"Switched to coloring method: {self.coloring_mode}")  # vorrübergehende Ausgabe im CLI
 
     def _handle_export(self):
         # Hochauflösende Größe definieren (z.B. 4K)
@@ -153,10 +150,10 @@ mit Colormap. Er darf nicht selbst berechnen.
 '''
 class Renderer():
 
-    def render(self, fractal, viewport, colormap, coloring_mode="smooth"):
+    def render(self, fractal, viewport, colormap, coloring_mode="smooth", k=40):
         span = viewport.xmax - viewport.xmin
         base_iter = fractal.max_iterations
-        k = 40  # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
+        k = k  # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
 
         adaptive_iter = max(base_iter, int(base_iter + k * np.log10(1.0 / span)))
 
@@ -187,7 +184,15 @@ class Renderer():
         elif coloring_mode == "ultra":
             image = colormap.apply_ultra(iterations, escaped, adaptive_iter)
 
+        # Debug-Ausgabe der aktuellen Einstellungen im CLI; gehört eigentlich nicht hierher
         clear_cli()
+        print_thin_separation(linebreak=False)
+        print(f"Coloring mode:          {coloring_mode}")
+        print(f"Palette:                {colormap.palette_name}")
+        print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
+        print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {base_iter}, span: {span:.2e})")
+        print_thin_separation(linebreak=False)
+        print()
         return image
 
 #============================================================
@@ -214,7 +219,6 @@ class Viewport():
     
     # Für Zoom in GUI
     def zoom_to_pixels(self, x0, y0, x1, y1):
-
         x_min_px = min(x0, x1)
         x_max_px = max(x0, x1)
         y_min_px = min(y0, y1)

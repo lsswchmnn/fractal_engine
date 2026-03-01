@@ -2,101 +2,12 @@ from color import ColorMap
 from gui import GUI
 from utils import printProgressBar, clear_cli
 from numba import njit
-from fractal import MandelbrotFractal, InvertedMandelbrotFractal
+from fractal import MandelbrotFractal, InvertedMandelbrotFractal, mandelbrot_kernel, inverted_mandelbrot_kernel
 from mapping import PALETTES
 from export import PNGExporter
 import numpy as np
 #============================================================
-# NUMBA-FUNKTIONEN (für Performance in der Iteration)
-@njit
-def _render_mandelbrot(
-    xmin, xmax, ymin, ymax,
-    width, height,
-    max_iterations,
-    escape_radius
-):
-    iterations = np.zeros((height, width), dtype=np.float64)
-    escaped = np.zeros((height, width), dtype=np.uint8)
 
-    escape_sq = escape_radius * escape_radius
-
-    for y in range(height):
-        imag = ymax - (y / (height - 1)) * (ymax - ymin)
-
-        for x in range(width):
-            real = xmin + (x / (width - 1)) * (xmax - xmin)
-
-            zr = 0.0
-            zi = 0.0
-
-            for i in range(max_iterations):
-                zr2 = zr * zr
-                zi2 = zi * zi
-
-                if zr2 + zi2 > escape_sq:
-                    mod_z = zr2 + zi2
-                    nu = i + 1 - np.log(np.log(mod_z))/np.log(2.0)
-                    iterations[y, x] = nu
-                    escaped[y, x] = 1
-                    break
-
-                zi = 2.0 * zr * zi + imag
-                zr = zr2 - zi2 + real
-            else:
-                iterations[y, x] = max_iterations
-                escaped[y, x] = 0
-
-    return iterations, escaped
-
-@njit
-def _render_inverted_mandelbrot(
-    xmin, xmax, ymin, ymax,
-    width, height,
-    max_iterations,
-    escape_radius
-):
-    iterations = np.zeros((height, width), dtype=np.float64)
-    escaped = np.zeros((height, width), dtype=np.uint8)
-
-    escape_sq = escape_radius * escape_radius
-
-    for y in range(height):
-        imag = ymax - (y / (height - 1)) * (ymax - ymin)
-
-        for x in range(width):
-            real = xmin + (x / (width - 1)) * (xmax - xmin)
-
-            # Inverse Koordinate
-            if real == 0.0 and imag == 0.0:
-                c_real = 1e10
-                c_imag = 0.0
-            else:
-                denom = real*real + imag*imag
-                c_real = real / denom
-                c_imag = -imag / denom
-
-            zr = 0.0
-            zi = 0.0
-
-            for i in range(max_iterations):
-                zr2 = zr * zr
-                zi2 = zi * zi
-
-                if zr2 + zi2 > escape_sq:
-                    mod_z = zr2 + zi2
-                    nu = i + 1 - np.log(np.log(mod_z))/np.log(2.0)
-                    iterations[y, x] = nu
-                    escaped[y, x] = 1
-                    break
-
-                # klassische Mandelbrot-Iteration
-                zi = 2.0 * zr * zi + c_imag
-                zr = zr2 - zi2 + c_real
-            else:
-                iterations[y, x] = max_iterations
-                escaped[y, x] = 0
-
-    return iterations, escaped
 #============================================================
 '''
 Der Visualizer orchestriert nur. Er ist kein Renderer und keine GUI, 
@@ -208,8 +119,8 @@ class Visualizer():
     def _handle_export(self):
         # Hochauflösende Größe definieren (z.B. 4K)
         factor = 4
-        highres_width = 800 * factor
-        highres_height = 600 * factor
+        highres_width = self.viewport.width_px * factor
+        highres_height = self.viewport.height_px * factor
 
         # Neues Viewport für Export
         export_viewport = self.viewport.copy()  # wir nehmen den gleichen Ausschnitt
@@ -237,82 +148,49 @@ class Visualizer():
 
 #============================================================
 '''
-Renderer iteriert über alle Pixel im Viewport. Er färbt diese
+Renderer iteriert über alle Pixel im Viewport und färbt diese
 mit Colormap. Er darf nicht selbst berechnen.
 '''
 class Renderer():
 
-    # Render-Funktion: Berechnet die Iterationen und wendet die Colormap an
     def render(self, fractal, viewport, colormap, coloring_mode="smooth"):
         span = viewport.xmax - viewport.xmin
         base_iter = fractal.max_iterations
-        k = 40  # Feintuning-Faktor
+        k = 40  # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
 
-        if span > 0:
-            adaptive_iter = int(base_iter + k * np.log10(1.0 / span))
-        else:
-            adaptive_iter = base_iter
+        adaptive_iter = max(base_iter, int(base_iter + k * np.log10(1.0 / span)))
 
-        adaptive_iter = max(base_iter, adaptive_iter)
+        height, width = viewport.height_px, viewport.width_px
+        iterations = np.zeros((height, width), dtype=np.float64)
+        escaped = np.zeros((height, width), dtype=np.uint8)
 
-        # Kernel-Aufruf je nach Fraktaltyp
-        if isinstance(fractal, MandelbrotFractal):
-            iterations, escaped = _render_mandelbrot(
-                viewport.xmin,
-                viewport.xmax,
-                viewport.ymin,
-                viewport.ymax,
-                viewport.width_px,
-                viewport.height_px,
-                adaptive_iter,
-                fractal.escape_radius
-            )
-        
-        elif isinstance(fractal, InvertedMandelbrotFractal):
-            iterations, escaped = _render_inverted_mandelbrot(
-                viewport.xmin,
-                viewport.xmax,
-                viewport.ymin,
-                viewport.ymax,
-                viewport.width_px,
-                viewport.height_px,
-                adaptive_iter,
-                fractal.escape_radius
-            )
+        # Fraktaltyp wählen
+        for y in range(height): 
+            imag = viewport.ymax - (y / (height - 1)) * (viewport.ymax - viewport.ymin)
+            for x in range(width):
+                real = viewport.xmin + (x / (width - 1)) * (viewport.xmax - viewport.xmin)
+
+                c = complex(real, imag)
+                result = fractal.iterate(c) # Iterate-Methode des Fraktals aufrufen
+                iterations[y, x] = result.iterations
+                escaped[y, x] = 1 if result.escaped else 0
             
-        # Farbzuweisung (beliebige apply-methode nutzbar)
+            printProgressBar(y+1, height, prefix='Rendering:', suffix='Complete', length=50)
+
+        # Farbzuweisung
         if coloring_mode == "basic":
-            image = colormap.apply_basic(
-                iterations,
-                escaped,
-                adaptive_iter
-            )
-
+            image = colormap.apply_basic(iterations, escaped, adaptive_iter)
         elif coloring_mode == "histogram":
-            image = colormap.apply_histogram(
-                iterations,
-                escaped,
-                adaptive_iter
-            )
-
-        elif coloring_mode == "smooth":  # smooth
-            image = colormap.apply_smooth(
-                iterations,
-                escaped,
-                adaptive_iter
-            )
-
-        elif coloring_mode == "ultra":  # ultra, später implementieren
-            image = colormap.apply_ultra(
-                iterations,
-                escaped,
-                adaptive_iter
-            )
+            image = colormap.apply_histogram(iterations, escaped, adaptive_iter)
+        elif coloring_mode == "smooth":
+            image = colormap.apply_smooth(iterations, escaped, adaptive_iter)
+        elif coloring_mode == "ultra":
+            image = colormap.apply_ultra(iterations, escaped, adaptive_iter)
 
         clear_cli()
         return image
 
-# #============================================================
+#============================================================
 '''
 Viewport definiert den sichtbaren (berechneten) Ausschnitt der
 komplexen Zahlenebene.
@@ -324,7 +202,7 @@ class Viewport():
         self.width_px  : int    = 800
         self.height_px : int    = 600
 
-# ------------------------------------------------------------
+#------------------------------------------------------------
     def reset(self):
         self.xmin, self.xmax, self.ymin, self.ymax = self.bounds
 

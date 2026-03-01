@@ -124,18 +124,13 @@ class CLI():
     def menu_settings(self):
         while True:
             print_heading("SETTINGS")
-            print("1 - Change color palette")
-            print("2 - Change coloring method")
+            print("1 - Manipulate Formula")
             print("C - Close")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
             if choice == "1":
-                self.cli_load_palette()
-                continue
-
-            elif choice == "2":
-                self.cli_load_coloring()
+                self.cli_manipulate_formula()
                 continue
 
             elif choice == "c":
@@ -143,6 +138,42 @@ class CLI():
 
 #------------------------------------------------------------
 # EINSTELLUNGEN
+
+    def cli_manipulate_formula(self):
+        if self.fractal_name == "MandelbrotFractal" or self.fractal_name == "InvertedMandelbrotFractal":
+
+            while True:
+                print_heading("MANIPULATE FORMULA")
+                print("Current formula: z = z^2 + c")
+                print("\nAvailable manipulations:")
+                print("1 - Change startvalue")
+                print("2 - Change exponent")
+                print("C - Cancel")
+                print_thin_separation(linebreak=False)
+                choice = input("> ").strip().lower()
+
+                if choice == "1":
+                    print_heading("CHANGE STARTVALUE")
+                    print(f"Current startvalue: z0 = {self.fractal.start_real} + {self.fractal.start_imag}i\n")
+
+                    try:
+                        real = float(input("Enter new real part of startvalue z0: "))
+                        imag = float(input("Enter new imaginary part of startvalue z0: "))
+                        self.fractal.start_real = real
+                        self.fractal.start_imag = imag
+                        enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue.", seperation=False)
+
+                    except ValueError:
+                        show_error(True, "InputError", "Invalid input. Please enter valid numbers.")
+                        continue
+                
+                elif choice == "2":
+                    pass
+
+                elif choice == "c":
+                    break
+
+    # Erstmal abgekoppelt, da Wechsel in GUI möglich
 
     def cli_load_palette(self):
         while True:

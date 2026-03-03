@@ -117,7 +117,7 @@ PALETTES = {
 # Mapping für GUI
 GUI_MAP = {
     # Farben für GUI-Elemente
-    "col_rect": "grey",
+    "col_rect": "lightgrey",
     "canvas_bg": "#ddd",
     "button_bg": "#eee",
 

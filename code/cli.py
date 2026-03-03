@@ -101,8 +101,8 @@ class CLI():
                     show_error(True, "TransitionError", f"Function {class_name} not found in Dictionary.")
                     continue
 
-            self.visualizer = Visualizer(self.fractal, self.fractal_name)  # Visualizer bereits hier erstellen
             self.fractal_name = class_name
+            self.visualizer = Visualizer(self.fractal, self.fractal_name)  # Visualizer bereits hier erstellen
 
             print_heading("FRACTAL LOADED")
             enter_continue(f"Fractal {class_name} loaded. Press enter to continue.", seperation=False)

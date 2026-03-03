@@ -1,7 +1,6 @@
 from PIL import Image
 import numpy as np
 from datetime import datetime
-import os
 #============================================================
 class PNGExporter:
 
@@ -14,6 +13,8 @@ class PNGExporter:
         image.save(path, format="PNG")
 
     @staticmethod
-    def generate_default_filename(prefix="fractal"):
+    def generate_default_filename(prefix="fractal", name=None):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if name:
+            return f"{prefix}_{name}_{timestamp}.png"
         return f"{prefix}_{timestamp}.png"

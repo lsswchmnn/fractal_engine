@@ -67,6 +67,53 @@ def inverted_mandelbrot_kernel(c_real, c_imag, max_iterations, escape_radius, z_
 
     return max_iterations, False, z_real, z_imag
 
+@njit
+def burning_ship_kernel(c_real, c_imag, max_iter, escape_radius, z_real=0.0, z_imag=0.0):
+    zr = z_real
+    zi = z_imag
+    escape_sq = escape_radius * escape_radius
+
+    for i in range(max_iter):
+        # Betrag auf Real- und Imaginärteil anwenden
+        zr_abs = abs(zr)
+        zi_abs = abs(zi)
+
+        # (a + ib)^2 = (a^2 - b^2) + 2ab i
+        zr_new = zr_abs * zr_abs - zi_abs * zi_abs + c_real
+        zi_new = 2.0 * zr_abs * zi_abs + c_imag
+
+        zr = zr_new
+        zi = zi_new
+
+        if zr * zr + zi * zi > escape_sq:
+            return i, True, zr, zi
+
+    return max_iter, False, zr, zi
+
+@njit
+def tricorn_kernel(c_real, c_imag, max_iter, escape_radius, z_real=0.0, z_imag=0.0):
+    zr = z_real
+    zi = z_imag
+    escape_sq = escape_radius * escape_radius
+
+    for i in range(max_iter):
+        # komplexe Konjugation: z -> z_bar
+        zr_conj = zr
+        zi_conj = -zi
+
+        # (a + ib)^2 = a^2 - b^2 + i*2ab
+        zr_new = zr_conj * zr_conj - zi_conj * zi_conj + c_real
+        zi_new = 2.0 * zr_conj * zi_conj + c_imag
+
+        zr = zr_new
+        zi = zi_new
+
+        if zr * zr + zi * zi > escape_sq:
+            return i, True, zr, zi
+
+    return max_iter, False, zr, zi
+
+
 #============================================================
 # KLASSE FÜR ERGEBNIS
 @dataclass(frozen=True)
@@ -155,3 +202,55 @@ class JuliaFractal(Fractal):
         self.k : complex = 0
 
     # ...
+#------------------------------------------------------------
+class BurningShipFractal(Fractal):
+    def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
+        super().__init__(max_iterations, escape_radius)
+        self._default_bounds = (-2.2, 1.2, -2.5, 1.5)
+        self.start_real = 0.0
+        self.start_imag = 0.0
+
+    def iterate(self, c: complex) -> IterationResult:
+        iterations, escaped, zr, zi = burning_ship_kernel(
+            c.real,
+            c.imag,
+            self.max_iterations,
+            self.escape_radius,
+            z_real=self.start_real,
+            z_imag=self.start_imag
+        )
+
+        return IterationResult(
+            iterations=iterations,
+            escaped=escaped,
+            z_real=zr,
+            z_imag=zi
+        )
+    
+#------------------------------------------------------------
+class TricornFractal(Fractal):
+    def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
+        super().__init__(max_iterations, escape_radius)
+
+        # Typische sinnvolle Bounds für Tricorn
+        self._default_bounds = (-2.0, 2.0, -1.5, 1.5)
+
+        self.start_real = 0.0
+        self.start_imag = 0.0
+
+    def iterate(self, c: complex) -> IterationResult:
+        iterations, escaped, zr, zi = tricorn_kernel(
+            c.real,
+            c.imag,
+            self.max_iterations,
+            self.escape_radius,
+            z_real=self.start_real,
+            z_imag=self.start_imag
+        )
+
+        return IterationResult(
+            iterations=iterations,
+            escaped=escaped,
+            z_real=zr,
+            z_imag=zi
+        )

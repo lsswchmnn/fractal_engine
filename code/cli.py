@@ -99,7 +99,7 @@ class CLI():
                     show_error(True, "TransitionError", f"Function {class_name} not found in Dictionary.")
                     continue
 
-            self.visualizer = Visualizer(self.fractal)  # Visualizer bereits hier erstellen
+            self.visualizer = Visualizer(self.fractal, self.fractal_name)  # Visualizer bereits hier erstellen
             self.fractal_name = class_name
 
             print_heading("FRACTAL LOADED")
@@ -126,7 +126,7 @@ class CLI():
         while True:
             print_heading("SETTINGS")
             print("1 - Manipulate Formula")
-            print("2 - Change iteration settings")
+            print("2 - Rendering settings")
             print("C - Close")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
@@ -136,7 +136,7 @@ class CLI():
                 continue
 
             elif choice == "2":
-                self.cli_change_iterations()
+                self.cli_change_rendering_settings()
                 continue
 
             elif choice == "c":
@@ -146,7 +146,7 @@ class CLI():
 # EINSTELLUNGEN
 
     def cli_manipulate_formula(self):
-        if self.fractal_name == "MandelbrotFractal" or self.fractal_name == "InvertedMandelbrotFractal":
+        if self.fractal_name == "MandelbrotFractal" or self.fractal_name == "InvertedMandelbrotFractal" or self.fractal_name == "BurningShipFractal":
 
             while True:
                 print_heading("MANIPULATE FORMULA")
@@ -180,16 +180,29 @@ class CLI():
                 elif choice == "c":
                     break
 
-    def cli_change_iterations(self):
+    def cli_change_rendering_settings(self):
         while True:
 
-            print_heading("CHANGE ITERATION SETTINGS")
-            print("1 - Change adaptive iteration factor 'k'")
+            print_heading("CHANGE RENDERING SETTINGS")
+            print("1 - Change base Iterations")
+            print("2 - Change factor for adaptive iteration depth (k)")
+            print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
             if choice == "1":
+                print_heading("CHANGE BASE ITERATIONS")
+                print(f"Current base iterations: {self.fractal.max_iterations}\n")
+                try:
+                    max_iter = int(input("Enter new base iterations: "))
+                    self.fractal.max_iterations = max_iter
+                    enter_continue(f"Base iterations changed to {max_iter}. Press enter to continue.", seperation=False)
+                except ValueError:
+                    show_error(True, "InputError", "Invalid input. Please enter a valid number.")
+                    continue
+
+            elif choice == "2":
                 print_heading("CHANGE ADAPTIVE ITERATION FACTOR")
                 print(f"Current adaptive iteration factor k: {self.visualizer.iterate_factor_k}\n")
                 try:
@@ -199,6 +212,12 @@ class CLI():
                 except ValueError:
                     show_error(True, "InputError", "Invalid input. Please enter a valid number.")
                     continue
+
+            elif choice == "h":
+                print_heading("HELP - RENDERING SETTINGS")
+                print("Base iterations: Number of iterations used as a baseline for the adaptive iteration depth.")
+                print("Adaptive iteration factor (k): Tuning for quantitative improvement of detail accuracy at strong zooms. Higher k means more iterations added as you zoom in.")
+                enter_continue("Press enter to return to settings menu.", seperation=False)
 
             elif choice == "c":
                 break

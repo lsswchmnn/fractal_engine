@@ -2,14 +2,14 @@ from color import ColorMap
 from gui import GUI
 from utils import printProgressBar, clear_cli, print_thin_separation
 from numba import njit
-from fractal import Fractal, MandelbrotFractal, InvertedMandelbrotFractal, mandelbrot_kernel, inverted_mandelbrot_kernel
+from fractal import Fractal#, MandelbrotFractal, InvertedMandelbrotFractal, mandelbrot_kernel, inverted_mandelbrot_kernel
 from mapping import PALETTES
 from export import PNGExporter
 import numpy as np
 #============================================================
 # VISUALIZER: Verbindet Komponenten und steuert Ablauf der Visualisierung
 class Visualizer():
-    def __init__(self, fractal):
+    def __init__(self, fractal, fractal_name=None):
         # Klasseninstanzen
         self.fractal          : Fractal      = fractal                                     # Aktuelles Fraktal
         self.colormap         : ColorMap     = ColorMap()                                  # Management der Färbung
@@ -19,6 +19,7 @@ class Visualizer():
         self.gui              : GUI          = None                                        # Graphische Schnittstelle zum User
         
         # Zustände und Settings
+        self.fractal_name     : str          = fractal_name                                # Name des Fraktals für Anzeige und Export
         self.history          : list         = []                                          # Für Zoom-History
         self.history_index    : int          = -1                                          # Aktuelle Position in der Zoom-History
         self.palette_names    : list         = list(PALETTES.keys())                       # Verfügbare Paletten
@@ -40,7 +41,7 @@ class Visualizer():
         self.gui.set_export_callback(self._handle_export)                       # Export-Button 
 
         self.coloring_modes = ["basic", "smooth", "histogram"]     # Verfügbare Coloring-Methoden
-        self.coloring_index = 1                                             # Start mit "smooth"-Coloring
+        self.coloring_index = 0                                             # Start mit "smooth"-Coloring
         self.coloring_mode = self.coloring_modes[self.coloring_index]       # Aktuelle Coloring-Methode
 
         self._push_history()                                   
@@ -59,6 +60,7 @@ class Visualizer():
     # Callback: Für Reset-Button in GUI
     def _handle_reset(self):
         self.viewport.reset()
+        self._push_history()
         self._rerender()
 
     # Callback: Für Zoom-History
@@ -95,7 +97,7 @@ class Visualizer():
             self.viewport,
             self.colormap,
             coloring_mode=self.coloring_mode,
-            k = self.iterate_factor_k
+            k = self.iterate_factor_k,
         )
         self.gui.display_image(pixels)
 
@@ -128,20 +130,25 @@ class Visualizer():
         scale_factor = highres_width / self.viewport.width_px
         max_iter = int(self.fractal.max_iterations * scale_factor)
 
+        original_iter = self.fractal.max_iterations
+        self.fractal.max_iterations = max_iter
+
         # Neues Rendering
         pixels = self.renderer.render(
             self.fractal,
             export_viewport,
             self.colormap,
             coloring_mode=self.coloring_mode,
-        )
+            k = self.iterate_factor_k)
 
         # Speicherort
-        default_name = self.exporter.generate_default_filename()
+        default_name = self.exporter.generate_default_filename(name=f"{self.fractal_name}")
         path = self.gui.ask_save_path(default_name)
 
         if path:
             self.exporter.save(pixels, path)
+            print(f"Image exported to {path}")
+            print_thin_separation()
 
 #============================================================
 '''
@@ -152,10 +159,15 @@ class Renderer():
 
     def render(self, fractal, viewport, colormap, coloring_mode="smooth", k=40):
         span = viewport.xmax - viewport.xmin
-        base_iter = fractal.max_iterations
-        k = k  # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
+        k = k                       # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
 
-        adaptive_iter = max(base_iter, int(base_iter + k * np.log10(1.0 / span)))
+        # Adaptive Iterationstiefe
+        original_iter = fractal.max_iterations
+        safe_span = max(span, 1e-16)
+        zoom_factor = 1.0 / safe_span
+        adaptive_iter = int(original_iter + k * np.log10(zoom_factor))
+        adaptive_iter = max(original_iter, adaptive_iter)
+        fractal.max_iterations = adaptive_iter
 
         height, width = viewport.height_px, viewport.width_px
         iterations = np.zeros((height, width), dtype=np.float64)
@@ -190,9 +202,11 @@ class Renderer():
         print(f"Coloring mode:          {coloring_mode}")
         print(f"Palette:                {colormap.palette_name}")
         print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
-        print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {base_iter}, span: {span:.2e})")
+        print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
         print_thin_separation(linebreak=False)
         print()
+
+        fractal.max_iterations = original_iter 
         return image
 
 #============================================================

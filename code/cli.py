@@ -55,7 +55,9 @@ class CLI():
                 clear_cli()
                 enter_continue("Press enter to leave the program", seperation=True)
                 clear_cli()
-                print("Goodbye!\n")
+                print("Goodbye!")
+                print_thin_separation()
+                print()
                 break
 
             else:
@@ -150,7 +152,7 @@ class CLI():
 
             while True:
                 print_heading("MANIPULATE FORMULA")
-                print("Current formula: z = z^2 + c")
+                print(f"Current formula: {FRACTALS_MAP[self.fractal_name]['formula']}")
                 print("\nAvailable manipulations:")
                 print("1 - Change startvalue")
                 print("2 - Change exponent")

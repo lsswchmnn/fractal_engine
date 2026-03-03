@@ -4,21 +4,25 @@ FRACTALS_MAP =  {
     "MandelbrotFractal": {
         "name": "Mandelbrot-Set",
         "desc": ("..."),
+        "formula": "z_{n+1} = z_n^2 + c"
     },
 
     "InvertedMandelbrotFractal": {
         "name": "Inverted Mandelbrot-Set",
         "desc": ("..."),
+        "formula": "z_{n+1} = z_n^2 + 1/c"
     },
 
     "BurningShipFractal": {
         "name": "Burning Ship",
         "desc": ("..."),
+        "formula": "z_{n+1} = (|Re(z_n)| + i|Im(z_n)|)^2 + c"
     },
 
     "TricornFractal": {
         "name": "Tricorn",
         "desc": ("..."),
+        "formula": "z_{n+1} = conj(z_n)^2 + c"
     },
 
 }

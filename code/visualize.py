@@ -24,7 +24,7 @@ class Visualizer():
         self.history_index    : int          = -1                                          # Aktuelle Position in der Zoom-History
         self.palette_names    : list         = list(PALETTES.keys())                       # Verfügbare Paletten
         self.palette_index    : int          = self.palette_names.index("default")         # Start mit "default"-Palette
-        self.iterate_factor_k : int          = 40                                          # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
+        self.iterate_factor_k : int          = 500                                         # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
 
 # ------------------------------------------------------------
 
@@ -199,6 +199,10 @@ class Renderer():
         # Debug-Ausgabe der aktuellen Einstellungen im CLI; gehört eigentlich nicht hierher
         clear_cli()
         print_thin_separation(linebreak=False)
+        print(f"Fractal:                {fractal._name}")
+        print(f"Formula:                {fractal._formula}") # ?
+        print(f"Startvalue:             {fractal.start_real} + {fractal.start_imag}i")
+        print(f"Exponent:               {fractal.exp_real} + {fractal.exp_imag}i")
         print(f"Coloring mode:          {coloring_mode}")
         print(f"Palette:                {colormap.palette_name}")
         print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")

@@ -18,7 +18,7 @@ class CLI():
     def run(self):
         while True:
             print_heading("FRACTAL-SIMULATION")
-            print(f"Current Fractal: {self.fractal_name if self.fractal_name else "None"}\n")
+            print(f"Current Fractal: {self.fractal._name if self.fractal else "None"}\n")
             print("1 - Load fractal")
             if self.fractal:
                 print("2 - Start visualizer")
@@ -100,9 +100,12 @@ class CLI():
                 except AttributeError:
                     show_error(True, "TransitionError", f"Function {class_name} not found in Dictionary.")
                     continue
+            
+            # Lesbare Namen und Formeln aus Mapping
+            self.fractal._name = FRACTALS_MAP[class_name]["name"]
+            self.fractal._formula = FRACTALS_MAP[class_name]["formula"]
 
-            self.fractal_name = class_name
-            self.visualizer = Visualizer(self.fractal, self.fractal_name)  # Visualizer bereits hier erstellen
+            self.visualizer = Visualizer(self.fractal, self.fractal._name)  # Visualizer bereits hier erstellen
 
             print_heading("FRACTAL LOADED")
             enter_continue(f"Fractal {class_name} loaded. Press enter to continue.", seperation=False)
@@ -129,6 +132,7 @@ class CLI():
             print_heading("SETTINGS")
             print("1 - Manipulate Formula")
             print("2 - Rendering settings")
+            print("H - Help")
             print("C - Close")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
@@ -141,6 +145,13 @@ class CLI():
                 self.cli_change_rendering_settings()
                 continue
 
+            elif choice == "h":
+                print_heading("HELP - SETTINGS")
+                print("Manipulate Formula: Change the start value and exponent used in the fractal formula. Note that non-standard settings can lead to very different and often less stable fractals, especially for complex exponents.")
+                print()
+                print("Rendering settings: Adjust the base number of iterations and the adaptive iteration factor k, which controls how many additional iterations are added as you zoom in. Higher k can improve detail accuracy at strong zooms but also increases rendering time.")
+                enter_continue("Press enter to return to settings menu.")
+
             elif choice == "c":
                 break
 
@@ -148,14 +159,15 @@ class CLI():
 # EINSTELLUNGEN
 
     def cli_manipulate_formula(self):
-        if self.fractal_name == "MandelbrotFractal" or self.fractal_name == "InvertedMandelbrotFractal" or self.fractal_name == "BurningShipFractal":
+        if self.fractal._name == "Mandelbrot-Set" or self.fractal._name == "Inverted Mandelbrot-Set" or self.fractal._name == "Burning Ship":
 
             while True:
                 print_heading("MANIPULATE FORMULA")
-                print(f"Current formula: {FRACTALS_MAP[self.fractal_name]['formula']}")
+                print(f"Current formula: {self.fractal._formula}")
                 print("\nAvailable manipulations:")
                 print("1 - Change startvalue")
                 print("2 - Change exponent")
+                print("H - Help")
                 print("C - Cancel")
                 print_thin_separation(linebreak=False)
                 choice = input("> ").strip().lower()
@@ -177,7 +189,36 @@ class CLI():
                         continue
                 
                 elif choice == "2":
-                    pass
+                    print_heading("CHANGE EXPONENT")
+                    print(f"Current exponent: {self.fractal.exp_real} + {self.fractal.exp_imag}i\n")
+                    print("Note: Changing the exponent can lead to very different and often less stable fractals, especially for non-integer or complex exponents. Experiment with caution!\n")
+
+                    try:
+                        real = float(input("Enter real part of exponent: "))
+                        imag = float(input("Enter imaginary part of exponent: "))
+                        self.fractal.exp_real = real
+                        self.fractal.exp_imag = imag
+                        enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue.", seperation=False)
+
+                    except ValueError:
+                        show_error(True, "InputError", "Invalid input. Please enter valid numbers.")
+                        continue
+
+                    # Warnungen für potenziell instabile Einstellungen
+
+                    if imag != 0:
+                        show_error(False, "StabilityWarning", "Complex exponents can lead to highly unstable fractals and cause long rendering times.")
+                        enter_continue("Press enter to continue.")
+
+                    if real != 2:
+                        show_error(False, "StabilityWarning", "Visualizer is not optimized for non-integer or non-2 exponents; can cause inappropriate image cropping.")
+                        enter_continue("Press enter to continue.")
+
+                elif choice == "h":
+                    print_heading("HELP - MANIPULATE FORMULA")
+                    print("Startvalue: The initial value z0 used in the fractal formula. For the Mandelbrot set, z0 is typically 0, but changing it can produce different and interesting variations.")
+                    print("Exponent: The power to which z is raised in the formula. The standard Mandelbrot uses an exponent of 2, but changing it can create a wide variety of fractal shapes. Note that non-integer or complex exponents can lead to very different and often less stable fractals.")
+                    enter_continue("Press enter to return to formula manipulation menu.")
 
                 elif choice == "c":
                     break

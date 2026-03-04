@@ -1,29 +1,105 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import math
 from numba import njit
 import numpy as np
 #============================================================
 # ITERATIONSKERNELS (eigentliche Berechnungen, in den Fraktal-Klassen aufgerufen)
+
+from numba import njit
+import math
+
 @njit
-def mandelbrot_kernel(c_real, c_imag, max_iterations, escape_radius, z_real=0.0, z_imag=0.0):
-    """
-    Berechnet die Iterationszahl für c = c_real + i*c_imag.
-    Liefert float-Iteration, escaped (0/1), last_z_real, last_z_imag
-    """
+def mandelbrot_kernel(
+    c_real,
+    c_imag,
+    max_iterations,
+    escape_radius,
+    z_real=0.0,
+    z_imag=0.0,
+    exp_real=2.0,
+    exp_imag=0.0
+):
     escape_sq = escape_radius * escape_radius
+
+    # ---- Pfadentscheidung VOR der Schleife ----
+
+    # 1) Standard Mandelbrot (Exponent 2)
+    if exp_imag == 0.0 and exp_real == 2.0:
+
+        zr = z_real
+        zi = z_imag
+
+        for i in range(max_iterations):
+            zr2 = zr * zr
+            zi2 = zi * zi
+
+            if zr2 + zi2 > escape_sq:
+                return float(i), 1, zr, zi
+
+            zi = 2.0 * zr * zi + c_imag
+            zr = zr2 - zi2 + c_real
+
+        return float(max_iterations), 0, zr, zi
+
+    # 2) Höhere ganzzahlige Exponenten
+    if exp_imag == 0.0 and exp_real == float(int(exp_real)):
+
+        d = int(exp_real)
+        zr = z_real
+        zi = z_imag
+
+        for i in range(max_iterations):
+
+            r2 = zr * zr + zi * zi
+            if r2 > escape_sq:
+                return float(i), 1, zr, zi
+
+            # z^d via wiederholte komplexe Multiplikation
+            zr_pow = zr
+            zi_pow = zi
+
+            for _ in range(d - 1):
+                temp = zr_pow * zr - zi_pow * zi
+                zi_pow = zr_pow * zi + zi_pow * zr
+                zr_pow = temp
+
+            zr = zr_pow + c_real
+            zi = zi_pow + c_imag
+
+        return float(max_iterations), 0, zr, zi
+
+    # 3) Komplexer Exponent (allgemeiner Fall)
     zr = z_real
     zi = z_imag
 
-    for i in range(max_iterations):
-        zr2 = zr * zr
-        zi2 = zi * zi
+    a = exp_real
+    b = exp_imag
 
-        if zr2 + zi2 > escape_sq:
+    for i in range(max_iterations):
+
+        r2 = zr * zr + zi * zi
+        if r2 > escape_sq:
             return float(i), 1, zr, zi
 
-        temp_zr = zr2 - zi2 + c_real
-        zi = 2.0 * zr * zi + c_imag
-        zr = temp_zr
+        if r2 == 0.0:
+            zr = c_real
+            zi = c_imag
+            continue
+
+        # log(z)
+        r = math.sqrt(r2)
+        log_r = math.log(r)
+        theta = math.atan2(zi, zr)
+
+        # α * log(z)
+        real_part = a * log_r - b * theta
+        imag_part = a * theta + b * log_r
+
+        # exp(...)
+        exp_r = math.exp(real_part)
+        zr = exp_r * math.cos(imag_part) + c_real
+        zi = exp_r * math.sin(imag_part) + c_imag
 
     return float(max_iterations), 0, zr, zi
 
@@ -113,7 +189,6 @@ def tricorn_kernel(c_real, c_imag, max_iter, escape_radius, z_real=0.0, z_imag=0
 
     return max_iter, False, zr, zi
 
-
 #============================================================
 # KLASSE FÜR ERGEBNIS
 @dataclass(frozen=True)
@@ -130,8 +205,16 @@ class Fractal(ABC):
         self.max_iterations = max_iterations                # Wie lange prüft man, ob der Wert "ausbricht"?
         self.escape_radius = escape_radius                  # Für Mandelbrot z.B. 2
         self._default_bounds = (-2.0, 1.0, -1.2, 1.2)       # Standard-Ausschnitt der komplexen Ebene, mit dem gearbeitet wird. Kann von Fraktal zu Fraktal unterschiedlich sein.
+        self._name = "Fractal"                              # Name des Fraktals (wird in Mapping überschrieben)
+        self._formula = "z_{n+1} = z_n^2 + c"
+
+        # Startwert
         self.start_real = 0.0
         self.start_imag = 0.0
+        
+        # Exponent
+        self.exp_real = 2.0
+        self.exp_imag = 0.0
 
     # Berechnet die Iterationszahl für einen Punkt c in der komplexen Ebene. Zentrale Kernemthode.
     @abstractmethod # muss implementiert sien
@@ -145,6 +228,8 @@ class MandelbrotFractal(Fractal):
         self._default_bounds = (-2.0, 1.0, -1.2, 1.2)
         self.start_real = 0.0
         self.start_imag = 0.0
+        self.exp_real = 2.0
+        self.exp_imag = 0.0
 
     # Iterater: ruft njit-Funktion auf
     def iterate(self, c: complex) -> IterationResult:
@@ -154,7 +239,9 @@ class MandelbrotFractal(Fractal):
             self.max_iterations,
             self.escape_radius,
             z_imag=self.start_imag,
-            z_real=self.start_real
+            z_real=self.start_real,
+            exp_real=self.exp_real,
+            exp_imag=self.exp_imag
         )
 
         return IterationResult(

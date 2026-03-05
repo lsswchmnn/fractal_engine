@@ -2,7 +2,6 @@ from utils import print_heading, enter_continue, clear_cli, print_thin_separatio
 from fractal import MandelbrotFractal, JuliaFractal
 from visualize import Visualizer
 from mapping import FRACTALS_MAP
-#from color import PALETTES
 import fractal
 #============================================================
 class CLI():

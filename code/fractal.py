@@ -1,13 +1,10 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import math
 from numba import njit
+import math
 import numpy as np
 #============================================================
 # ITERATIONSKERNELS (eigentliche Berechnungen, in den Fraktal-Klassen aufgerufen)
-
-from numba import njit
-import math
 
 @njit
 def mandelbrot_kernel(
@@ -104,7 +101,11 @@ def mandelbrot_kernel(
     return float(max_iterations), 0, zr, zi
 
 @njit
-def inverted_mandelbrot_kernel(c_real, c_imag, max_iterations, escape_radius, z_real=0.0, z_imag=0.0):
+def inverted_mandelbrot_kernel(c_real, c_imag, 
+                               max_iterations, 
+                               escape_radius, 
+                               z_real=0.0, z_imag=0.0, 
+                               exp_real=2.0, exp_imag=0.0):
     """
     Inverted Mandelbrot:
     Iteriert z_{n+1} = z_n^2 + 1/c
@@ -122,26 +123,99 @@ def inverted_mandelbrot_kernel(c_real, c_imag, max_iterations, escape_radius, z_
     # Berechnung
     escape_sq = escape_radius * escape_radius
 
-    for i in range(max_iterations):
-        # z^2
-        zr2 = z_real * z_real
-        zi2 = z_imag * z_imag
+    if exp_imag == 0.0 and exp_real == 2.0:
+         # Spezieller Fall: Exponent 2 → direkter Berechnungspfad (ohne komplexe Exponentiation)
+         for i in range(max_iterations):
+            # z^2
+            zr2 = z_real * z_real
+            zi2 = z_imag * z_imag
 
-        # Abbruch
-        if zr2 + zi2 > escape_sq:
+            # Abbruch
+            if zr2 + zi2 > escape_sq:
+                return i, True, z_real, z_imag
+
+            # z = z^2 + 1/c
+            # 1/c = (a - bi)/(a^2 + b^2)
+            denom = c_real * c_real + c_imag * c_imag
+            c_inv_real = c_real / denom
+            c_inv_imag = -c_imag / denom
+
+            # Iteration
+            z_imag = 2.0 * z_real * z_imag + c_inv_imag
+            z_real = zr2 - zi2 + c_inv_real
+
+         return max_iterations, False, z_real, z_imag
+    
+    if exp_imag == 0.0 and exp_real == float(int(exp_real)):
+        # Spezieller Fall: Ganzzahliger Exponent > 2 → direkter Berechnungspfad (ohne komplexe Exponentiation)
+         d = int(exp_real)
+         for i in range(max_iterations):
+            # z^d via wiederholte komplexe Multiplikation
+            zr_pow = z_real
+            zi_pow = z_imag
+
+            for _ in range(d - 1):
+                temp = zr_pow * z_real - zi_pow * z_imag
+                zi_pow = zr_pow * z_imag + zi_pow * z_real
+                zr_pow = temp
+
+            # Abbruch
+            if zr_pow * zr_pow + zi_pow * zi_pow > escape_sq:
+                return i, True, z_real, z_imag
+
+            # z = z^d + 1/c
+            # 1/c = (a - bi)/(a^2 + b^2)
+            denom = c_real * c_real + c_imag * c_imag
+            c_inv_real = c_real / denom
+            c_inv_imag = -c_imag / denom
+
+            # Iteration
+            z_imag = zi_pow + c_inv_imag
+            z_real = zr_pow + c_inv_real
+
+         return max_iterations, False, z_real, z_imag
+    
+    # komplexer Exponent (allgemeiner Fall) → allgemeiner Berechnungspfad (mit komplexer Exponentiation)
+    zr = z_real
+    zi = z_imag
+    
+    a = exp_real
+    b = exp_imag
+
+    for i in range(max_iterations):
+        r2 = zr * zr + zi * zi
+        if r2 > escape_sq:
             return i, True, z_real, z_imag
 
-        # z = z^2 + 1/c
+        if r2 == 0.0:
+            zr = c_real
+            zi = c_imag
+            continue
+
+        # log(z)
+        r = math.sqrt(r2)
+        log_r = math.log(r)
+        theta = math.atan2(zi, zr)
+
+        # α * log(z)
+        real_part = a * log_r - b * theta
+        imag_part = a * theta + b * log_r
+
+        # exp(...)
+        exp_r = math.exp(real_part)
+        zr = exp_r * math.cos(imag_part)
+        zi = exp_r * math.sin(imag_part)
+
+        # z = z^exp + 1/c
         # 1/c = (a - bi)/(a^2 + b^2)
         denom = c_real * c_real + c_imag * c_imag
         c_inv_real = c_real / denom
         c_inv_imag = -c_imag / denom
 
-        # Iteration
-        z_imag = 2.0 * z_real * z_imag + c_inv_imag
-        z_real = zr2 - zi2 + c_inv_real
+        zr += c_inv_real
+        zi += c_inv_imag
 
-    return max_iterations, False, z_real, z_imag
+    return float(max_iterations), 0, z_real, z_imag
 
 @njit
 def burning_ship_kernel(c_real, c_imag, max_iter, escape_radius, z_real=0.0, z_imag=0.0):
@@ -272,7 +346,9 @@ class InvertedMandelbrotFractal(Fractal):
             self.max_iterations,
             self.escape_radius,
             z_real=self.start_real,
-            z_imag=self.start_imag
+            z_imag=self.start_imag,
+            exp_real=self.exp_real,
+            exp_imag=self.exp_imag
         )
 
         return IterationResult(

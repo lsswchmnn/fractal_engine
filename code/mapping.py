@@ -102,6 +102,17 @@ PALETTES = {
         (255,50,80)
     ],
 
+    "baroque": [
+        (255,255,255),
+        (255,245,220),   # warmes Kerzenlicht / Elfenbein
+        (240,210,120),   # Blattgold
+        (200,60,60),     # Karminrot
+        (120,30,90),     # Purpur
+        (40,60,160),     # Ultramarin
+        (10,100,70),     # Smaragdgrün
+        (8,6,20)         # tiefer barocker Schatten
+    ],
+
     "grayscale": [
         (255,255,255),
         (230,230,235),   # minimaler Blaustich

@@ -157,6 +157,7 @@ mit Colormap. Er darf nicht selbst berechnen.
 '''
 class Renderer():
 
+    # DRINGEND AN NJIT DELEGIEREN
     def render(self, fractal, viewport, colormap, coloring_mode="smooth", k=40):
         span = viewport.xmax - viewport.xmin
         k = k                       # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
@@ -173,7 +174,6 @@ class Renderer():
         iterations = np.zeros((height, width), dtype=np.float64)
         escaped = np.zeros((height, width), dtype=np.uint8)
 
-        # Fraktaltyp wählen
         for y in range(height): 
             imag = viewport.ymax - (y / (height - 1)) * (viewport.ymax - viewport.ymin)
             for x in range(width):

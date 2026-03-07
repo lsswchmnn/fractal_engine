@@ -31,16 +31,17 @@ class Visualizer():
     # STARTING POINT
     def start(self):
         # GUI erzeugen und Callbacks setzen
-        self.gui = GUI(self.viewport.width_px, self.viewport.height_px)         # GUI erzeugen
-        self.gui.set_zoom_callback(self._handle_zoom)                           # Zoom
-        self.gui.set_reset_callback(self._handle_reset)                         # Reset-Button
-        self.gui.set_back_step_callback(self._handle_back)                      # Zoom-History
-        self.gui.set_forward_step_callback(self._handle_forward)                # Zoom-History
-        self.gui.set_change_color_callback(self._handle_change_color)           # Farbwechsel-Button
-        self.gui.set_change_coloring_callback(self._handle_change_coloring)     # Coloring-Method wechseln
-        self.gui.set_export_callback(self._handle_export)                       # Export-Button 
+        self.gui = GUI(self.viewport.width_px, self.viewport.height_px)             # GUI erzeugen
+        self.gui.set_zoom_callback(self._handle_zoom)                               # Zoom
+        self.gui.set_reset_callback(self._handle_reset)                             # Reset-Button
+        self.gui.set_back_step_callback(self._handle_back)                          # Zoom-History
+        self.gui.set_forward_step_callback(self._handle_forward)                    # Zoom-History
+        self.gui.set_change_color_callback(self._handle_change_coloring)               # Farbwechsel-Button
+        self.gui.set_palette_menu(self.palette_names, self._handle_palette_select)  # Farbpalette Dropdown-Menü
+        self.gui.set_change_coloring_callback(self._handle_change_coloring)         # Coloring-Method wechseln
+        self.gui.set_export_callback(self._handle_export)                           # Export-Button 
 
-        self.coloring_modes = ["basic", "smooth", "histogram"]     # Verfügbare Coloring-Methoden
+        self.coloring_modes = ["basic", "smooth", "histogram"]              # Verfügbare Coloring-Methoden
         self.coloring_index = 0                                             # Start mit "smooth"-Coloring
         self.coloring_mode = self.coloring_modes[self.coloring_index]       # Aktuelle Coloring-Methode
 
@@ -104,10 +105,9 @@ class Visualizer():
 #------------------------------------------------------------
 # HANDLING (Farbwechsel, Coloring-Methode wechseln, Exportieren)
 
-    def _handle_change_color(self):
-        self.palette_index = (self.palette_index + 1) % len(self.palette_names)
-        new_name = self.palette_names[self.palette_index]
-        self.colormap.set_palette(new_name)
+    def _handle_palette_select(self, palette_name):
+        self.colormap.set_palette(palette_name)
+        self.palette_index = self.palette_names.index(palette_name)
         self._rerender()
 
     def _handle_change_coloring(self):

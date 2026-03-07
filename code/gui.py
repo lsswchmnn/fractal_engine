@@ -111,6 +111,7 @@ class GUI():
             command=self._on_change_coloring_clicked
         )
         self.change_coloring_button.pack(side="right", padx=10, pady=5)
+        self.palette_menu = tk.Menu(self.root, tearoff=0)    # Farbpalette Dropdown-Menü
 
         # Als Hochauflöndes Bild speichern (exp)
         self.save_button = tk.Button(
@@ -225,8 +226,21 @@ class GUI():
         self._change_color_callback = callback
 
     def _on_change_color_clicked(self):
-        if self._change_color_callback:
-            self._change_color_callback()
+        try:
+            x = self.change_color_button.winfo_rootx()
+            y = self.change_color_button.winfo_rooty() + self.change_color_button.winfo_height()
+            self.palette_menu.tk_popup(x, y)
+        finally:
+            self.palette_menu.grab_release()
+
+    def set_palette_menu(self, palette_names, callback):
+        self.palette_menu.delete(0, "end")
+
+        for name in palette_names:
+            self.palette_menu.add_command(
+                label=name,
+                command=lambda n=name: callback(n)
+            )
 
     def set_change_coloring_callback(self, callback):
         self._change_coloring_callback = callback

@@ -99,6 +99,7 @@ class GUI():
             command=self._on_change_color_clicked
         )
         self.change_color_button.pack(side="right", padx=10, pady=5)
+        self.palette_menu = tk.Menu(self.root, tearoff=0)    # Farbpalette Dropdown-Menü
 
         # Färbungsmethode wechseln
         self.change_coloring_button = tk.Button(
@@ -111,7 +112,7 @@ class GUI():
             command=self._on_change_coloring_clicked
         )
         self.change_coloring_button.pack(side="right", padx=10, pady=5)
-        self.palette_menu = tk.Menu(self.root, tearoff=0)    # Farbpalette Dropdown-Menü
+        self.coloring_menu = tk.Menu(self.root, tearoff=0)    # Färbungsmethode Dropdown-Menü
 
         # Als Hochauflöndes Bild speichern (exp)
         self.save_button = tk.Button(
@@ -246,8 +247,21 @@ class GUI():
         self._change_coloring_callback = callback
 
     def _on_change_coloring_clicked(self):
-        if self._change_coloring_callback:
-            self._change_coloring_callback()
+        try:
+            x = self.change_coloring_button.winfo_rootx()
+            y = self.change_coloring_button.winfo_rooty() + self.change_coloring_button.winfo_height()
+            self.coloring_menu.tk_popup(x, y)
+        finally:
+            self.coloring_menu.grab_release()
+
+    def set_coloring_menu(self, coloring_names, callback):
+        self.coloring_menu.delete(0, "end")
+
+        for name in coloring_names:
+            self.coloring_menu.add_command(
+                label=name,
+                command=lambda n=name: callback(n)
+            )
 
 #------------------------------------------------------------
 # EXPORT-BUTTON (Hochauflösendes Bild speichern)

@@ -1,5 +1,4 @@
 from utils import print_heading, enter_continue, clear_cli, print_thin_separation, show_error
-from fractal import MandelbrotFractal, JuliaFractal
 from visualize import Visualizer
 from mapping import FRACTALS_MAP
 import fractal
@@ -157,8 +156,9 @@ class CLI():
 #------------------------------------------------------------
 # EINSTELLUNGEN
 
+    # Einstellungen: Formelmanipulation (Startwert und Exponent)
     def cli_manipulate_formula(self):
-        if self.fractal._name == "Mandelbrot-Set" or self.fractal._name == "Inverted Mandelbrot-Set" or self.fractal._name == "Burning Ship":
+        if self.fractal._name is not None:  # später Einschränkung, falls manche Fraktale bestimmte Manipulationen nicht unterstützen
 
             while True:
                 print_heading("MANIPULATE FORMULA")
@@ -186,6 +186,11 @@ class CLI():
                     except ValueError:
                         show_error(True, "InputError", "Invalid input. Please enter valid numbers.")
                         continue
+
+                    # Warnungen für potenziell instabile Einstellungen
+                    if imag != 0 or real != 2:
+                        self.cli_settings_warning(imag, real)
+                        break
                 
                 elif choice == "2":
                     print_heading("CHANGE EXPONENT")
@@ -204,14 +209,9 @@ class CLI():
                         continue
 
                     # Warnungen für potenziell instabile Einstellungen
-
-                    if imag != 0:
-                        show_error(False, "StabilityWarning", "Complex exponents can lead to highly unstable fractals and cause long rendering times.")
-                        enter_continue("Press enter to continue.")
-
-                    if real != 2:
-                        show_error(False, "StabilityWarning", "Visualizer is not optimized for non-integer or non-2 exponents; can cause inappropriate image cropping.")
-                        enter_continue("Press enter to continue.")
+                    if imag != 0 or real != 2:
+                        self.cli_settings_warning(imag, real)
+                        break
 
                 elif choice == "h":
                     print_heading("HELP - MANIPULATE FORMULA")
@@ -221,7 +221,20 @@ class CLI():
 
                 elif choice == "c":
                     break
+    
+    # Warnungen für potenziell instabile Einstellungen bei Formelmanipulation
+    def cli_settings_warning(self, imag, real):
+        print_heading("STABILITY WARNING")
 
+        if imag != 0:
+            show_error(False, "StabilityWarning", "Complex exponents can lead to highly unstable fractals and cause long rendering times.")
+
+        if real != 2:
+            show_error(False, "StabilityWarning", "Visualizer is not optimized for non-integer or non-2 exponents; can cause inappropriate image cropping.")
+        
+        enter_continue("Press enter to continue.")
+
+    # Einstellungen: Rendering (Basis-Iterationen und adaptiver Iterationsfaktor)
     def cli_change_rendering_settings(self):
         while True:
 

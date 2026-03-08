@@ -2,7 +2,7 @@ from color import ColorMap
 from gui import GUI
 from utils import printProgressBar, clear_cli, print_thin_separation
 from numba import njit
-from fractal import Fractal#, MandelbrotFractal, InvertedMandelbrotFractal, mandelbrot_kernel, inverted_mandelbrot_kernel
+from fractal import Fractal
 from mapping import PALETTES
 from export import PNGExporter
 import numpy as np
@@ -24,7 +24,7 @@ class Visualizer():
         self.history_index    : int          = -1                                          # Aktuelle Position in der Zoom-History
         self.palette_names    : list         = list(PALETTES.keys())                       # Verfügbare Paletten
         self.palette_index    : int          = self.palette_names.index("default")         # Start mit "default"-Palette
-        self.iterate_factor_k : int          = 500                                         # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
+        self.iterate_factor_k : int          = 250                                         # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
 
 # ------------------------------------------------------------
 
@@ -36,15 +36,20 @@ class Visualizer():
         self.gui.set_reset_callback(self._handle_reset)                             # Reset-Button
         self.gui.set_back_step_callback(self._handle_back)                          # Zoom-History
         self.gui.set_forward_step_callback(self._handle_forward)                    # Zoom-History
-        self.gui.set_change_color_callback(self._handle_change_coloring)               # Farbwechsel-Button
-        self.gui.set_palette_menu(self.palette_names, self._handle_palette_select)  # Farbpalette Dropdown-Menü
+        self.gui.set_change_color_callback(self._handle_change_coloring)            # Farbwechsel-Button
         self.gui.set_change_coloring_callback(self._handle_change_coloring)         # Coloring-Method wechseln
         self.gui.set_export_callback(self._handle_export)                           # Export-Button 
 
+        # Coloring initialisieren
         self.coloring_modes = ["basic", "smooth", "histogram"]              # Verfügbare Coloring-Methoden
-        self.coloring_index = 0                                             # Start mit "smooth"-Coloring
+        self.coloring_index = 1
         self.coloring_mode = self.coloring_modes[self.coloring_index]       # Aktuelle Coloring-Methode
 
+        # Dropdown-Menüs
+        self.gui.set_coloring_menu(self.coloring_modes, self._handle_change_coloring)    # Coloring-Method Dropdown-Menü
+        self.gui.set_palette_menu(self.palette_names, self._handle_palette_select)      # Farbpalette Dropdown-Menü
+
+        # Methoden aufrufen
         self._push_history()                                   
         self._rerender()                      # Erstes Bild rendern (inkl. Anzeige)
         self.gui.run()                      # Eventloop starten
@@ -110,8 +115,11 @@ class Visualizer():
         self.palette_index = self.palette_names.index(palette_name)
         self._rerender()
 
-    def _handle_change_coloring(self):
-        self.coloring_index = (self.coloring_index + 1) % len(self.coloring_modes)
+    def _handle_change_coloring(self, coloring_name=None):
+        if coloring_name is not None:
+            self.coloring_index = self.coloring_modes.index(coloring_name)
+        else:
+            self.coloring_index = (self.coloring_index + 1) % len(self.coloring_modes)
         self.coloring_mode = self.coloring_modes[self.coloring_index]
         self._rerender()
 
@@ -151,10 +159,7 @@ class Visualizer():
             print_thin_separation()
 
 #============================================================
-'''
-Renderer iteriert über alle Pixel im Viewport und färbt diese
-mit Colormap. Er darf nicht selbst berechnen.
-'''
+# RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an
 class Renderer():
 
     # DRINGEND AN NJIT DELEGIEREN
@@ -214,10 +219,7 @@ class Renderer():
         return image
 
 #============================================================
-'''
-Viewport definiert den sichtbaren (berechneten) Ausschnitt der
-komplexen Zahlenebene.
-'''
+# VIEWPORT: Definiert den sichtbaren Ausschnitt der komplexen Zahlenebene
 class Viewport():
     def __init__(self, bounds:tuple):
         self.bounds = bounds

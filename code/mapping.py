@@ -13,6 +13,12 @@ FRACTALS_MAP =  {
         "formula": "z_{n+1} = z_n^2 + 1/c"
     },
 
+    "JuliaFractal": {
+        "name": "Julia-Set",
+        "desc": ("..."),
+        "formula": "z_{n+1} = z_n^2 + c"
+    },
+
     "BurningShipFractal": {
         "name": "Burning Ship",
         "desc": ("..."),

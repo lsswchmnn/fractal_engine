@@ -8,18 +8,13 @@ import numpy as np
 
 @njit
 def mandelbrot_kernel(
-    c_real,
-    c_imag,
-    max_iterations,
+    c_real, c_imag,
+    max_iter,
     escape_radius,
-    z_real=0.0,
-    z_imag=0.0,
-    exp_real=2.0,
-    exp_imag=0.0
-):
-    escape_sq = escape_radius * escape_radius
+    z_real=0.0, z_imag=0.0,
+    exp_real=2.0, exp_imag=0.0):
 
-    # ---- Pfadentscheidung VOR der Schleife ----
+    escape_sq = escape_radius * escape_radius
 
     # 1) Standard Mandelbrot (Exponent 2)
     if exp_imag == 0.0 and exp_real == 2.0:
@@ -27,7 +22,7 @@ def mandelbrot_kernel(
         zr = z_real
         zi = z_imag
 
-        for i in range(max_iterations):
+        for i in range(max_iter):
             zr2 = zr * zr
             zi2 = zi * zi
 
@@ -37,7 +32,7 @@ def mandelbrot_kernel(
             zi = 2.0 * zr * zi + c_imag
             zr = zr2 - zi2 + c_real
 
-        return float(max_iterations), 0, zr, zi
+        return float(max_iter), 0, zr, zi
 
     # 2) Höhere ganzzahlige Exponenten
     if exp_imag == 0.0 and exp_real == float(int(exp_real)):
@@ -46,7 +41,7 @@ def mandelbrot_kernel(
         zr = z_real
         zi = z_imag
 
-        for i in range(max_iterations):
+        for i in range(max_iter):
 
             r2 = zr * zr + zi * zi
             if r2 > escape_sq:
@@ -64,7 +59,7 @@ def mandelbrot_kernel(
             zr = zr_pow + c_real
             zi = zi_pow + c_imag
 
-        return float(max_iterations), 0, zr, zi
+        return float(max_iter), 0, zr, zi
 
     # 3) Komplexer Exponent (allgemeiner Fall)
     zr = z_real
@@ -73,7 +68,7 @@ def mandelbrot_kernel(
     a = exp_real
     b = exp_imag
 
-    for i in range(max_iterations):
+    for i in range(max_iter):
 
         r2 = zr * zr + zi * zi
         if r2 > escape_sq:
@@ -98,20 +93,16 @@ def mandelbrot_kernel(
         zr = exp_r * math.cos(imag_part) + c_real
         zi = exp_r * math.sin(imag_part) + c_imag
 
-    return float(max_iterations), 0, zr, zi
+    return float(max_iter), 0, zr, zi
 
 @njit
-def inverted_mandelbrot_kernel(c_real, c_imag, 
-                               max_iterations, 
-                               escape_radius, 
-                               z_real=0.0, z_imag=0.0, 
-                               exp_real=2.0, exp_imag=0.0):
-    """
-    Inverted Mandelbrot:
-    Iteriert z_{n+1} = z_n^2 + 1/c
-    c_real, c_imag : Re/Im Teil des aktuellen Pixelpunkts
-    z_real, z_imag : optionaler Startwert
-    """
+def inverted_mandelbrot_kernel(
+    c_real, c_imag, 
+    max_iter, 
+    escape_radius, 
+    z_real=0.0, z_imag=0.0, 
+    exp_real=2.0, exp_imag=0.0):
+
     # Singularität vermeiden: c=0 → sehr großer Wert
     if c_real == 0.0 and c_imag == 0.0:
         c_real, c_imag = 1e10, 0.0
@@ -125,7 +116,7 @@ def inverted_mandelbrot_kernel(c_real, c_imag,
 
     if exp_imag == 0.0 and exp_real == 2.0:
          # Spezieller Fall: Exponent 2 → direkter Berechnungspfad (ohne komplexe Exponentiation)
-         for i in range(max_iterations):
+         for i in range(max_iter):
             # z^2
             zr2 = z_real * z_real
             zi2 = z_imag * z_imag
@@ -144,12 +135,12 @@ def inverted_mandelbrot_kernel(c_real, c_imag,
             z_imag = 2.0 * z_real * z_imag + c_inv_imag
             z_real = zr2 - zi2 + c_inv_real
 
-         return max_iterations, False, z_real, z_imag
+         return max_iter, False, z_real, z_imag
     
     if exp_imag == 0.0 and exp_real == float(int(exp_real)):
         # Spezieller Fall: Ganzzahliger Exponent > 2 → direkter Berechnungspfad (ohne komplexe Exponentiation)
          d = int(exp_real)
-         for i in range(max_iterations):
+         for i in range(max_iter):
             # z^d via wiederholte komplexe Multiplikation
             zr_pow = z_real
             zi_pow = z_imag
@@ -173,7 +164,7 @@ def inverted_mandelbrot_kernel(c_real, c_imag,
             z_imag = zi_pow + c_inv_imag
             z_real = zr_pow + c_inv_real
 
-         return max_iterations, False, z_real, z_imag
+         return max_iter, False, z_real, z_imag
     
     # komplexer Exponent (allgemeiner Fall) → allgemeiner Berechnungspfad (mit komplexer Exponentiation)
     zr = z_real
@@ -182,7 +173,7 @@ def inverted_mandelbrot_kernel(c_real, c_imag,
     a = exp_real
     b = exp_imag
 
-    for i in range(max_iterations):
+    for i in range(max_iter):
         r2 = zr * zr + zi * zi
         if r2 > escape_sq:
             return i, True, z_real, z_imag
@@ -215,33 +206,79 @@ def inverted_mandelbrot_kernel(c_real, c_imag,
         zr += c_inv_real
         zi += c_inv_imag
 
-    return float(max_iterations), 0, z_real, z_imag
+    return float(max_iter), 0, z_real, z_imag
 
 @njit
-def burning_ship_kernel(c_real, c_imag, max_iter, escape_radius, z_real=0.0, z_imag=0.0):
-    zr = z_real
-    zi = z_imag
+def burning_ship_kernel(
+    c_real, c_imag, 
+    max_iter, 
+    escape_radius, 
+    z_real=0.0, z_imag=0.0,
+    exp_real=2.0, exp_imag=0.0):
+    
     escape_sq = escape_radius * escape_radius
 
-    for i in range(max_iter):
-        # Betrag auf Real- und Imaginärteil anwenden
-        zr_abs = abs(zr)
-        zi_abs = abs(zi)
+    # 1) Standard Burning Ship (Exponent 2)
+    if exp_imag == 0.0 and exp_real == 2.0:
 
-        # (a + ib)^2 = (a^2 - b^2) + 2ab i
-        zr_new = zr_abs * zr_abs - zi_abs * zi_abs + c_real
-        zi_new = 2.0 * zr_abs * zi_abs + c_imag
+        zr = z_real
+        zi = z_imag
 
-        zr = zr_new
-        zi = zi_new
+        for i in range(max_iter):
+            zr_abs = abs(zr)
+            zi_abs = abs(zi)
 
-        if zr * zr + zi * zi > escape_sq:
-            return i, True, zr, zi
+            zr2 = zr_abs * zr_abs
+            zi2 = zi_abs * zi_abs
 
-    return max_iter, False, zr, zi
+            if zr2 + zi2 > escape_sq:
+                return i, True, zr, zi
+
+            zi = 2.0 * zr_abs * zi_abs + c_imag
+            zr = zr2 - zi2 + c_real
+
+        return max_iter, False, zr, zi
+
+    # 2) Höhere ganzzahlige Exponenten
+    if exp_imag == 0.0 and exp_real == float(int(exp_real)):
+
+        d = int(exp_real)
+        zr = z_real
+        zi = z_imag
+
+        for i in range(max_iter):
+
+            # Betrag auf Real- und Imaginärteil anwenden
+            zr_abs = abs(zr)
+            zi_abs = abs(zi)
+
+            # z^d via wiederholte komplexe Multiplikation
+            zr_pow = zr_abs
+            zi_pow = zi_abs
+
+            for _ in range(d - 1):
+                temp = zr_pow * zr - zi_pow * zi
+                zi_pow = zr_pow * zi + zi_pow * zr
+                zr_pow = temp
+
+            if zr_pow * zr_pow + zi_pow * zi_pow > escape_sq:
+                return i, True, zr, zi
+
+            zr = zr_pow + c_real
+            zi = zi_pow + c_imag
+
+        return max_iter, False, zr, zi
+
+    # 3) Komplexer Exponent (allgemeiner Fall)
+    # ...
 
 @njit
-def tricorn_kernel(c_real, c_imag, max_iter, escape_radius, z_real=0.0, z_imag=0.0):
+def tricorn_kernel(
+    c_real, c_imag, 
+    max_iter, 
+    escape_radius, 
+    z_real=0.0, z_imag=0.0):
+    
     zr = z_real
     zi = z_imag
     escape_sq = escape_radius * escape_radius
@@ -276,7 +313,7 @@ class IterationResult:
 # KLASSEN FÜR FRAKTALE
 class Fractal(ABC):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
-        self.max_iterations = max_iterations                # Wie lange prüft man, ob der Wert "ausbricht"?
+        self.max_iterations = max_iterations                # Wie lange prüft man, ob der Wert "ausbricht"? - höhere Werte → detailliertere Bilder, aber längere Berechnungszeit
         self.escape_radius = escape_radius                  # Für Mandelbrot z.B. 2
         self._default_bounds = (-2.0, 1.0, -1.2, 1.2)       # Standard-Ausschnitt der komplexen Ebene, mit dem gearbeitet wird. Kann von Fraktal zu Fraktal unterschiedlich sein.
         self._name = "Fractal"                              # Name des Fraktals (wird in Mapping überschrieben)
@@ -300,10 +337,13 @@ class MandelbrotFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2.0, 1.0, -1.2, 1.2)
+        self._name = "Mandelbrot-Set"
+        self._formula = "z_{n+1} = z_n^2 + c"
         self.start_real = 0.0
         self.start_imag = 0.0
         self.exp_real = 2.0
         self.exp_imag = 0.0
+
 
     # Iterater: ruft njit-Funktion auf
     def iterate(self, c: complex) -> IterationResult:
@@ -330,6 +370,10 @@ class InvertedMandelbrotFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2, 4.5, -2.4, 2.4)   # zu Fraktal
+        self._name = "Inverted Mandelbrot-Set"
+        self._formula = "z_{n+1} = z_n^2 + 1/c"
+        self.exp_real = 2.0
+        self.exp_imag = 0.0
         self.start_real = 0.0
         self.start_imag = 0.0
 
@@ -360,16 +404,46 @@ class InvertedMandelbrotFractal(Fractal):
 
 #------------------------------------------------------------
 class JuliaFractal(Fractal):
-    def __init__(self):
-        super().__init__()
-        self.k : complex = 0
+    def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0, c: complex = complex(0.355, 0.355)):
+        super().__init__(max_iterations, escape_radius)
+        self._default_bounds = (-2.0, 2.0, -2.0, 2.0)
+        self._name = "Julia-Set"
+        self._formula = "z_{n+1} = z_n^2 + c"
+        self.start_real = 0.0
+        self.start_imag = 0.0
+        self.exp_real = 2.0
+        self.exp_imag = 0.0
+        self.c = c
 
-    # ...
+    def iterate(self, z: complex) -> IterationResult:
+        iterations, escaped, zr, zi = mandelbrot_kernel(
+            self.c.real,
+            self.c.imag,
+            self.max_iterations,
+            self.escape_radius,
+            z_real=z.real,
+            z_imag=z.imag,
+            exp_real=self.exp_real,
+            exp_imag=self.exp_imag
+        )
+
+        return IterationResult(
+            iterations=iterations,
+            escaped=escaped,
+            z_real=zr,
+            z_imag=zi
+        )
 #------------------------------------------------------------
 class BurningShipFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2.2, 1.2, -2.5, 1.5)
+        self._name = "Burning Ship"
+        self._formula = "z_{n+1} = (|Re(z_n)| + i|Im(z_n)|)^2 + c"
+
+        # muss eigentlich nicht explizit gespeichert werden
+        self.exp_real = 2.0
+        self.exp_imag = 0.0
         self.start_real = 0.0
         self.start_imag = 0.0
 
@@ -380,7 +454,9 @@ class BurningShipFractal(Fractal):
             self.max_iterations,
             self.escape_radius,
             z_real=self.start_real,
-            z_imag=self.start_imag
+            z_imag=self.start_imag,
+            exp_real=self.exp_real,
+            exp_imag=self.exp_imag
         )
 
         return IterationResult(

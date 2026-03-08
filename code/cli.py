@@ -189,7 +189,7 @@ class CLI():
 
                     # Warnungen für potenziell instabile Einstellungen
                     if imag != 0 or real != 2:
-                        self.cli_settings_warning(imag, real)
+                        self.cli_settings_warning(imag, real, "startvalue")
                         break
                 
                 elif choice == "2":
@@ -210,7 +210,7 @@ class CLI():
 
                     # Warnungen für potenziell instabile Einstellungen
                     if imag != 0 or real != 2:
-                        self.cli_settings_warning(imag, real)
+                        self.cli_settings_warning(imag, real, "exponent")
                         break
 
                 elif choice == "h":
@@ -223,15 +223,27 @@ class CLI():
                     break
     
     # Warnungen für potenziell instabile Einstellungen bei Formelmanipulation
-    def cli_settings_warning(self, imag, real):
+    def cli_settings_warning(self, imag, real, setting_type: str):
         print_heading("STABILITY WARNING")
 
-        if imag != 0:
-            show_error(False, "StabilityWarning", "Complex exponents can lead to highly unstable fractals and cause long rendering times.")
+        if setting_type == "startvalue":
+            if imag != 0:
+                show_error(False, "StabilityWarning", "Visualizer is not optimized for complex startvalues; can cause inappropriate image cropping, long rendering-times and unpredictable results.")
 
-        if real != 2:
-            show_error(False, "StabilityWarning", "Visualizer is not optimized for non-integer or non-2 exponents; can cause inappropriate image cropping.")
-        
+            if real > 0.5:
+                show_error(False, "StabilityWarning", "Visualizer is not optimized for startvalues far from the critical point (0 for Mandelbrot); can cause inappropriate image cropping, long rendering-times and unpredictable results.")
+
+        elif setting_type == "exponent":
+
+            if imag != 0:
+                show_error(False, "StabilityWarning", "Visualizer is not optimized for complex exponents; can cause inappropriate image cropping, long rendering-times and unpredictable results.")
+
+            if real > 2:
+                show_error(False, "StabilityWarning", "Visualizer is not optimized for exponents higher than two; can cause inappropriate image cropping.")
+            
+        else:
+            show_error(False, "StabilityWarning", "Unusual settings can lead to unpredictable results, long rendering times and inappropriate image cropping. Experiment with caution!")
+
         enter_continue("Press enter to continue.")
 
     # Einstellungen: Rendering (Basis-Iterationen und adaptiver Iterationsfaktor)

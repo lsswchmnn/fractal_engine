@@ -103,13 +103,13 @@ class CLI():
             self.fractal._name = FRACTALS_MAP[class_name]["name"]
             self.fractal._formula = FRACTALS_MAP[class_name]["formula"]
 
-            self.visualizer = Visualizer(self.fractal, self.fractal._name)  # Visualizer bereits hier erstellen
+            self.visualizer = Visualizer(self.fractal, self.fractal._name)
 
             print_heading("FRACTAL LOADED")
             enter_continue(f"Fractal {class_name} loaded. Press enter to continue.", seperation=False)
             return
 
-    # Menüpunkt 2: Fraktal graphisch visualisieren (Visualizer bereit in load_fractal instanziiert)
+    # Menüpunkt 2: Fraktal graphisch visualisieren (Visualizer bereit in load_fractal instanziert)
     def menu_visualize(self):
         clear_cli()
         print()

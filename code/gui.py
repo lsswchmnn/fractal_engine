@@ -5,7 +5,7 @@ import tkinter as tk
 import numpy as np
 #============================================================
 class GUI():
-    def __init__(self, width=800, height=600):
+    def __init__(self, width=800, height=600, julia: bool = False):
         # Höhe und Breite
         self.width          = width
         self.height         = height
@@ -125,7 +125,20 @@ class GUI():
             command=self._on_export_clicked
         )
         self.save_button.pack(side="right", padx=10, pady=5)
-# ------------------------------------------------------------
+
+        # Für Julia: C ändern
+        if julia:
+            self.change_c_button = tk.Button(
+                self.control_bar,
+                text="C",
+                font=("Arial", 12, "bold"),
+                width=GUI_MAP["button_width"],
+                bg=GUI_MAP["button_bg"],
+                relief="raised",
+                command=self._on_change_c_clicked
+            )
+            self.change_c_button.pack(side="right", padx=10, pady=5)
+#------------------------------------------------------------
 # VERSCHIEDENES
 
     def run(self):
@@ -137,7 +150,7 @@ class GUI():
         self._photo = ImageTk.PhotoImage(image)                         # PIL -> Tkinter-Image
         self.canvas.create_image(0, 0, anchor="nw", image=self._photo)  # Bild anzeigen
 
-# ------------------------------------------------------------
+#------------------------------------------------------------
 # ZOOM-FUNKTIONALITÄT
 
     def set_zoom_callback(self, callback):
@@ -193,7 +206,7 @@ class GUI():
         self.canvas.delete(self._rect)
         self._rect = None
 
-# ------------------------------------------------------------
+#------------------------------------------------------------
 # RESET-BUTTON (Zurück zu Standardansicht)
 
     def set_reset_callback(self, callback):
@@ -203,7 +216,7 @@ class GUI():
         if self._reset_callback:
             self._reset_callback()
 
-# ------------------------------------------------------------
+#------------------------------------------------------------
 # STEP-BUTTONS (Schritt zurück/vorwärts im Zoom-Verlauf)
 
     def set_back_step_callback(self, callback):
@@ -279,3 +292,13 @@ class GUI():
             filetypes=[("PNG Image", "*.png")],
             initialfile=default_name
         )
+
+#------------------------------------------------------------
+# Für JULIA-SET: C ändern
+
+    def set_change_c_callback(self, callback):
+        self._change_c_callback = callback
+
+    def _on_change_c_clicked(self):
+        if self._change_c_callback:
+            self._change_c_callback()

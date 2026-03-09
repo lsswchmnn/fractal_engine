@@ -30,8 +30,13 @@ class Visualizer():
 
     # STARTING POINT
     def start(self):
-        # GUI erzeugen und Callbacks setzen
-        self.gui = GUI(self.viewport.width_px, self.viewport.height_px)             # GUI erzeugen
+        # GUI erzeugen (Unterscheidung für Julia-Set, da hier zusätzliches Feature "C ändern" im GUI benötigt wird)
+        if self.fractal._name == "Julia-Set":
+            self.gui = GUI(self.viewport.width_px, self.viewport.height_px, julia=True)             # GUI erzeugen
+        else:
+            self.gui = GUI(self.viewport.width_px, self.viewport.height_px, julia=False)             # GUI erzeugen
+
+        # Callbacks setzen
         self.gui.set_zoom_callback(self._handle_zoom)                               # Zoom
         self.gui.set_reset_callback(self._handle_reset)                             # Reset-Button
         self.gui.set_back_step_callback(self._handle_back)                          # Zoom-History

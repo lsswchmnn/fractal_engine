@@ -2,7 +2,7 @@ from color import ColorMap
 from gui import GUI
 from utils import printProgressBar, clear_cli, print_thin_separation
 from numba import njit
-from fractal import Fractal
+from fractal import Fractal, MandelbrotFractal
 from mapping import PALETTES
 from export import PNGExporter
 import numpy as np
@@ -44,7 +44,9 @@ class Visualizer():
         self.gui.set_change_color_callback(self._handle_change_coloring)            # Farbwechsel-Button
         self.gui.set_change_coloring_callback(self._handle_change_coloring)         # Coloring-Method wechseln
         self.gui.set_export_callback(self._handle_export)                           # Export-Button 
-
+        self.gui.set_change_c_callback(self._handle_change_c)
+        self.gui.set_c_select_callback(self._handle_c_select)
+        
         # Coloring initialisieren
         self.coloring_modes = ["basic", "smooth", "histogram"]              # Verfügbare Coloring-Methoden
         self.coloring_index = 1
@@ -66,13 +68,7 @@ class Visualizer():
         self._rerender()
 
 #------------------------------------------------------------
-# Zoom-History: Back, Forward, Reset
-
-    # Callback: Für Reset-Button in GUI
-    def _handle_reset(self):
-        self.viewport.reset()
-        self._push_history()
-        self._rerender()
+# Hilfsfunktionen
 
     # Callback: Für Zoom-History
     def _push_history(self):
@@ -80,16 +76,6 @@ class Visualizer():
         self.history = self.history[:self.history_index + 1]  # Alle "vorwärts"-Einträge löschen
         self.history.append(bounds)
         self.history_index += 1
-
-    def _handle_back(self):
-        if self.history_index > 0:
-            self.history_index -= 1
-            self._apply_history()
-
-    def _handle_forward(self):
-        if self.history_index < len(self.history) - 1:
-            self.history_index += 1
-            self._apply_history()
 
     # Hilfsfunktion: Aktuellen Viewport aus History anwenden
     def _apply_history(self):
@@ -113,7 +99,22 @@ class Visualizer():
         self.gui.display_image(pixels)
 
 #------------------------------------------------------------
-# HANDLING (Farbwechsel, Coloring-Methode wechseln, Exportieren)
+# HANDLING 
+
+    def _handle_reset(self):
+        self.viewport.reset()
+        self._push_history()
+        self._rerender()
+
+    def _handle_back(self):
+        if self.history_index > 0:
+            self.history_index -= 1
+            self._apply_history()
+
+    def _handle_forward(self):
+        if self.history_index < len(self.history) - 1:
+            self.history_index += 1
+            self._apply_history()
 
     def _handle_palette_select(self, palette_name):
         self.colormap.set_palette(palette_name)
@@ -162,6 +163,30 @@ class Visualizer():
             self.exporter.save(pixels, path)
             print(f"Image exported to {path}")
             print_thin_separation()
+
+    def _handle_change_c(self):
+        mandelbrot = MandelbrotFractal()
+    
+        pixels = self.renderer.render(
+            mandelbrot,
+            self.viewport,
+            self.colormap,
+            coloring_mode=self.coloring_mode
+        )
+
+        self.gui.show_overlay(pixels)
+
+    def _handle_c_select(self, x, y):
+        real = self.viewport.xmin + (x / (self.viewport.width_px - 1)) * \
+            (self.viewport.xmax - self.viewport.xmin)
+
+        imag = self.viewport.ymax - (y / (self.viewport.height_px - 1)) * \
+            (self.viewport.ymax - self.viewport.ymin)
+
+        self.fractal.c_real = real
+        self.fractal.c_imag = imag
+        self.gui.clear_overlay()
+        self._rerender()
 
 #============================================================
 # RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an

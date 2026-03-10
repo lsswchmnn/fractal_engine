@@ -404,7 +404,7 @@ class InvertedMandelbrotFractal(Fractal):
 
 #------------------------------------------------------------
 class JuliaFractal(Fractal):
-    def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0, c: complex = complex(0.355, 0.355)):
+    def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0, c_real: float = 0.355, c_imag: float = 0.355):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2.0, 2.0, -2.0, 2.0)
         self._name = "Julia-Set"
@@ -413,12 +413,13 @@ class JuliaFractal(Fractal):
         self.start_imag = 0.0
         self.exp_real = 2.0
         self.exp_imag = 0.0
-        self.c = c
+        self.c_real = c_real
+        self.c_imag = c_imag
 
     def iterate(self, z: complex) -> IterationResult:
         iterations, escaped, zr, zi = mandelbrot_kernel(
-            self.c.real,
-            self.c.imag,
+            self.c_real,
+            self.c_imag,
             self.max_iterations,
             self.escape_radius,
             z_real=z.real,

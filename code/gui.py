@@ -49,6 +49,14 @@ class GUI():
 
         self._reset_callback = None
 
+        # Für Julia-Menge und Paramter C
+        self._change_c_callback = None
+        self._c_select_mode = False
+        self._c_callback = None
+        self._mandelbrot_overlay = None
+
+        self.canvas.config(cursor="crosshair")
+
 # ------------------------------------------------------------
 # BUTTONS in der Control Bar (Zoom-Interaktion links, Farbwechsel rechts)
 
@@ -159,14 +167,17 @@ class GUI():
     def _on_mouse_press(self, event):
         self._start_x = event.x
         self._start_y = event.y
-        self._rect = self.canvas.create_rectangle(
-            self._start_x,
-            self._start_y,
-            self._start_x,
-            self._start_y,
-            outline=GUI_MAP["col_rect"],
-            width=3.0
-        )
+
+        # Für Julia-Menge: C auswählen statt Zoom
+        if not self._c_select_mode:
+            self._rect = self.canvas.create_rectangle(
+                self._start_x,
+                self._start_y,
+                self._start_x,
+                self._start_y,
+                outline=GUI_MAP["col_rect"],
+                width=3.0
+            )
 
     def _on_mouse_drag(self, event):
         dx = event.x - self._start_x
@@ -197,6 +208,19 @@ class GUI():
         )
 
     def _on_mouse_release(self, event):
+        # Für Julia-Menge: C auswählen statt Zoom
+        if self._c_select_mode:     
+
+            x = event.x
+            y = event.y
+
+            if self._c_callback:
+                self._c_callback(x, y)
+
+            self._c_select_mode = False
+            return
+
+        # Normaler Zoom-Fall
         coords = self.canvas.coords(self._rect)
         x0, y0, x1, y1 = coords
 
@@ -224,14 +248,16 @@ class GUI():
 
     def _on_back_step_clicked(self):
         if self._back_step_callback:
-            self._back_step_callback()
+            if not self._c_select_mode:   
+                self._back_step_callback()
 
     def set_forward_step_callback(self, callback):
         self._forward_step_callback = callback
 
     def _on_forward_step_clicked(self):
         if self._forward_step_callback:
-            self._forward_step_callback()
+            if not self._c_select_mode:
+                self._forward_step_callback()
 
 #------------------------------------------------------------
 # COLOR-BUTTON (Farbpalette und Coloring wechseln)
@@ -240,6 +266,9 @@ class GUI():
         self._change_color_callback = callback
 
     def _on_change_color_clicked(self):
+        if self._change_color_callback:
+            return
+        
         try:
             x = self.change_color_button.winfo_rootx()
             y = self.change_color_button.winfo_rooty() + self.change_color_button.winfo_height()
@@ -260,6 +289,9 @@ class GUI():
         self._change_coloring_callback = callback
 
     def _on_change_coloring_clicked(self):
+        if self._change_coloring_callback:
+            return
+        
         try:
             x = self.change_coloring_button.winfo_rootx()
             y = self.change_coloring_button.winfo_rooty() + self.change_coloring_button.winfo_height()
@@ -284,7 +316,8 @@ class GUI():
 
     def _on_export_clicked(self):
         if self._export_callback:
-            self._export_callback()
+            if not self._c_select_mode:
+                self._export_callback()
 
     def ask_save_path(self, default_name="fractal.png"):
         return filedialog.asksaveasfilename(
@@ -299,6 +332,32 @@ class GUI():
     def set_change_c_callback(self, callback):
         self._change_c_callback = callback
 
+    def set_c_select_callback(self, callback):
+        self._c_callback = callback
+
     def _on_change_c_clicked(self):
+        self._c_select_mode = True
         if self._change_c_callback:
             self._change_c_callback()
+
+    # Overlay
+    def show_overlay(self, pixel_array, alpha=120):
+        image = Image.fromarray(pixel_array, "RGB").convert("RGBA")
+
+        overlay = np.array(image)
+        overlay[:,:,3] = alpha
+
+        image = Image.fromarray(overlay, "RGBA")
+
+        self._mandelbrot_overlay = ImageTk.PhotoImage(image)
+        self.canvas.create_image(
+            0,0,
+            anchor="nw",
+            image=self._mandelbrot_overlay
+        )
+
+    def clear_overlay(self):
+        self.canvas.delete("all")
+
+        if self._photo:
+            self.canvas.create_image(0,0,anchor="nw",image=self._photo)

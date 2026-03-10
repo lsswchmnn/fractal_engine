@@ -266,7 +266,7 @@ class GUI():
         self._change_color_callback = callback
 
     def _on_change_color_clicked(self):
-        if self._change_color_callback:
+        if self._c_select_mode:
             return
         
         try:
@@ -289,7 +289,7 @@ class GUI():
         self._change_coloring_callback = callback
 
     def _on_change_coloring_clicked(self):
-        if self._change_coloring_callback:
+        if self._c_select_mode:
             return
         
         try:

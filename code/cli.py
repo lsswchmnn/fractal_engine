@@ -103,7 +103,7 @@ class CLI():
             self.fractal._name = FRACTALS_MAP[class_name]["name"]
             self.fractal._formula = FRACTALS_MAP[class_name]["formula"]
 
-            self.visualizer = Visualizer(self.fractal, self.fractal._name)
+            self.visualizer = Visualizer(self.fractal, self.fractal._name)  # Visualizer erstellen
 
             print_heading("FRACTAL LOADED")
             enter_continue(f"Fractal {class_name} loaded. Press enter to continue.", seperation=False)
@@ -113,14 +113,21 @@ class CLI():
     def menu_visualize(self):
         clear_cli()
         print()
-        self.visualizer.start()    # CLI startet nur das Visualisierungfenster und spielt danach keine aktive Rolle mehr.
+        self.visualizer.start()
         clear_cli()
         return
     
     # Menü: Hilfe
     def menu_help(self):
         print_heading("HELP MENU")
-        print("...")
+        print(
+            "This program allows you to load and visualize different types of fractals, " \
+            "as well as manipulate the underlying formula and rendering settings for more customized results." \
+            "\n" \
+            "Fractals are complex mathematical sets that exhibit self-similarity and intricate patterns at every scale. " \
+            "The Mandelbrot set, for example, is defined by iterating the formula z = z^2 + c, where z and c are complex " \
+            "numbers. By changing the parameters of this formula, you can create a wide variety of fractal images." 
+        )
 
         enter_continue("Press enter to return to main menu.")
 

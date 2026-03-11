@@ -1,4 +1,5 @@
 from color import ColorMap
+import fractal
 from gui import GUI
 from utils import printProgressBar, clear_cli, print_thin_separation
 from numba import njit
@@ -189,49 +190,84 @@ class Visualizer():
         self._rerender()
 
 #============================================================
+# RENDERING (zweigeteilt; render_tile_kernel ist die numerische Berechnung, Renderer verbindet diese mit der Farbzuweisung)
+
+# Numba-Rendering-Funktion
+@njit
+def render_tile_kernel(kernel, iterations, escaped, y0, y1, width,
+                       xmin, xmax, ymin, ymax, max_iter, escape_radius,
+                       c_real, c_imag, exp_real=2.0, exp_imag=0.0):
+
+    for y in range(y0, y1):
+        imag = ymin + (y / (y1 - y0)) * (ymax - ymin)  # Beispiel
+        for x in range(width):
+            real = xmin + (x / (width-1)) * (xmax - xmin)
+
+            # Pixel an Julia-Kernel übergeben
+            it, esc, zr, zi = kernel(
+                c_real,
+                c_imag,
+                max_iter,
+                escape_radius,
+                z_real=real,
+                z_imag=imag,
+                exp_real=exp_real,
+                exp_imag=exp_imag
+            )
+
+            iterations[y, x] = it
+            escaped[y, x] = esc
+
+#------------------------------------------------------------
 # RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an
 class Renderer():
 
-    # DRINGEND AN NJIT DELEGIEREN
     def render(self, fractal, viewport, colormap, coloring_mode="smooth", k=40):
         span = viewport.xmax - viewport.xmin
-        k = k                       # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
 
-        # Adaptive Iterationstiefe
         original_iter = fractal.max_iterations
         safe_span = max(span, 1e-16)
         zoom_factor = 1.0 / safe_span
-        adaptive_iter = int(original_iter + k * np.log10(zoom_factor))
+
+        #adaptive_iter = int(original_iter + k * np.log10(zoom_factor))
+        adaptive_iter = int(original_iter + k * max(0, np.log10(zoom_factor)))
         adaptive_iter = max(original_iter, adaptive_iter)
+
         fractal.max_iterations = adaptive_iter
 
         height, width = viewport.height_px, viewport.width_px
+
         iterations = np.zeros((height, width), dtype=np.float64)
         escaped = np.zeros((height, width), dtype=np.uint8)
 
-        for y in range(height): 
-            imag = viewport.ymax - (y / (height - 1)) * (viewport.ymax - viewport.ymin)
-            for x in range(width):
-                real = viewport.xmin + (x / (width - 1)) * (viewport.xmax - viewport.xmin)
+        tile_h = 32
 
-                c = complex(real, imag)
-                result = fractal.iterate(c) # Iterate-Methode des Fraktals aufrufen
-                iterations[y, x] = result.iterations
-                escaped[y, x] = 1 if result.escaped else 0
-            
-            printProgressBar(y+1, height, prefix='Rendering:', suffix='Complete', length=50)
+        for y0 in range(0, height, tile_h):
 
-        # Farbzuweisung
-        if coloring_mode == "basic":
-            image = colormap.apply_basic(iterations, escaped, adaptive_iter)
-        elif coloring_mode == "histogram":
-            image = colormap.apply_histogram(iterations, escaped, adaptive_iter)
-        elif coloring_mode == "smooth":
-            image = colormap.apply_smooth(iterations, escaped, adaptive_iter)
-        elif coloring_mode == "ultra":
-            image = colormap.apply_ultra(iterations, escaped, adaptive_iter)
+            y1 = min(y0 + tile_h, height)
 
-        # Debug-Ausgabe der aktuellen Einstellungen im CLI; gehört eigentlich nicht hierher
+            c_real = fractal.c_real
+            c_imag = fractal.c_imag
+
+            render_tile_kernel(
+                fractal.kernel,
+                iterations,
+                escaped,
+                y0, y1,
+                width,
+                viewport.xmin,
+                viewport.xmax,
+                viewport.ymin,
+                viewport.ymax,
+                fractal.max_iterations,
+                fractal.escape_radius,
+                c_real,       # <--- Pflichargument hinzufügen
+                c_imag        # <--- Pflichargument hinzufügen
+            )
+
+            printProgressBar(y1, height, prefix="Rendering:", suffix="Complete", length=50)
+
+        # Debug-Ausgabe der aktuellen Einstellungen im CLI; gehört eigentlich nicht hierher, aber so haben wir es an einer zentralen Stelle, wo alle relevanten Informationen vorliegen
         clear_cli()
         print_thin_separation(linebreak=False)
         print(f"Fractal:                {fractal._name}")
@@ -245,7 +281,21 @@ class Renderer():
         print_thin_separation(linebreak=False)
         print()
 
-        fractal.max_iterations = original_iter 
+        # Farbzuweisung
+        if coloring_mode == "basic":
+            image = colormap.apply_basic(iterations, escaped, adaptive_iter)
+
+        elif coloring_mode == "histogram":
+            image = colormap.apply_histogram(iterations, escaped, adaptive_iter)
+
+        elif coloring_mode == "smooth":
+            image = colormap.apply_smooth(iterations, escaped, adaptive_iter)
+
+        elif coloring_mode == "ultra":
+            image = colormap.apply_ultra(iterations, escaped, adaptive_iter)
+
+        fractal.max_iterations = original_iter
+
         return image
 
 #============================================================

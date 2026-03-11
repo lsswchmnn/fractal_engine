@@ -176,7 +176,7 @@ class GUI():
                 self._start_x,
                 self._start_y,
                 outline=GUI_MAP["col_rect"],
-                width=3.0
+                width=GUI_MAP["width_rect"]
             )
 
     def _on_mouse_drag(self, event):

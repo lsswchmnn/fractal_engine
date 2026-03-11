@@ -122,7 +122,7 @@ class ColorMap():
                     image[y, x] = (0, 0, 0)
                 else:
                     iter_value = int(iterations[y, x])
-                    t = cumulative[iter_value]  # 0..1
+                    t = cumulative[iter_value]  # 0.1
                     index = int(t * (palette_size - 1))
                     image[y, x] = self.palette[index]
 

@@ -209,6 +209,22 @@ def inverted_mandelbrot_kernel(
     return float(max_iter), 0, z_real, z_imag
 
 @njit
+def julia_kernel(c_real, c_imag, max_iter, escape_radius, z_real, z_imag,
+                 exp_real=2.0, exp_imag=0.0):
+    # z_real, z_imag: Pixel-Koordinaten
+    # c_real, c_imag: Parameter der Julia-Menge
+    return mandelbrot_kernel(
+        c_real=c_real,
+        c_imag=c_imag,
+        max_iter=max_iter,
+        escape_radius=escape_radius,
+        z_real=z_real,  # Pixel als Startwert
+        z_imag=z_imag,
+        exp_real=exp_real,
+        exp_imag=exp_imag
+    )
+
+@njit
 def burning_ship_kernel(
     c_real, c_imag, 
     max_iter, 
@@ -327,6 +343,11 @@ class Fractal(ABC):
         self.exp_real = 2.0
         self.exp_imag = 0.0
 
+        self.c_real = 0.0
+        self.c_imag = 0.0
+
+        self.kernel = None    # Platzhalter für die Iterationsfunktion, wird in den Unterklassen gesetzt
+
     # Berechnet die Iterationszahl für einen Punkt c in der komplexen Ebene. Zentrale Kernemthode.
     @abstractmethod # muss implementiert sien
     def iterate(self, c:complex) -> IterationResult:
@@ -343,7 +364,7 @@ class MandelbrotFractal(Fractal):
         self.start_imag = 0.0
         self.exp_real = 2.0
         self.exp_imag = 0.0
-
+        self.kernel = mandelbrot_kernel
 
     # Iterater: ruft njit-Funktion auf
     def iterate(self, c: complex) -> IterationResult:
@@ -376,6 +397,7 @@ class InvertedMandelbrotFractal(Fractal):
         self.exp_imag = 0.0
         self.start_real = 0.0
         self.start_imag = 0.0
+        self.kernel = inverted_mandelbrot_kernel
 
     def iterate(self, c: complex) -> IterationResult:
         # Singularität vermeiden (Division durch 0)
@@ -406,7 +428,7 @@ class InvertedMandelbrotFractal(Fractal):
 class JuliaFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0, c_real: float = 0.355, c_imag: float = 0.355):
         super().__init__(max_iterations, escape_radius)
-        self._default_bounds = (-2.0, 2.0, -2.0, 2.0)
+        self._default_bounds = (-2.0, 1.0, -1.2, 1.2)
         self._name = "Julia-Set"
         self._formula = "z_{n+1} = z_n^2 + c"
         self.start_real = 0.0
@@ -415,6 +437,7 @@ class JuliaFractal(Fractal):
         self.exp_imag = 0.0
         self.c_real = c_real
         self.c_imag = c_imag
+        self.kernel = julia_kernel
 
     def iterate(self, z: complex) -> IterationResult:
         iterations, escaped, zr, zi = mandelbrot_kernel(
@@ -434,6 +457,7 @@ class JuliaFractal(Fractal):
             z_real=zr,
             z_imag=zi
         )
+
 #------------------------------------------------------------
 class BurningShipFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
@@ -441,12 +465,11 @@ class BurningShipFractal(Fractal):
         self._default_bounds = (-2.2, 1.2, -2.5, 1.5)
         self._name = "Burning Ship"
         self._formula = "z_{n+1} = (|Re(z_n)| + i|Im(z_n)|)^2 + c"
-
-        # muss eigentlich nicht explizit gespeichert werden
         self.exp_real = 2.0
         self.exp_imag = 0.0
         self.start_real = 0.0
         self.start_imag = 0.0
+        self.kernel = burning_ship_kernel
 
     def iterate(self, c: complex) -> IterationResult:
         iterations, escaped, zr, zi = burning_ship_kernel(
@@ -471,12 +494,14 @@ class BurningShipFractal(Fractal):
 class TricornFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         super().__init__(max_iterations, escape_radius)
-
-        # Typische sinnvolle Bounds für Tricorn
         self._default_bounds = (-2.0, 2.0, -1.5, 1.5)
-
         self.start_real = 0.0
         self.start_imag = 0.0
+        self.exp_real = 2.0
+        self.exp_imag = 0.0
+        self.kernel = tricorn_kernel
+        self._name = "Tricorn"
+        self._formula = "z_{n+1} = conjugate(z_n)^2 + c"
 
     def iterate(self, c: complex) -> IterationResult:
         iterations, escaped, zr, zi = tricorn_kernel(
@@ -494,3 +519,7 @@ class TricornFractal(Fractal):
             z_real=zr,
             z_imag=zi
         )
+
+#------------------------------------------------------------
+class ExperimentialFractal(Fractal):
+    pass

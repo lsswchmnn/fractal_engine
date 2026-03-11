@@ -1,5 +1,4 @@
 from color import ColorMap
-import fractal
 from gui import GUI
 from utils import printProgressBar, clear_cli, print_thin_separation
 from numba import njit
@@ -194,29 +193,56 @@ class Visualizer():
 
 # Numba-Rendering-Funktion
 @njit
-def render_tile_kernel(kernel, iterations, escaped, y0, y1, width,
+def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                        xmin, xmax, ymin, ymax, max_iter, escape_radius,
-                       c_real, c_imag, exp_real=2.0, exp_imag=0.0):
+                       c_real, c_imag, start_real, start_imag, 
+                       exp_real=2.0, exp_imag=0.0):
 
     for y in range(y0, y1):
-        imag = ymin + (y / (y1 - y0)) * (ymax - ymin)  # Beispiel
+
+        imag = ymax - (y / (height-1)) * (ymax - ymin)
+
         for x in range(width):
+
             real = xmin + (x / (width-1)) * (xmax - xmin)
 
-            # Pixel an Julia-Kernel übergeben
+            # JULIA
+            if c_real != 0.0 or c_imag != 0.0:
+
+                c_r = c_real
+                c_i = c_imag
+                z_r = real
+                z_i = imag
+
+            # MANDELBROT
+            else:
+
+                c_r = real
+                c_i = imag
+                z_r = start_real
+                z_i = start_imag
+
+            # c_r = c_real
+            # c_i = c_imag
+            # z_r = real
+            # z_i = imag
+
+
             it, esc, zr, zi = kernel(
-                c_real,
-                c_imag,
+                c_r,
+                c_i,
                 max_iter,
                 escape_radius,
-                z_real=real,
-                z_imag=imag,
+                z_real=z_r,
+                z_imag=z_i,
                 exp_real=exp_real,
                 exp_imag=exp_imag
             )
 
             iterations[y, x] = it
             escaped[y, x] = esc
+
+
 
 #------------------------------------------------------------
 # RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an
@@ -240,7 +266,9 @@ class Renderer():
         iterations = np.zeros((height, width), dtype=np.float64)
         escaped = np.zeros((height, width), dtype=np.uint8)
 
-        tile_h = 32
+        tile_h = 32        
+
+        #c_real, c_imag, z_real, z_imag = fractal.initial_values(real, imag)
 
         for y0 in range(0, height, tile_h):
 
@@ -255,15 +283,22 @@ class Renderer():
                 escaped,
                 y0, y1,
                 width,
+                height,
                 viewport.xmin,
                 viewport.xmax,
                 viewport.ymin,
                 viewport.ymax,
                 fractal.max_iterations,
                 fractal.escape_radius,
-                c_real,       # <--- Pflichargument hinzufügen
-                c_imag        # <--- Pflichargument hinzufügen
+                fractal.c_real,
+                fractal.c_imag,
+                fractal.start_real,
+                fractal.start_imag,
+                fractal.exp_real,
+                fractal.exp_imag
             )
+
+
 
             printProgressBar(y1, height, prefix="Rendering:", suffix="Complete", length=50)
 

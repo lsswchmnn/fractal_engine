@@ -1,4 +1,4 @@
-from fractal import IterationResult
+#from fractal import IterationResult
 from mapping import PALETTES
 import numpy as np
 import math

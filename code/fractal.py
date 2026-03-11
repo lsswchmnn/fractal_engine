@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from numba import njit
 import math
-import numpy as np
 #============================================================
 # ITERATIONSKERNELS (eigentliche Berechnungen, in den Fraktal-Klassen aufgerufen)
 
@@ -27,7 +26,7 @@ def mandelbrot_kernel(
             zi2 = zi * zi
 
             if zr2 + zi2 > escape_sq:
-                return float(i), 1, zr, zi
+                return i, True, zr, zi
 
             zi = 2.0 * zr * zi + c_imag
             zr = zr2 - zi2 + c_real
@@ -317,21 +316,14 @@ def tricorn_kernel(
     return max_iter, False, zr, zi
 
 #============================================================
-# KLASSE FÜR ERGEBNIS
-@dataclass(frozen=True)
-class IterationResult:
-    iterations: int         # Anzahl duchlaufener Iterationen
-    escaped: bool           # Escape-Radius überschritten?
-    z_real: float           # Realteil des letzten berechneten Wertes
-    z_imag: float           # Imaginärteil des letzten berechneten Wertes
-
-#============================================================
 # KLASSEN FÜR FRAKTALE
 class Fractal(ABC):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         self.max_iterations = max_iterations                # Wie lange prüft man, ob der Wert "ausbricht"? - höhere Werte → detailliertere Bilder, aber längere Berechnungszeit
         self.escape_radius = escape_radius                  # Für Mandelbrot z.B. 2
         self._default_bounds = (-2.0, 1.0, -1.2, 1.2)       # Standard-Ausschnitt der komplexen Ebene, mit dem gearbeitet wird. Kann von Fraktal zu Fraktal unterschiedlich sein.
+        
+        # Anzeige
         self._name = "Fractal"                              # Name des Fraktals (wird in Mapping überschrieben)
         self._formula = "z_{n+1} = z_n^2 + c"
 
@@ -343,15 +335,11 @@ class Fractal(ABC):
         self.exp_real = 2.0
         self.exp_imag = 0.0
 
+        # Faktor C
         self.c_real = 0.0
         self.c_imag = 0.0
 
         self.kernel = None    # Platzhalter für die Iterationsfunktion, wird in den Unterklassen gesetzt
-
-    # Berechnet die Iterationszahl für einen Punkt c in der komplexen Ebene. Zentrale Kernemthode.
-    @abstractmethod # muss implementiert sien
-    def iterate(self, c:complex) -> IterationResult:
-        pass    # bleibt leer
 
 #------------------------------------------------------------
 class MandelbrotFractal(Fractal):
@@ -360,32 +348,8 @@ class MandelbrotFractal(Fractal):
         self._default_bounds = (-2.0, 1.0, -1.2, 1.2)
         self._name = "Mandelbrot-Set"
         self._formula = "z_{n+1} = z_n^2 + c"
-        self.start_real = 0.0
-        self.start_imag = 0.0
-        self.exp_real = 2.0
-        self.exp_imag = 0.0
         self.kernel = mandelbrot_kernel
 
-    # Iterater: ruft njit-Funktion auf
-    def iterate(self, c: complex) -> IterationResult:
-        iterations, escaped, zr, zi = mandelbrot_kernel(
-            c.real,
-            c.imag,
-            self.max_iterations,
-            self.escape_radius,
-            z_imag=self.start_imag,
-            z_real=self.start_real,
-            exp_real=self.exp_real,
-            exp_imag=self.exp_imag
-        )
-
-        return IterationResult(
-            iterations=iterations,
-            escaped=escaped,
-            z_imag=zi,
-            z_real=zr
-        )
-    
 #------------------------------------------------------------
 class InvertedMandelbrotFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
@@ -393,36 +357,7 @@ class InvertedMandelbrotFractal(Fractal):
         self._default_bounds = (-2, 4.5, -2.4, 2.4)   # zu Fraktal
         self._name = "Inverted Mandelbrot-Set"
         self._formula = "z_{n+1} = z_n^2 + 1/c"
-        self.exp_real = 2.0
-        self.exp_imag = 0.0
-        self.start_real = 0.0
-        self.start_imag = 0.0
         self.kernel = inverted_mandelbrot_kernel
-
-    def iterate(self, c: complex) -> IterationResult:
-        # Singularität vermeiden (Division durch 0)
-        if c == 0:
-            c_inv = complex(1e10, 0)  # praktisch "unendlich"
-        else:
-            c_inv = 1 / c
-
-        iterations, escaped, zr, zi = mandelbrot_kernel(
-            c_inv.real,
-            c_inv.imag,
-            self.max_iterations,
-            self.escape_radius,
-            z_real=self.start_real,
-            z_imag=self.start_imag,
-            exp_real=self.exp_real,
-            exp_imag=self.exp_imag
-        )
-
-        return IterationResult(
-            iterations=iterations,
-            escaped=escaped,
-            z_real=zr,
-            z_imag=zi
-        )
 
 #------------------------------------------------------------
 class JuliaFractal(Fractal):
@@ -431,32 +366,9 @@ class JuliaFractal(Fractal):
         self._default_bounds = (-2.0, 1.0, -1.2, 1.2)
         self._name = "Julia-Set"
         self._formula = "z_{n+1} = z_n^2 + c"
-        self.start_real = 0.0
-        self.start_imag = 0.0
-        self.exp_real = 2.0
-        self.exp_imag = 0.0
         self.c_real = c_real
         self.c_imag = c_imag
         self.kernel = julia_kernel
-
-    def iterate(self, z: complex) -> IterationResult:
-        iterations, escaped, zr, zi = mandelbrot_kernel(
-            self.c_real,
-            self.c_imag,
-            self.max_iterations,
-            self.escape_radius,
-            z_real=z.real,
-            z_imag=z.imag,
-            exp_real=self.exp_real,
-            exp_imag=self.exp_imag
-        )
-
-        return IterationResult(
-            iterations=iterations,
-            escaped=escaped,
-            z_real=zr,
-            z_imag=zi
-        )
 
 #------------------------------------------------------------
 class BurningShipFractal(Fractal):
@@ -465,61 +377,17 @@ class BurningShipFractal(Fractal):
         self._default_bounds = (-2.2, 1.2, -2.5, 1.5)
         self._name = "Burning Ship"
         self._formula = "z_{n+1} = (|Re(z_n)| + i|Im(z_n)|)^2 + c"
-        self.exp_real = 2.0
-        self.exp_imag = 0.0
-        self.start_real = 0.0
-        self.start_imag = 0.0
         self.kernel = burning_ship_kernel
-
-    def iterate(self, c: complex) -> IterationResult:
-        iterations, escaped, zr, zi = burning_ship_kernel(
-            c.real,
-            c.imag,
-            self.max_iterations,
-            self.escape_radius,
-            z_real=self.start_real,
-            z_imag=self.start_imag,
-            exp_real=self.exp_real,
-            exp_imag=self.exp_imag
-        )
-
-        return IterationResult(
-            iterations=iterations,
-            escaped=escaped,
-            z_real=zr,
-            z_imag=zi
-        )
     
 #------------------------------------------------------------
 class TricornFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2.0, 2.0, -1.5, 1.5)
-        self.start_real = 0.0
-        self.start_imag = 0.0
-        self.exp_real = 2.0
-        self.exp_imag = 0.0
         self.kernel = tricorn_kernel
         self._name = "Tricorn"
         self._formula = "z_{n+1} = conjugate(z_n)^2 + c"
 
-    def iterate(self, c: complex) -> IterationResult:
-        iterations, escaped, zr, zi = tricorn_kernel(
-            c.real,
-            c.imag,
-            self.max_iterations,
-            self.escape_radius,
-            z_real=self.start_real,
-            z_imag=self.start_imag
-        )
-
-        return IterationResult(
-            iterations=iterations,
-            escaped=escaped,
-            z_real=zr,
-            z_imag=zi
-        )
-
 #------------------------------------------------------------
-class ExperimentialFractal(Fractal):
+class ExperimentalFractal(Fractal):
     pass

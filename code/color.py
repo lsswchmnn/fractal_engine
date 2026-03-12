@@ -1,16 +1,14 @@
-#from fractal import IterationResult
 from mapping import PALETTES
 import numpy as np
-import math
 #============================================================
 class ColorMap():
     def __init__(self):
         self.palette_name   = "default"
-        self.palette        = []            # vollständige Palette
+        self.palette        = []
         self.set_palette("default")
 
 #------------------------------------------------------------
-# FARBPROFILE UND PALETTE
+# FPALETTE MANAGEMENT
 
     # Palette als Attribut setzen
     def set_palette(self, name:str):
@@ -21,23 +19,6 @@ class ColorMap():
         
         key_colors = PALETTES[name]
         self.palette = self._interpolate_palette(key_colors, 256)
-
-    # Kontinuierliches Palette-Sampling
-    def _sample_palette(self, t: float) -> tuple:
-        t = max(0.0, min(1.0, t))
-
-        pos = t * (len(self.palette) - 1)
-        idx = int(pos)
-        frac = pos - idx
-
-        c1 = self.palette[idx]
-        c2 = self.palette[min(idx+1, len(self.palette) - 1)]
-
-        r = int(c1[0] + frac * (c2[0] - c1[0]))
-        g = int(c1[1] + frac * (c2[1] - c1[1]))
-        b = int(c1[2] + frac * (c2[2] - c1[2]))
-
-        return (r, g, b)
 
 #------------------------------------------------------------
 # INTERPOLATION für Palette
@@ -67,7 +48,7 @@ class ColorMap():
 #------------------------------------------------------------
 # FÄRBUNGSMETHODEN für Iterationsergebnisse
 
-    # Klassiche Färbung
+    # Förbung: simpel und grundlegend
     def apply_basic(self, iterations: np.ndarray,
                     escaped: np.ndarray,
                     max_iterations: int) -> np.ndarray:
@@ -92,7 +73,7 @@ class ColorMap():
 
         return image
 
-    # Histogramm-basierte Färbung
+    # Färbung: Histogramm
     def apply_histogram(self, iterations: np.ndarray,
                         escaped: np.ndarray,
                         max_iterations: int) -> np.ndarray:
@@ -128,27 +109,29 @@ class ColorMap():
 
         return image
 
-    # Smooth-Färbung
     def apply_smooth(self, iterations: np.ndarray,
                     escaped: np.ndarray,
                     max_iterations: int) -> np.ndarray:
-        """
-        Smooth Coloring mit linearer Interpolation in der Palette
-        """
+
         height, width = iterations.shape
         image = np.zeros((height, width, 3), dtype=np.uint8)
         palette_size = len(self.palette)
 
         for y in range(height):
             for x in range(width):
+
                 if not escaped[y, x]:
                     image[y, x] = (0, 0, 0)
+
                 else:
-                    # float Iteration → interpolate Palette
-                    t = iterations[y, x] / max_iterations  # 0..1
+                    t = iterations[y, x] / max_iterations
+
+                    t = max(0.0, min(1.0,t))    # t dampen (wichtig)
+
                     idx = t * (palette_size - 1)
-                    i0 = int(np.floor(idx))
+                    i0 = int(idx)
                     i1 = min(i0 + 1, palette_size - 1)
+
                     frac = idx - i0
 
                     c0 = self.palette[i0]

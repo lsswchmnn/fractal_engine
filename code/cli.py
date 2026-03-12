@@ -15,7 +15,7 @@ class CLI():
 
     def run(self):
         while True:
-            print_heading("FRACTAL-SIMULATION")
+            print_heading("FRACTAL-ENGINE")
             print(f"Current Fractal: {self.fractal._name if self.fractal else "None"}\n")
             print("1 - Load fractal")
             if self.fractal:
@@ -123,7 +123,7 @@ class CLI():
         print(
             "This program allows you to load and visualize different types of fractals, " \
             "as well as manipulate the underlying formula and rendering settings for more customized results." \
-            "\n" \
+            "\n\n" \
             "Fractals are complex mathematical sets that exhibit self-similarity and intricate patterns at every scale. " \
             "The Mandelbrot set, for example, is defined by iterating the formula z = z^2 + c, where z and c are complex " \
             "numbers. By changing the parameters of this formula, you can create a wide variety of fractal images." 
@@ -171,8 +171,8 @@ class CLI():
                 print_heading("MANIPULATE FORMULA")
                 print(f"Current formula: {self.fractal._formula}")
                 print("\nAvailable manipulations:")
-                print("1 - Change startvalue")
-                print("2 - Change exponent")
+                print(f"1 - Change startvalue (current: {self.fractal.start_real} + {self.fractal.start_imag}i)")
+                print(f"2 - Change exponent (current: {self.fractal.exp_real} + {self.fractal.exp_imag}i)")
                 print("H - Help")
                 print("C - Cancel")
                 print_thin_separation(linebreak=False)
@@ -254,12 +254,12 @@ class CLI():
         enter_continue("Press enter to continue.")
 
     # Einstellungen: Rendering (Basis-Iterationen und adaptiver Iterationsfaktor)
-    def cli_change_rendering_settings(self):
+    def cli_change_rendering_settings(self): 
         while True:
 
             print_heading("CHANGE RENDERING SETTINGS")
-            print("1 - Change base Iterations")
-            print("2 - Change factor for adaptive iteration depth (k)")
+            print(f"1 - Change base Iterations (current: {self.fractal.max_iterations})")
+            print(f"2 - Change factor for adaptive iteration depth (current: {self.visualizer.iterate_factor_k})")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)

@@ -205,8 +205,8 @@ class CLI():
                     print("Note: Changing the exponent can lead to very different and often less stable fractals, especially for non-integer or complex exponents. Experiment with caution!\n")
 
                     try:
-                        real = input_float(0.0, 20.0, 2.0, "Enter real part of Exponent", True)
-                        imag = input_float(0.0, 20.0, 0.0, "Enter imaginary part of Exponent", True)
+                        real = input_float(0.0, 20.0, 2.0, [1], "Enter real part of Exponent", True)
+                        imag = input_float(0.0, 20.0, 0.0, [], "Enter imaginary part of Exponent", True)
                         self.fractal.exp_real = real
                         self.fractal.exp_imag = imag
                         enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue.", seperation=False)

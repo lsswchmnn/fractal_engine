@@ -204,7 +204,10 @@ def estimate_power() -> int:
 # Input-Utilities
 
 # Um Integer abzufragen
-def input_int(min_value: int=0, max_value: int=10000, default: int=100, msg: str="value", cli: bool=True) -> int | None:
+def input_int(
+        min_value: int=0, max_value: int=10000, default: int=100, 
+        forbidden: list = [], msg: str="value", cli: bool=True) -> int | None:
+    
     if cli:
         raw = input(f"{msg} (min: {min_value}, max: {max_value}): ").strip()
     else:
@@ -215,6 +218,10 @@ def input_int(min_value: int=0, max_value: int=10000, default: int=100, msg: str
 
     if raw == '':
         return default
+
+    for e in forbidden:
+        if int(e) == int(raw):
+            show_error(True, "InputError", f"'{raw}' is not allowed.")
 
     try:
         value = int(raw)
@@ -233,7 +240,8 @@ def input_int(min_value: int=0, max_value: int=10000, default: int=100, msg: str
     return value
 
 # Um Float abzufragen
-def input_float(min_value: float=0, max_value: float=10000, default: float=100, msg: str="value", cli: bool=True) -> float:
+def input_float(min_value: float=0, max_value: float=10000, default: float=100, 
+                forbidden: list = [], msg: str="value", cli: bool=True) -> float:
     if cli:
         raw = input(f"{msg} (min: {min_value}, max: {max_value}): ").strip()
     else:
@@ -245,6 +253,10 @@ def input_float(min_value: float=0, max_value: float=10000, default: float=100, 
     if raw == '':
         show_error(True, "InputError", "Input is empty. Returning Default")
         return default
+
+    for e in forbidden:
+        if int(e) == int(raw):
+            show_error(True, "InputError", f"'{raw}' is not allowed.")
 
     try:
         value = float(raw)

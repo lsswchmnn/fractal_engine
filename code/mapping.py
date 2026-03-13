@@ -151,4 +151,7 @@ GUI_MAP = {
     # Größen für GUI-Elemente
     "button_width": 5,
     "width_rect": 2,
+
+    # Font
+    "font_basic": "tahoma"
 }

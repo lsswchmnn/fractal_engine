@@ -1,4 +1,4 @@
-from utils import print_heading, enter_continue, clear_cli, print_thin_separation, show_error
+from utils import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int
 from visualize import Visualizer
 from mapping import FRACTALS_MAP
 import fractal
@@ -184,8 +184,8 @@ class CLI():
                     print("Recommended: Startvalue close to the critical point (0 for Mandelbrot) for more interesting results, but feel free to experiment!\n")
 
                     try:
-                        real = float(input("Enter real part of startvalue z0: "))
-                        imag = float(input("Enter imaginary part of startvalue z0: "))
+                        real = input_float(-100.0, 100.0, 0.0, "Enter real part of startvalue z0", True)
+                        imag = input_float(-100.0, 100.0, 0.0, "Enter imaginary part of startvalue z0", True)
                         self.fractal.start_real = real
                         self.fractal.start_imag = imag
                         enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue.", seperation=False)
@@ -205,8 +205,8 @@ class CLI():
                     print("Note: Changing the exponent can lead to very different and often less stable fractals, especially for non-integer or complex exponents. Experiment with caution!\n")
 
                     try:
-                        real = float(input("Enter real part of exponent: "))
-                        imag = float(input("Enter imaginary part of exponent: "))
+                        real = input_float(0.0, 20.0, 2.0, "Enter real part of Exponent", True)
+                        imag = input_float(0.0, 20.0, 0.0, "Enter imaginary part of Exponent", True)
                         self.fractal.exp_real = real
                         self.fractal.exp_imag = imag
                         enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue.", seperation=False)
@@ -269,7 +269,7 @@ class CLI():
                 print_heading("CHANGE BASE ITERATIONS")
                 print(f"Current base iterations: {self.fractal.max_iterations}\n")
                 try:
-                    max_iter = int(input("Enter new base iterations: "))
+                    max_iter = input_int(10, 100, 10000, "Enter new base iterations", True)
                     self.fractal.max_iterations = max_iter
                     enter_continue(f"Base iterations changed to {max_iter}. Press enter to continue.", seperation=False)
                 except ValueError:
@@ -280,7 +280,7 @@ class CLI():
                 print_heading("CHANGE ADAPTIVE ITERATION FACTOR")
                 print(f"Current adaptive iteration factor k: {self.visualizer.iterate_factor_k}\n")
                 try:
-                    k = int(input("Enter new adaptive iteration factor k: "))
+                    k = input_int(1, 1000, 100, "Enter new adaptive iteration factor k", True)
                     self.visualizer.iterate_factor_k = k
                     enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
                 except ValueError:

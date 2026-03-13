@@ -17,7 +17,7 @@ class Visualizer():
         self.renderer         : Renderer     = Renderer()                                  # Numerische Berechnung
         self.exporter         : PNGExporter  = PNGExporter()                               # Export-Funktionalität
         self.gui              : GUI          = None                                        # Graphische Schnittstelle zum User
-        
+
         # Zustände und Settings
         self.fractal_name     : str          = fractal_name                                # Name des Fraktals für Anzeige und Export
         self.history          : list         = []                                          # Für Zoom-History
@@ -189,9 +189,8 @@ class Visualizer():
         self._rerender()
 
 #============================================================
-# RENDERING (zweigeteilt; render_tile_kernel ist die numerische Berechnung, Renderer verbindet diese mit der Farbzuweisung)
+# NUMBAR-RENDERING-Funktion (Unterscheidung zwischen zwei Typen, nötig für Julia)
 
-# Numba-Rendering-Funktion (Unterscheidung zwischen zwei Typen, nötig für Julia)
 @njit
 def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                        xmin, xmax, ymin, ymax, max_iter, escape_radius,

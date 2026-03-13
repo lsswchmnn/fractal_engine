@@ -1,9 +1,52 @@
 from mapping import GUI_MAP
 from PIL import Image, ImageTk
-from tkinter import filedialog
+from tkinter import filedialog, Toplevel, Label
 import tkinter as tk
 import numpy as np
 #============================================================
+# Klasse für Text bei Hovern über Buttons
+class ToolTip(object):
+    def __init__(self, widget):
+        self.widget = widget
+        self.tipwindow = None
+        self.id = None
+        self.x = self.y = 0
+
+    def showtip(self, text):
+        "Display test in tooltip window"
+        self.text = text
+        if self.tipwindow or not self.text:
+            return
+        x, y, cx, cy = self.widget.bbox("insert")
+        x = x + self.widget.winfo_rootx() + 57
+        y = y + cy + self.widget.winfo_rooty() + 27
+        self.tipwindow = tw = Toplevel(self.widget)
+        tw.wm_overrideredirect(1)
+        tw.wm_geometry("+%d+%d" % (x,y))
+        label = Label(
+            tw, text=self.text, justify="left", 
+            background=GUI_MAP["button_bg"], relief="flat",
+            borderwidth=1, font=(GUI_MAP["font_basic"], "8", "normal")
+        )
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        tw = self.tipwindow
+        self.tipwindow = None
+        if tw:
+            tw.destroy()
+
+def CreateToolTip(widget, text):
+    toolTip = ToolTip(widget)
+    def enter(event):
+        toolTip.showtip(text)
+    def leave(event):
+        toolTip.hidetip()
+    widget.bind('<Enter>', enter)
+    widget.bind('<Leave>', leave)
+
+#============================================================
+# Zentrale GUI
 class GUI():
     def __init__(self, width=800, height=600, julia: bool = False):
         # Höhe und Breite
@@ -71,6 +114,7 @@ class GUI():
             command=self._on_reset_clicked
         )
         self.reset_button.pack(side="left", padx=10, pady=5)
+        CreateToolTip(self.reset_button, "Reset viewport")
 
         # Button für Schritt zurück im Zoom-Verlauf
         self.back_step_button = tk.Button(
@@ -83,6 +127,7 @@ class GUI():
             command=self._on_back_step_clicked
         )
         self.back_step_button.pack(side="left", padx=10, pady=5)
+        CreateToolTip(self.back_step_button, "Step back in zoom-history")
 
         # Button für Schritt vorwärts im Zoom-Verlauf
         self.forward_step_button = tk.Button(
@@ -95,6 +140,7 @@ class GUI():
             command=self._on_forward_step_clicked
         )
         self.forward_step_button.pack(side="left", padx=10, pady=5)
+        CreateToolTip(self.forward_step_button, "Step forward in zoom-history")
 
         # Farbpalette des Fraktals wechseln
         self.change_color_button = tk.Button(
@@ -108,6 +154,7 @@ class GUI():
         )
         self.change_color_button.pack(side="right", padx=10, pady=5)
         self.palette_menu = tk.Menu(self.root, tearoff=0)    # Farbpalette Dropdown-Menü
+        CreateToolTip(self.change_color_button, "Change color palette")
 
         # Färbungsmethode wechseln
         self.change_coloring_button = tk.Button(
@@ -121,6 +168,7 @@ class GUI():
         )
         self.change_coloring_button.pack(side="right", padx=10, pady=5)
         self.coloring_menu = tk.Menu(self.root, tearoff=0)    # Färbungsmethode Dropdown-Menü
+        CreateToolTip(self.change_coloring_button, "Change coloring method")
 
         # Als Hochauflöndes Bild speichern (exp)
         self.save_button = tk.Button(
@@ -133,6 +181,7 @@ class GUI():
             command=self._on_export_clicked
         )
         self.save_button.pack(side="right", padx=10, pady=5)
+        CreateToolTip(self.save_button, "Export current view as png")
 
         # Für Julia: C ändern
         if julia:
@@ -146,6 +195,8 @@ class GUI():
                 command=self._on_change_c_clicked
             )
             self.change_c_button.pack(side="right", padx=10, pady=5)
+            CreateToolTip(self.change_c_button, "Change parameter 'C'")
+
 #------------------------------------------------------------
 # VERSCHIEDENES
 

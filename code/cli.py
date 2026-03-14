@@ -182,10 +182,12 @@ class CLI():
                     print_heading("CHANGE STARTVALUE")
                     print(f"Current startvalue: z0 = {self.fractal.start_real} + {self.fractal.start_imag}i\n")
                     print("Recommended: Startvalue close to the critical point (0 for Mandelbrot) for more interesting results, but feel free to experiment!\n")
+                    print_thin_separation()
+                    print()
 
                     try:
-                        real = input_float(-100.0, 100.0, 0.0, "Enter real part of startvalue z0", True)
-                        imag = input_float(-100.0, 100.0, 0.0, "Enter imaginary part of startvalue z0", True)
+                        real = input_float(-100.0, 100.0, 0.0, msg="Enter real part of startvalue z0", cli=True, loop=True)
+                        imag = input_float(-100.0, 100.0, 0.0, msg="Enter imaginary part of startvalue z0", cli=True, loop=True)
                         self.fractal.start_real = real
                         self.fractal.start_imag = imag
                         enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue.", seperation=False)
@@ -203,10 +205,12 @@ class CLI():
                     print_heading("CHANGE EXPONENT")
                     print(f"Current exponent: {self.fractal.exp_real} + {self.fractal.exp_imag}i\n")
                     print("Note: Changing the exponent can lead to very different and often less stable fractals, especially for non-integer or complex exponents. Experiment with caution!\n")
+                    print_thin_separation()
+                    print()
 
                     try:
-                        real = input_float(0.0, 20.0, 2.0, [1], "Enter real part of Exponent", True)
-                        imag = input_float(0.0, 20.0, 0.0, [], "Enter imaginary part of Exponent", True)
+                        real = input_float(-20.0, 20.0, 2.0, [1], msg="Enter real part of Exponent", cli=True, loop=False)
+                        imag = input_float(-20.0, 20.0, 0.0,      msg="Enter imaginary part of Exponent", cli=True, loop=False)
                         self.fractal.exp_real = real
                         self.fractal.exp_imag = imag
                         enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue.", seperation=False)

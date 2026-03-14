@@ -204,75 +204,142 @@ def estimate_power() -> int:
 # Input-Utilities
 
 # Um Integer abzufragen
-def input_int(
-        min_value: int=0, max_value: int=10000, default: int=100, 
-        forbidden: list = [], msg: str="value", cli: bool=True) -> int | None:
+def input_int(min_value: int=0, max_value: int=10000, default: int=100, 
+        forbidden: list = [], msg: str="value", cli: bool=True, loop: bool = True) -> int | None:
     
-    if cli:
-        raw = input(f"{msg} (min: {min_value}, max: {max_value}): ").strip()
-    else:
-        root = tk.Tk()
-        root.withdraw()
-        raw = tk.simpledialog.askinteger("Input Value", f"Enter {msg}:", minvalue=min_value, maxvalue=max_value, initialvalue=default)
-        root.destroy()
+    if forbidden is None:
+        forbidden = []
 
-    if raw == '':
-        return default
+    while True:
 
-    for e in forbidden:
-        if int(e) == int(raw):
-            show_error(True, "InputError", f"'{raw}' is not allowed.")
+        if cli:
+            raw = input(f"{msg} (min: {min_value}, max: {max_value}): ").strip()
+        else:
+            root = tk.Tk()
+            root.withdraw()
+            raw = tk.simpledialog.askinteger(
+                "Input Value", f"Enter {msg}:", 
+                minvalue=min_value, maxvalue=max_value, 
+                initialvalue=default)
+            root.destroy()
 
-    try:
-        value = int(raw)
-    except ValueError:
-        show_error(True, "Input Error", f"'{raw}' is not a valid integer.")
-        return default
+            if raw is None:
+                return default
+            raw = str(raw)
 
-    if value > max_value:
-        show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}.")
-        return max_value
-    
-    elif value < min_value:
-        show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}.")
-        return min_value
-    
-    return value
+        # Input leer?
+        if raw == '':
+            show_error(True, "InputError", "Input is empty. Returning Default")
+            return default
+
+        # Ist Input ein integer?
+        try:
+            value = int(raw)
+        except ValueError:
+            if not loop:
+                show_error(True, "Input Error", f"'{raw}' is not a valid Integer. Returning Default")
+                return default
+            else:
+                show_error(True, "Input Error", f"'{raw}' is not a valid Integer.")
+                continue
+
+        # Ist der Wert erlaubt?
+        if value in forbidden:
+            if not loop:
+                show_error(True, "InputError", f"'{raw} is not allowed. Returning Default")
+                return default
+            else:
+                show_error(True, "InputError", f"'{raw} is not allowed.")
+                continue
+
+        # Wert klein genug?
+        if value > max_value:
+            if not loop:
+                show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}. Returning {max_value}")
+                return max_value
+            else:
+                show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}.")
+                continue
+
+        # Wert groß genug?
+        elif value < min_value:
+            if not loop:
+                show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
+                return min_value
+            else:
+                show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
+                continue
+
+        return value
 
 # Um Float abzufragen
 def input_float(min_value: float=0, max_value: float=10000, default: float=100, 
-                forbidden: list = [], msg: str="value", cli: bool=True) -> float:
-    if cli:
-        raw = input(f"{msg} (min: {min_value}, max: {max_value}): ").strip()
-    else:
-        root = tk.Tk()
-        root.withdraw()
-        raw = tk.simpledialog.askinteger("Input Value", f"Enter {msg}:", minvalue=min_value, maxvalue=max_value, initialvalue=default)
-        root.destroy()
-
-    if raw == '':
-        show_error(True, "InputError", "Input is empty. Returning Default")
-        return default
-
-    for e in forbidden:
-        if int(e) == int(raw):
-            show_error(True, "InputError", f"'{raw}' is not allowed.")
-
-    try:
-        value = float(raw)
-    except ValueError:
-        show_error(True, "Input Error", f"'{raw}' is not a valid Float. Returning Default")
-        return default
-
-    if value > max_value:
-        show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}.")
-        return max_value
+                forbidden: list = [], msg: str="value", cli: bool=True, loop: bool=True) -> float:
     
-    elif value < min_value:
-        show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}.")
-        return min_value
-    
-    return value
+    if forbidden is None:
+        forbidden = []
+
+    while True:
+
+        if cli:
+            raw = input(f"{msg} (min: {min_value}, max: {max_value}): ").strip()
+        else:
+            root = tk.Tk()
+            root.withdraw()
+            raw = tk.simpledialog.askinteger(
+                "Input Value", f"Enter {msg}:", 
+                minvalue=min_value, maxvalue=max_value, 
+                initialvalue=default)
+            root.destroy()
+
+            if raw is None:
+                return default
+            raw = str(raw)
+
+        # Input leer?
+        if raw == '':
+            show_error(True, "InputError", "Input is empty. Returning Default")
+            return default
+
+        # Ist Input ein float?
+        try:
+            value = float(raw)
+        except ValueError:
+            if not loop:
+                show_error(True, "Input Error", f"'{raw}' is not a valid Float. Returning Default")
+                return default
+            else:
+                show_error(True, "Input Error", f"'{raw}' is not a valid Float.")
+                continue
+
+        # Ist der Wert erlaubt?
+        if value in forbidden:
+            if not loop:
+                show_error(True, "InputError", f"'{raw} is not allowed. Returning Default")
+                return default
+            else:
+                show_error(True, "InputError", f"'{raw} is not allowed.")
+                continue
+
+        # Wert klein genug?
+        if value > max_value:
+            if not loop:
+                show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}. Returning {max_value}")
+                return max_value
+            else:
+                show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}.")
+                continue
+
+        # Wert groß genug?
+        elif value < min_value:
+            if not loop:
+                show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
+                return min_value
+            else:
+                show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
+                continue
+
+        return value
 
 # Um Strings abzufragen
 def input_str(msg: str="value", cli: bool=True) -> str:

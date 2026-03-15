@@ -3,6 +3,7 @@ import numpy as np
 from mapping import GUI_MAP
 from PIL import Image, ImageTk
 from tkinter import filedialog, Toplevel, Label, ttk
+BG = GUI_MAP["canvas_bg"]
 #============================================================
 # Klasse für Text bei Hovern über Buttons
 class ToolTip(object):
@@ -27,7 +28,7 @@ class ToolTip(object):
         label = Label(
             tw, text=self.text, justify="left", 
             background=GUI_MAP["hover_bg"], relief="flat",
-            borderwidth=1, font=(GUI_MAP["font_basic"], "8", "normal")
+            borderwidth=1, font=(GUI_MAP["font_basic"], 8, "normal")
         )
         label.pack(ipadx=1)
 
@@ -59,7 +60,7 @@ class GUI():
         self.root = tk.Tk()
         self.root.resizable(False, False)   # Fenster NICHT vergrößerbar 
         self.root.title("Fractal Viewer")
-        self.root.configure(bg=GUI_MAP["canvas_bg"])
+        self.root.configure(bg=BG)
 
         # Button-Design definieren
         style = ttk.Style()
@@ -80,20 +81,23 @@ class GUI():
         )
 
         # Hauptlayout-Frames
-        self.main_frame = tk.Frame(self.root)
+        self.main_frame = tk.Frame(self.root, bg=BG)
         self.main_frame.pack(fill="both", expand=True)
 
-        self.canvas_frame = tk.Frame(self.main_frame)
+        self.canvas_frame = tk.Frame(self.main_frame, bg=BG)
         self.canvas_frame.pack(fill="both", expand=True)
 
-        self.control_bar = tk.Frame(self.main_frame, height=40, bg=GUI_MAP["canvas_bg"])
+        self.control_bar = tk.Frame(self.main_frame, height=40, bg=BG)
         self.control_bar.pack(fill="x", side="bottom")
 
         # Canvas in Frame setzen
         self.canvas = tk.Canvas(
             self.canvas_frame,
             width=self.width,
-            height=self.height
+            height=self.height,
+            bg=BG,
+            highlightbackground=BG,
+            highlightthickness=0
         )
         self.canvas.pack(fill="both", expand=True)
 

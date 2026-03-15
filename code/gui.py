@@ -17,15 +17,16 @@ class ToolTip(object):
         self.text = text
         if self.tipwindow or not self.text:
             return
-        x, y, cx, cy = self.widget.bbox("insert")
-        x = x + self.widget.winfo_rootx() + 57
-        y = y + cy + self.widget.winfo_rooty() + 27
+
+        x = self.widget.winfo_rootx() + 20
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 5
+
         self.tipwindow = tw = Toplevel(self.widget)
         tw.wm_overrideredirect(1)
         tw.wm_geometry("+%d+%d" % (x,y))
         label = Label(
             tw, text=self.text, justify="left", 
-            background=GUI_MAP["button_bg"], relief="flat",
+            background=GUI_MAP["hover_bg"], relief="flat",
             borderwidth=1, font=(GUI_MAP["font_basic"], "8", "normal")
         )
         label.pack(ipadx=1)
@@ -58,6 +59,25 @@ class GUI():
         self.root = tk.Tk()
         self.root.resizable(False, False)   # Fenster NICHT vergrößerbar 
         self.root.title("Fractal Viewer")
+        self.root.configure(bg=GUI_MAP["canvas_bg"])
+
+        # Button-Design definieren
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure(
+            "Modern.TButton",
+            font=GUI_MAP["font_button"],
+        )
+        style.map(
+            "Modern.TButton",
+            background=[
+                ("active", GUI_MAP["button_bg_active"]),
+                ("!active", GUI_MAP["button_bg_inactive"])
+            ],
+            foreground=[
+                ("!disabled", GUI_MAP["button_fg"])
+            ]
+        )
 
         # Hauptlayout-Frames
         self.main_frame = tk.Frame(self.root)
@@ -98,86 +118,75 @@ class GUI():
         self._c_callback = None
         self._mandelbrot_overlay = None
 
+        # Cursor
         self.canvas.config(cursor="crosshair")
 
 # ------------------------------------------------------------
 # BUTTONS in der Control Bar (Zoom-Interaktion links, Farbwechsel rechts)
 
         # Button für Reset
-        self.reset_button = tk.Button(
+        self.reset_button = ttk.Button(
             self.control_bar,
             text="⟳",
-            font=("Arial", 12, "bold"),
             width=GUI_MAP["button_width"],
-            bg=GUI_MAP["button_bg"],
-            relief="raised",
+            style="Modern.TButton",
             command=self._on_reset_clicked
         )
         self.reset_button.pack(side="left", padx=10, pady=5)
         CreateToolTip(self.reset_button, "Reset viewport")
 
         # Button für Schritt zurück im Zoom-Verlauf
-        self.back_step_button = tk.Button(
+        self.back_step_button = ttk.Button(
             self.control_bar,
             text="←",
-            font=("Arial", 12, "bold"),
             width=GUI_MAP["button_width"],
-            bg=GUI_MAP["button_bg"],
-            relief="raised",
+            style="Modern.TButton",
             command=self._on_back_step_clicked
         )
         self.back_step_button.pack(side="left", padx=10, pady=5)
         CreateToolTip(self.back_step_button, "Step back in zoom-history")
 
         # Button für Schritt vorwärts im Zoom-Verlauf
-        self.forward_step_button = tk.Button(
+        self.forward_step_button = ttk.Button(
             self.control_bar,
             text="→",
-            font=("Arial", 12, "bold"),
             width=GUI_MAP["button_width"],
-            bg=GUI_MAP["button_bg"],
-            relief="raised",
+            style="Modern.TButton",
             command=self._on_forward_step_clicked
         )
         self.forward_step_button.pack(side="left", padx=10, pady=5)
         CreateToolTip(self.forward_step_button, "Step forward in zoom-history")
 
         # Farbpalette des Fraktals wechseln
-        self.change_color_button = tk.Button(
+        self.change_color_button = ttk.Button(
             self.control_bar,
             text="🎨",
-            font=("Arial", 12, "bold"),
             width=GUI_MAP["button_width"],
-            bg=GUI_MAP["button_bg"],
-            relief="raised",
+            style="Modern.TButton",
             command=self._on_change_color_clicked
         )
         self.change_color_button.pack(side="right", padx=10, pady=5)
-        self.palette_menu = tk.Menu(self.root, tearoff=0)    # Farbpalette Dropdown-Menü
+        self.palette_menu = tk.Menu(self.root, tearoff=0, bg=GUI_MAP["button_bg_active"], fg="white")    # Farbpalette Dropdown-Menü
         CreateToolTip(self.change_color_button, "Change color palette")
 
         # Färbungsmethode wechseln
-        self.change_coloring_button = tk.Button(
+        self.change_coloring_button = ttk.Button(
             self.control_bar,
             text="🌈",
-            font=("Arial", 12, "bold"),
             width=GUI_MAP["button_width"],
-            bg=GUI_MAP["button_bg"],
-            relief="raised",
+            style="Modern.TButton",
             command=self._on_change_coloring_clicked
         )
         self.change_coloring_button.pack(side="right", padx=10, pady=5)
-        self.coloring_menu = tk.Menu(self.root, tearoff=0)    # Färbungsmethode Dropdown-Menü
+        self.coloring_menu = tk.Menu(self.root, tearoff=0, bg=GUI_MAP["button_bg_active"], fg="white")    # Färbungsmethode Dropdown-Menü
         CreateToolTip(self.change_coloring_button, "Change coloring method")
 
         # Als Hochauflöndes Bild speichern (exp)
-        self.save_button = tk.Button(
+        self.save_button = ttk.Button(
             self.control_bar,
             text="💾",
-            font=("Arial", 12, "bold"),
             width=GUI_MAP["button_width"],
-            bg=GUI_MAP["button_bg"],
-            relief="raised",
+            style="Modern.TButton",
             command=self._on_export_clicked
         )
         self.save_button.pack(side="right", padx=10, pady=5)
@@ -185,13 +194,11 @@ class GUI():
 
         # Für Julia: C ändern
         if julia:
-            self.change_c_button = tk.Button(
+            self.change_c_button = ttk.Button(
                 self.control_bar,
                 text="C",
-                font=("Arial", 12, "bold"),
                 width=GUI_MAP["button_width"],
-                bg=GUI_MAP["button_bg"],
-                relief="raised",
+                style="Modern.TButton",
                 command=self._on_change_c_clicked
             )
             self.change_c_button.pack(side="right", padx=10, pady=5)
@@ -289,7 +296,8 @@ class GUI():
 
     def _on_reset_clicked(self):
         if self._reset_callback:
-            self._reset_callback()
+            if not self._c_select_mode:
+                self._reset_callback()
 
 #------------------------------------------------------------
 # STEP-BUTTONS (Schritt zurück/vorwärts im Zoom-Verlauf)

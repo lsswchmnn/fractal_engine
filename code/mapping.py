@@ -145,14 +145,19 @@ PALETTES = {
 # Mapping für GUI
 GUI_MAP = {
     # Farben für GUI-Elemente
-    "col_rect": "grey",
-    "canvas_bg": "#ddd",
-    "button_bg": "#eee",
+    "col_rect": "#7D7D7D",      # Zoom-Rechteck (sichtbar aber nicht aggressiv)
+    "canvas_bg": "#1e1e1e",     # dunkler neutraler Hintergrund für Fraktal
+    "button_bg_active": "#404040", 
+    "button_bg_inactive": "#2b2b2b",
+    "button_fg": "white",
+    "hover_bg": "#7D7D7D",
 
     # Größen für GUI-Elemente
     "button_width": 5,
     "width_rect": 2,
 
     # Font
-    "font_basic": "tahoma"
+    "font_basic": "tahoma",
+    "font_button": ("Segoe UI", 11, "bold"),
+
 }

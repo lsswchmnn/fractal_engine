@@ -48,7 +48,7 @@ class Visualizer():
         self.gui.set_c_select_callback(self._handle_c_select)
         
         # Coloring initialisieren
-        self.coloring_modes = ["basic", "smooth", "histogram"]              # Verfügbare Coloring-Methoden
+        self.coloring_modes = ["basic", "smooth", "histogram", "orbit trap"]              # Verfügbare Coloring-Methoden
         self.coloring_index = 1
         self.coloring_mode = self.coloring_modes[self.coloring_index]       # Aktuelle Coloring-Methode
 
@@ -328,8 +328,8 @@ class Renderer():
         elif coloring_mode == "smooth":
             image = colormap.apply_smooth(iterations, escaped, adaptive_iter)
 
-        elif coloring_mode == "ultra":
-            image = colormap.apply_ultra(iterations, escaped, adaptive_iter)
+        elif coloring_mode == "orbit trap":
+            image = colormap.apply_orbit_trap(iterations, escaped, adaptive_iter)
 
         fractal.max_iterations = original_iter
 

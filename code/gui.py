@@ -1,8 +1,8 @@
-from mapping import GUI_MAP
-from PIL import Image, ImageTk
-from tkinter import filedialog, Toplevel, Label
 import tkinter as tk
 import numpy as np
+from mapping import GUI_MAP
+from PIL import Image, ImageTk
+from tkinter import filedialog, Toplevel, Label, ttk
 #============================================================
 # Klasse für Text bei Hovern über Buttons
 class ToolTip(object):

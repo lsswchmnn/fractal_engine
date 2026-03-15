@@ -20,7 +20,7 @@ class CLI():
             print("1 - Load fractal")
             if self.fractal:
                 print("2 - Start visualizer")
-                print("S - Settings")
+                print("3 - Settings")
             print("H - Help")
             print("C - Close program")
             print_thin_separation(linebreak=False)
@@ -30,23 +30,21 @@ class CLI():
                 self.menu_load_fractal()
                 continue
 
-            elif choice == "2":
+            elif choice == "2" and self.fractal:
                 if not self.fractal:
                     show_error(True, "AttributeError", "No Fractal loaded.")
                     continue
-
                 self.menu_visualize()
+                continue
+
+            elif choice == "3" and self.fractal:
+                if not self.fractal:
+                    show_error(True, "AttributeError", "No Fractal loaded.")
+                self.menu_settings()
                 continue
 
             elif choice == "h":
                 self.menu_help()
-                continue
-
-            elif choice == "s":
-                if not self.fractal:
-                    show_error(True, "AttributeError", "No Fractal loaded.")
-
-                self.menu_settings()
                 continue
 
             elif choice == "c":
@@ -156,6 +154,7 @@ class CLI():
                 print()
                 print("Rendering settings: Adjust the base number of iterations and the adaptive iteration factor k, which controls how many additional iterations are added as you zoom in. Higher k can improve detail accuracy at strong zooms but also increases rendering time.")
                 enter_continue("Press enter to return to settings menu.")
+                continue
 
             elif choice == "c":
                 break
@@ -234,24 +233,35 @@ class CLI():
                     break
     
     # Warnungen für potenziell instabile Einstellungen bei Formelmanipulation
-    def cli_settings_warning(self, imag, real, setting_type: str):
+    def cli_settings_warning(self, imag: float, real: float, setting_type: str):
         print_heading("STABILITY WARNING")
 
         if setting_type == "startvalue":
             if imag != 0:
-                show_error(False, "StabilityWarning", "Visualizer is not optimized for complex startvalues; can cause inappropriate image cropping, long rendering-times and unpredictable results.")
+                show_error(
+                    False, "StabilityWarning", 
+                    "Complex startvalues are experimental and can cause inappropriate image cropping, long rendering-times and unpredictable results.")
 
-            if real > 0.5:
-                show_error(False, "StabilityWarning", "Visualizer is not optimized for startvalues far from the critical point (0 for Mandelbrot); can cause inappropriate image cropping, long rendering-times and unpredictable results.")
+            if abs(real) > 0.5 or abs(imag) > 0.5:
+                show_error(
+                    False, "StabilityWarning", 
+                    "Visualizer is not optimized for startvalues far from the critical point (0+0i for Mandelbrot); can cause inappropriate image cropping, long rendering-times and unpredictable results.")
 
         elif setting_type == "exponent":
 
-            if imag != 0:
-                show_error(False, "StabilityWarning", "Visualizer is not optimized for complex exponents; can cause inappropriate image cropping, long rendering-times and unpredictable results.")
+            if real < 0:
+                show_error(
+                    False, "StabilityWarning",
+                    "Negative exponents introduce poles (1/z^n) and may cause numerical instability.")
 
-            if real > 2:
-                show_error(False, "StabilityWarning", "Visualizer is not optimized for exponents higher than two; can cause inappropriate image cropping.")
-            
+            if abs(imag) > 0.5:
+                show_error(False, "StabilityWarning",
+                    "Large imaginary parts of the exponent can strongly distort the dynamics and slow down rendering.")
+
+            if real > 5:
+                show_error(False, "StabilityWarning",
+                    "Very large exponents may produce extremely thin structures and long rendering times.")
+
         else:
             show_error(False, "StabilityWarning", "Unusual settings can lead to unpredictable results, long rendering times and inappropriate image cropping. Experiment with caution!")
 

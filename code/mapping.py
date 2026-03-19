@@ -48,13 +48,14 @@ PALETTES = {
     ],
 
     "fairytale": [
-        (255,255,255),
-        (240,220,255),
-        (200,160,255),
-        (160,120,255),
-        (120,80,255),
-        (80,40,255),
-        (40,20,255)
+        (255, 255, 255),   # klarer Start (Glow)
+        (245, 225, 255),   # sehr helles Lavendel
+        (220, 170, 255),   # weiches Violett
+        (255, 140, 220),   # leichter Rosa-Shift (unerwartet, „magisch“)
+        (150, 110, 255),   # zurück ins kühle Violett
+        (90, 60, 255),     # tiefer, gesättigter Kern
+        (140, 200, 255),   # kühler Kontrast (bläulicher Schimmer)
+        (60, 30, 180)      # dunkler Abschluss statt reinem Blau
     ],
 
     "fire": [

@@ -73,7 +73,7 @@ class ColorMap():
 
         return image
 
-    # Färbung: Histogramm
+    # Färbung: Histogramm. int(iterations[y,x]) muss smooth und kein roher int sein!
     def apply_histogram(self, iterations: np.ndarray,
                         escaped: np.ndarray,
                         max_iterations: int) -> np.ndarray:
@@ -81,31 +81,54 @@ class ColorMap():
         height, width = iterations.shape
         image = np.zeros((height, width, 3), dtype=np.uint8)
 
-        # Histogramm der Iterationszahlen
         histogram = np.zeros(max_iterations + 1, dtype=np.int64)
+
         for y in range(height):
             for x in range(width):
                 if escaped[y, x]:
                     histogram[int(iterations[y, x])] += 1
 
-        # Kumulative Verteilung
-        total = histogram.sum()
-        if total == 0:
-            total = 1  # verhindert Division durch Null
-        cumulative = np.cumsum(histogram) / total  # Werte zwischen 0 und 1
+        cumulative = np.cumsum(histogram)
+        total = cumulative[-1] if cumulative[-1] > 0 else 1
+        cumulative = cumulative / total
 
         palette_size = len(self.palette)
 
-        # Farbzuweisung
         for y in range(height):
             for x in range(width):
+
                 if not escaped[y, x]:
                     image[y, x] = (0, 0, 0)
-                else:
-                    iter_value = int(iterations[y, x])
-                    t = cumulative[iter_value]  # 0.1
-                    index = int(t * (palette_size - 1))
-                    image[y, x] = self.palette[index]
+                    continue
+
+                nu = iterations[y, x]
+
+                i0 = int(np.floor(nu))
+                i1 = min(i0 + 1, max_iterations)
+
+                f = nu - i0
+
+                t0 = cumulative[i0]
+                t1 = cumulative[i1]
+
+                t = (1 - f) * t0 + f * t1
+
+                # Palette-Interpolation
+                idx = t * (palette_size - 1)
+
+                p0 = int(np.floor(idx))
+                p1 = min(p0 + 1, palette_size - 1)
+
+                frac = idx - p0
+
+                c0 = self.palette[p0]
+                c1 = self.palette[p1]
+
+                r = int(c0[0] + frac * (c1[0] - c0[0]))
+                g = int(c0[1] + frac * (c1[1] - c0[1]))
+                b = int(c0[2] + frac * (c1[2] - c0[2]))
+
+                image[y, x] = (r, g, b)
 
         return image
 
@@ -144,7 +167,6 @@ class ColorMap():
                     image[y, x] = (r, g, b)
 
         return image
-    
 
     def apply_orbit_trap(self, iterations: np.ndarray,
                         escaped: np.ndarray,

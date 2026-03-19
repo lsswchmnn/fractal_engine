@@ -220,7 +220,11 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                     exp_imag=exp_imag
                 )
 
-                iterations[y, x] = it
+                # exp
+                nu = it + 1 - np.log2(np.log(np.sqrt(zr*zr + zi*zi)))
+                iterations[y, x] = nu
+
+                #iterations[y, x] = it
                 escaped[y, x] = esc
 
     else:
@@ -246,7 +250,10 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                     exp_imag=exp_imag
                 )
 
-                iterations[y, x] = it
+                nu = it + 1 - np.log2(np.log(np.sqrt(zr*zr + zi*zi)))
+                iterations[y, x] = nu
+
+                #iterations[y, x] = it
                 escaped[y, x] = esc
 
 #------------------------------------------------------------

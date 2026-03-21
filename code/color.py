@@ -1,5 +1,5 @@
-from mapping import PALETTES
 import numpy as np
+from mapping import PALETTES
 #============================================================
 class ColorMap():
     def __init__(self):
@@ -48,7 +48,7 @@ class ColorMap():
 #------------------------------------------------------------
 # FÄRBUNGSMETHODEN für Iterationsergebnisse
 
-    # Förbung: simpel und grundlegend
+    # Förbung: simpel und grundlegend (spezielle, kristalline Struktur, allerdings etwas pixelig)
     def apply_basic(self, iterations: np.ndarray,
                     escaped: np.ndarray,
                     max_iterations: int) -> np.ndarray:
@@ -86,7 +86,17 @@ class ColorMap():
         for y in range(height):
             for x in range(width):
                 if escaped[y, x]:
-                    histogram[int(iterations[y, x])] += 1
+
+                    nu = iterations[y, x]
+
+                    idx = int(nu)
+                    if idx < 0:
+                        idx = 0
+                    elif idx > max_iterations:
+                        idx = max_iterations
+
+                    histogram[idx] += 1
+
 
         cumulative = np.cumsum(histogram)
         total = cumulative[-1] if cumulative[-1] > 0 else 1
@@ -103,8 +113,15 @@ class ColorMap():
 
                 nu = iterations[y, x]
 
+
                 i0 = int(np.floor(nu))
+                if i0 < 0:
+                    i0 = 0
+                elif i0 > max_iterations:
+                    i0 = max_iterations
+
                 i1 = min(i0 + 1, max_iterations)
+
 
                 f = nu - i0
 
@@ -132,6 +149,7 @@ class ColorMap():
 
         return image
 
+    # Färbung: Smooth (gut für mitteltiefe Zooms und stark abhängig von Iterationszahl)
     def apply_smooth(self, iterations: np.ndarray,
                     escaped: np.ndarray,
                     max_iterations: int) -> np.ndarray:
@@ -168,6 +186,7 @@ class ColorMap():
 
         return image
 
+    # Färbung: Orbit-Trap (noch unvollständig)
     def apply_orbit_trap(self, iterations: np.ndarray,
                         escaped: np.ndarray,
                         max_iterations: int) -> np.ndarray:

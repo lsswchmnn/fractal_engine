@@ -1,3 +1,5 @@
+import numpy as np
+import time
 from color import ColorMap
 from gui import GUI
 from utils import printProgressBar, clear_cli, print_thin_separation
@@ -5,7 +7,6 @@ from numba import njit
 from fractal import Fractal, MandelbrotFractal
 from mapping import PALETTES
 from export import PNGExporter
-import numpy as np
 #============================================================
 # VISUALIZER: Verbindet Komponenten und steuert Ablauf der Visualisierung
 class Visualizer():
@@ -196,71 +197,55 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                        xmin, xmax, ymin, ymax, max_iter, escape_radius,
                        pixel_is_c, c_real, c_imag, start_real, start_imag,
                        exp_real=2.0, exp_imag=0.0):
-
+    
+    # Einmalige Unterscheidung
     if pixel_is_c:
+        mode = 0    # Fall 1: Mandelbrot oder andere Fraktale außer Julia
+    else:       
+        mode = 1    # Fall 2: Julia
 
-        for y in range(y0, y1):
-            imag = ymax - (y / (height-1)) * (ymax - ymin)
+    # Einmalige Berechnung der Schrittweiten
+    dx = (xmax - xmin) / (width - 1)
+    dy = (ymax - ymin) / (height - 1)
 
-            for x in range(width):
-                real = xmin + (x / (width-1)) * (xmax - xmin)
+    # Äußerer Loop: Imaginärteil / Y-Achse
+    for y in range(y0, y1):
+        imag = ymax - y * dy
 
-                c_r = real
-                c_i = imag
-                z_r = start_real
-                z_i = start_imag
+        # Innerer Loop: Realteil / X-Achse
+        for x in range(width):
+            real = xmin + x * dx
 
-                it, esc, zr, zi = kernel(
-                    c_r, c_i,
-                    max_iter,
-                    escape_radius,
-                    z_real=z_r,
-                    z_imag=z_i,
-                    exp_real=exp_real,
-                    exp_imag=exp_imag
-                )
+            # Rollenverteilung je nach Modus
+            if mode == 0:
+                c_r, c_i = real, imag
+                z_r, z_i = start_real, start_imag
+            else:
+                c_r, c_i = c_real, c_imag
+                z_r, z_i = real, imag
 
-                # exp
-                nu = it + 1 - np.log2(np.log(np.sqrt(zr*zr + zi*zi)))
-                iterations[y, x] = nu
+            # Aufruf des Fraktal-Kernels (fractal.py)
+            it, esc, zr, zi = kernel(
+                c_r, c_i,
+                max_iter,
+                escape_radius,
+                z_real=z_r,
+                z_imag=z_i,
+                exp_real=exp_real,
+                exp_imag=exp_imag
+            )
 
-                #iterations[y, x] = it
-                escaped[y, x] = esc
-
-    else:
-
-        for y in range(y0, y1):
-            imag = ymax - (y / (height-1)) * (ymax - ymin)
-
-            for x in range(width):
-                real = xmin + (x / (width-1)) * (xmax - xmin)
-
-                c_r = c_real
-                c_i = c_imag
-                z_r = real
-                z_i = imag
-
-                it, esc, zr, zi = kernel(
-                    c_r, c_i,
-                    max_iter,
-                    escape_radius,
-                    z_real=z_r,
-                    z_imag=z_i,
-                    exp_real=exp_real,
-                    exp_imag=exp_imag
-                )
-
-                nu = it + 1 - np.log2(np.log(np.sqrt(zr*zr + zi*zi)))
-                iterations[y, x] = nu
-
-                #iterations[y, x] = it
-                escaped[y, x] = esc
+            # Speichern der Ergebnisse
+            iterations[y, x] = it           # Iterations (Geometrie)
+            escaped[y, x] = esc             # Escaped (Topologie)
 
 #------------------------------------------------------------
 # RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an
 class Renderer():
 
     def render(self, fractal, viewport, colormap, coloring_mode="smooth", k=40):
+        start = time.time()
+
         span = viewport.xmax - viewport.xmin
 
         original_iter = fractal.max_iterations
@@ -284,9 +269,7 @@ class Renderer():
 
             y1 = min(y0 + tile_h, height)
 
-            c_real = fractal.c_real
-            c_imag = fractal.c_imag
-
+            # Allgemeinen Rendering-Kernel (NJIT) aufrufen
             render_tile_kernel(
                 fractal.kernel,
                 iterations,
@@ -311,17 +294,21 @@ class Renderer():
 
             printProgressBar(y1, height, prefix="Rendering:", suffix="Complete", length=50)
 
+        end = time.time()
+        length = round(number=end - start, ndigits=4)
+
         # Debug-Ausgabe der aktuellen Einstellungen im CLI; gehört eigentlich nicht hierher, aber so haben wir es an einer zentralen Stelle, wo alle relevanten Informationen vorliegen
         clear_cli()
         print_thin_separation(linebreak=False)
         print(f"Fractal:                {fractal._name}")
-        print(f"Formula:                {fractal._formula}") # ?
+        print(f"Formula:                {fractal._formula}")
         print(f"Startvalue:             {fractal.start_real} + {fractal.start_imag}i")
         print(f"Exponent:               {fractal.exp_real} + {fractal.exp_imag}i")
         print(f"Coloring mode:          {coloring_mode}")
         print(f"Palette:                {colormap.palette_name}")
         print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
         print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
+        print(f"Rendering-Time:         {length} sec")
         print_thin_separation(linebreak=False)
         print()
 

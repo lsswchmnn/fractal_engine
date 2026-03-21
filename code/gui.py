@@ -299,9 +299,13 @@ class GUI():
         self._reset_callback = callback
 
     def _on_reset_clicked(self):
+        if self._c_select_mode:
+            print("\nButton locked during c-select-mode.")
+            return
+
         if self._reset_callback:
-            if not self._c_select_mode:
-                self._reset_callback()
+            self._reset_callback()
+
 
 #------------------------------------------------------------
 # STEP-BUTTONS (Schritt zurück/vorwärts im Zoom-Verlauf)
@@ -310,17 +314,23 @@ class GUI():
         self._back_step_callback = callback
 
     def _on_back_step_clicked(self):
+        if self._c_select_mode:
+            print("\nButton locked during c-select-mode.")
+            return
+
         if self._back_step_callback:
-            if not self._c_select_mode:   
-                self._back_step_callback()
+            self._back_step_callback()
 
     def set_forward_step_callback(self, callback):
         self._forward_step_callback = callback
 
     def _on_forward_step_clicked(self):
+        if self._c_select_mode:
+            print("\nButton locked during c-select-mode.")
+            return
+
         if self._forward_step_callback:
-            if not self._c_select_mode:
-                self._forward_step_callback()
+            self._forward_step_callback()
 
 #------------------------------------------------------------
 # COLOR-BUTTON (Farbpalette und Coloring wechseln)
@@ -330,6 +340,7 @@ class GUI():
 
     def _on_change_color_clicked(self):
         if self._c_select_mode:
+            print("\nButton locked during c-select-mode.")
             return
         
         try:
@@ -353,6 +364,7 @@ class GUI():
 
     def _on_change_coloring_clicked(self):
         if self._c_select_mode:
+            print("\nButton locked during c-select-mode.")
             return
         
         try:
@@ -378,9 +390,12 @@ class GUI():
         self._export_callback = callback
 
     def _on_export_clicked(self):
+        if self._c_select_mode:
+            print("\nButton locked during c-select-mode.")
+            return
+
         if self._export_callback:
-            if not self._c_select_mode:
-                self._export_callback()
+            self._export_callback()
 
     def ask_save_path(self, default_name="fractal.png"):
         return filedialog.asksaveasfilename(
@@ -399,6 +414,11 @@ class GUI():
         self._c_callback = callback
 
     def _on_change_c_clicked(self):
+        if self._c_select_mode:
+            self._c_select_mode = False
+            self.clear_overlay()
+            return
+
         self._c_select_mode = True
         if self._change_c_callback:
             self._change_c_callback()

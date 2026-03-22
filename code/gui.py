@@ -51,18 +51,19 @@ def CreateToolTip(widget, text):
 # Zentrale GUI
 class GUI():
     def __init__(self, width=800, height=600, julia: bool = False):
-        # Höhe und Breite
+
+        # - Geometrie / Anzeigeparameter -
         self.width          = width
         self.height         = height
         self.aspect_ratio   = self.width / self.height
 
-        # Hauptfenster
+        # - Hauptfenster (Root) -
         self.root = tk.Tk()
-        self.root.resizable(False, False)   # Fenster NICHT vergrößerbar 
         self.root.title("Fractal Viewer")
+        self.root.resizable(False, False)   # Fenster NICHT vergrößerbar 
         self.root.configure(bg=BG)
 
-        # Button-Design definieren
+        # - Styling (ttk) -
         style = ttk.Style()
         style.theme_use("clam")
         style.configure(
@@ -80,7 +81,7 @@ class GUI():
             ]
         )
 
-        # Hauptlayout-Frames
+        # - Layout (Frames + Canvas) -
         self.main_frame = tk.Frame(self.root, bg=BG)
         self.main_frame.pack(fill="both", expand=True)
 
@@ -90,7 +91,6 @@ class GUI():
         self.control_bar = tk.Frame(self.main_frame, height=40, bg=BG)
         self.control_bar.pack(fill="x", side="bottom")
 
-        # Canvas in Frame setzen
         self.canvas = tk.Canvas(
             self.canvas_frame,
             width=self.width,
@@ -101,29 +101,30 @@ class GUI():
         )
         self.canvas.pack(fill="both", expand=True)
 
-        # Referenz auf das aktuelle Bild
-        self._photo = None
+        self.canvas.config(cursor="crosshair")
 
-        # Für Zoom-Funktionalität
+        # - Rendering-/GUI-State -
+        self._photo = None                  # aktuell angezeigtes Bild
+
         self._zoom_callback     = None
         self._rect              = None
         self._start_x           = None
         self._start_y           = None
 
-        self.canvas.bind("<ButtonPress-1>", self._on_mouse_press)
-        self.canvas.bind("<B1-Motion>", self._on_mouse_drag)
-        self.canvas.bind("<ButtonRelease-1>", self._on_mouse_release)
-
         self._reset_callback = None
 
-        # Für Julia-Menge und Paramter C
+        # - Event-Bindings (Input)
+        self.canvas.bind("<ButtonPress-1>", self._on_mouse_press)       # Linksklick
+        self.canvas.bind("<B1-Motion>", self._on_mouse_drag)
+        self.canvas.bind("<ButtonRelease-1>", self._on_mouse_release)
+        self.canvas.bind("<ButtonPress-3>", self._on_right_click)       # Rechtsklick
+        self.canvas.bind("<B3-Motion>", self._on_right_click)
+
+        # - Julia-/Spezialzustände
         self._change_c_callback = None
         self._c_select_mode = False
         self._c_callback = None
         self._mandelbrot_overlay = None
-
-        # Cursor
-        self.canvas.config(cursor="crosshair")
 
 # ------------------------------------------------------------
 # BUTTONS in der Control Bar (Zoom-Interaktion links, Farbwechsel rechts)
@@ -242,6 +243,9 @@ class GUI():
             )
 
     def _on_mouse_drag(self, event):
+        if self._rect is None:
+            return
+
         dx = event.x - self._start_x
         dy = event.y - self._start_y
 
@@ -272,7 +276,6 @@ class GUI():
     def _on_mouse_release(self, event):
         # Für Julia-Menge: C auswählen statt Zoom
         if self._c_select_mode:     
-
             x = event.x
             y = event.y
 
@@ -280,6 +283,10 @@ class GUI():
                 self._c_callback(x, y)
 
             self._c_select_mode = False
+            return
+
+        # Absicherung
+        if self._rect is None:
             return
 
         # Normaler Zoom-Fall
@@ -291,6 +298,17 @@ class GUI():
 
         self.canvas.delete(self._rect)
         self._rect = None
+
+    def _on_right_click(self, event):
+        # Kein Zoom -> nichts tun
+        if self._rect is None:
+            return
+        
+        self.canvas.delete(self._rect)
+        self._rect = None
+
+        self._start_x = None
+        self._start_y = None
 
 #------------------------------------------------------------
 # RESET-BUTTON (Zurück zu Standardansicht)
@@ -305,7 +323,6 @@ class GUI():
 
         if self._reset_callback:
             self._reset_callback()
-
 
 #------------------------------------------------------------
 # STEP-BUTTONS (Schritt zurück/vorwärts im Zoom-Verlauf)
@@ -333,7 +350,7 @@ class GUI():
             self._forward_step_callback()
 
 #------------------------------------------------------------
-# COLOR-BUTTON (Farbpalette und Coloring wechseln)
+# COLOR-BUTTONS (Farbpalette und Coloring wechseln)
 
     def set_change_color_callback(self, callback):
         self._change_color_callback = callback
@@ -405,7 +422,7 @@ class GUI():
         )
 
 #------------------------------------------------------------
-# Für JULIA-SET: C ändern
+# Für JULIA-SET: C ändern und Overlay
 
     def set_change_c_callback(self, callback):
         self._change_c_callback = callback

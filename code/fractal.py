@@ -13,6 +13,7 @@ def mandelbrot_kernel(
     z_real=0.0, z_imag=0.0,
     exp_real=2.0, exp_imag=0.0):
 
+    trap_min = 1e10     # Für Orbit-Trap
     escape_sq = escape_radius * escape_radius
     zr = z_real
     zi = z_imag
@@ -22,6 +23,13 @@ def mandelbrot_kernel(
 
         for i in range(max_iter):
 
+            # Für Orbit-Trap
+            d1 = (zr - 0.3)**2 + (zi - 0.2)**2
+            d2 = (zr + 0.4)**2 + (zi - 0.1)**2
+            dist = min(d1, d2)
+            if dist < trap_min:
+                trap_min = dist
+
             zr2 = zr * zr
             zi2 = zi * zi
             r2 = zr2 + zi2
@@ -30,12 +38,12 @@ def mandelbrot_kernel(
 
                 abs_z = math.sqrt(r2)
                 nu = i + 1 - math.log(math.log(abs_z)) / math.log(2)
-                return float(nu), 1, zr, zi
+                return float(nu), 1, zr, zi, trap_min
 
             zi = 2.0 * zr * zi + c_imag
             zr = zr2 - zi2 + c_real
 
-        return float(max_iter), 0, zr, zi
+        return float(max_iter), 0, zr, zi, trap_min
 
     # 2) Höhere ganzzahlige Exponenten
     if exp_imag == 0.0 and exp_real == float(int(exp_real)):
@@ -52,7 +60,7 @@ def mandelbrot_kernel(
                 abs_z = math.sqrt(r2)
                 nu = i + 1 - math.log(math.log(abs_z)) / log_exp
 
-                return float(nu), 1, zr, zi
+                return float(nu), 1, zr, zi, trap_min
 
             # z^d via wiederholte komplexe Multiplikation
             zr_pow = zr
@@ -66,7 +74,7 @@ def mandelbrot_kernel(
             zr = zr_pow + c_real
             zi = zi_pow + c_imag
 
-        return float(max_iter), 0, zr, zi
+        return float(max_iter), 0, zr, zi, trap_min
 
     # 3) Komplexer Exponent (allgemeiner Fall)
     a = exp_real
@@ -79,7 +87,7 @@ def mandelbrot_kernel(
         if r2 > escape_sq:
             abs_z = math.sqrt(r2)
             nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-            return float(nu), 1, zr, zi
+            return float(nu), 1, zr, zi, trap_min
 
         if r2 == 0.0:
             zr = c_real
@@ -98,7 +106,7 @@ def mandelbrot_kernel(
         zr = exp_r * math.cos(imag_part) + c_real
         zi = exp_r * math.sin(imag_part) + c_imag
 
-    return float(max_iter), 0, zr, zi
+    return float(max_iter), 0, zr, zi, trap_min
 
 @njit
 def inverted_mandelbrot_kernel(
@@ -440,7 +448,9 @@ class Fractal(ABC):
         self.max_iterations = max_iterations                # Wie lange prüft man, ob der Wert "ausbricht"? - höhere Werte → detailliertere Bilder, aber längere Berechnungszeit
         self.escape_radius = escape_radius                  # Für Mandelbrot z.B. 2
         self._default_bounds = (-2.0, 1.0, -1.2, 1.2)       # Standard-Ausschnitt der komplexen Ebene, mit dem gearbeitet wird. Kann von Fraktal zu Fraktal unterschiedlich sein.
-        
+        self.kernel = None          # Platzhalter für die Iterationsfunktion, wird in den Unterklassen gesetzt
+        self.pixel_is_c = True      # Pixel repräsentiert c (Alles außer Julia, standad)
+
         # Anzeige
         self._name = "Fractal"                              # Name des Fraktals (wird in Mapping überschrieben)
         self._formula = "z_{n+1} = z_n^2 + c"
@@ -457,8 +467,11 @@ class Fractal(ABC):
         self.c_real = 0.0
         self.c_imag = 0.0
 
-        self.kernel = None          # Platzhalter für die Iterationsfunktion, wird in den Unterklassen gesetzt
-        self.pixel_is_c = True      # Pixel repräsentiert c (Alles außer Julia, standad)
+        # Für Orbit-Trap
+        self.trap_type = "point"
+        self.trap_x = 0.3
+        self.trap_y = 0.2
+        self.trap_radius = 0.05
 
 #------------------------------------------------------------
 class MandelbrotFractal(Fractal):

@@ -133,8 +133,9 @@ class CLI():
     def menu_settings(self):
         while True:
             print_heading("SETTINGS")
-            print("1 - Manipulate Formula")
-            print("2 - Rendering settings")
+            print("1 - Formula manipulation")
+            print("2 - Rendering")
+            print("3 - Orbit trap")
             print("H - Help")
             print("C - Close")
             print_thin_separation(linebreak=False)
@@ -146,6 +147,10 @@ class CLI():
 
             elif choice == "2":
                 self.cli_change_rendering_settings()
+                continue
+
+            elif choice == "3":
+                self.cli_change_orbit_trap_settings()
                 continue
 
             elif choice == "h":
@@ -309,3 +314,59 @@ class CLI():
 
             elif choice == "c":
                 break
+
+    def cli_change_orbit_trap_settings(self):
+        while True:
+
+            print_heading("CHANGE ORBIT-TRAP-SETTINGS")
+            print(f"1 - Change Type (current: {self.fractal.trap_type})")
+            print(f"2 - Change X-Offset (current: {self.visualizer.trap_x})")
+            print(f"3 - Change Y-Offset (current: {self.visualizer.trap_y})")
+            print(f"4 - Change trap radius (current: {self.visualizer.trap_radius})")
+            print("H - Help")
+            print("C - Cancel")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "1":
+                print_heading("CHANGE TYPE")
+                print(f"Current Type: {self.fractal.trap_type}\n")
+                #try:
+                    # ... Auswahl aus Liste, ggf mapping anfertigen!
+                    #enter_continue(f"Base iterations changed to {}. Press enter to continue.", seperation=False)
+                # except ValueError:
+                #     show_error(True, "InputError", "Invalid input. Please enter a valid number.")
+                #     continue
+
+            elif choice == "2":
+                print_heading("CHANGE X-OFFSET")
+                print(f"Current X-Offset: {self.fractal.trap_x}\n")
+                try:
+                    x_offset = input_float(-5, 0.2, 5, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
+                    self.fractal.trap_x = x_offset
+                    enter_continue(f"Adaptive iteration factor changed to {fractal.trap_x}. Press enter to continue.", seperation=False)
+                except ValueError:
+                    show_error(True, "InputError", "Invalid input. Please enter a valid number.")
+                    continue
+
+            elif choice == "3":
+                print_heading("CHANGE Y-OFFSET")
+                print(f"Current Y-Offset: {self.fractal.trap_y}\n")
+                try:
+                    y_offset = input_float(-5, 0.2, 5, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
+                    self.fractal.trap_y = y_offset
+                    enter_continue(f"Adaptive iteration factor changed to {fractal.trap_y}. Press enter to continue.", seperation=False)
+                except ValueError:
+                    show_error(True, "InputError", "Invalid input. Please enter a valid number.")
+                    continue
+
+            elif choice == "3":
+                print_heading("CHANGE RADIUS")
+                print(f"Current Radius: {self.fractal.trap_radius}\n")
+                try:
+                    radius = input_float(0.0, 0.2, 5, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
+                    self.fractal.trap_radius = radius
+                    enter_continue(f"Adaptive iteration factor changed to {fractal.trap_radius}. Press enter to continue.", seperation=False)
+                except ValueError:
+                    show_error(True, "InputError", "Invalid input. Please enter a valid number.")
+                    continue

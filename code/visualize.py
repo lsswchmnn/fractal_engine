@@ -196,7 +196,7 @@ class Visualizer():
 def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                        xmin, xmax, ymin, ymax, max_iter, escape_radius,
                        pixel_is_c, c_real, c_imag, start_real, start_imag,
-                       exp_real=2.0, exp_imag=0.0):
+                       trap, exp_real=2.0, exp_imag=0.0):
     
     # Einmalige Unterscheidung
     if pixel_is_c:
@@ -225,7 +225,7 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                 z_r, z_i = real, imag
 
             # Aufruf des Fraktal-Kernels (fractal.py)
-            it, esc, zr, zi = kernel(
+            it, esc, zr, zi, trap_val = kernel(
                 c_r, c_i,
                 max_iter,
                 escape_radius,
@@ -237,7 +237,8 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
 
             # Speichern der Ergebnisse
             iterations[y, x] = it           # Iterations (Geometrie)
-            escaped[y, x] = esc             # Escaped (Topologie)
+            escaped[y, x] = esc             # Escaped (Topologie)+
+            trap[y, x] = trap_val
 
 #------------------------------------------------------------
 # RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an
@@ -262,6 +263,7 @@ class Renderer():
 
         iterations = np.zeros((height, width), dtype=np.float64)
         escaped = np.zeros((height, width), dtype=np.uint8)
+        trap = np.full((height, width), np.inf, dtype=np.float64)
 
         tile_h = 32        
 
@@ -288,8 +290,9 @@ class Renderer():
                 fractal.c_imag,
                 fractal.start_real,
                 fractal.start_imag,
+                trap,    # für Orbit-Trap
                 fractal.exp_real,
-                fractal.exp_imag
+                fractal.exp_imag,
             )
 
             printProgressBar(y1, height, prefix="Rendering:", suffix="Complete", length=50)
@@ -323,7 +326,7 @@ class Renderer():
             image = colormap.apply_smooth(iterations, escaped, adaptive_iter)
 
         elif coloring_mode == "orbit trap":
-            image = colormap.apply_orbit_trap(iterations, escaped, adaptive_iter)
+            image = colormap.apply_orbit_trap(trap, escaped)
 
         fractal.max_iterations = original_iter
 

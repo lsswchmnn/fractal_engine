@@ -187,35 +187,68 @@ class ColorMap():
         return image
 
     # Färbung: Orbit-Trap (noch unvollständig)
-    def apply_orbit_trap(self, iterations: np.ndarray,
-                        escaped: np.ndarray,
-                        max_iterations: int) -> np.ndarray:
+    def apply_orbit_trap(self,
+                        trap_dist: np.ndarray,
+                        escaped: np.ndarray) -> np.ndarray:
 
-        height, width = iterations.shape
+        height, width = trap_dist.shape
         image = np.zeros((height, width, 3), dtype=np.uint8)
+
         palette_size = len(self.palette)
 
-        # Zentrum der Trap (z.B. Kreis in der Mitte)
-        trap_center = np.array([0.0, 0.0])  # komplexer Mittelpunkt (Re, Im)
-        trap_radius = 0.05                   # kleiner Radius
+        # --- Normalisierung vorbereiten ---
+        # Nur escaped Punkte berücksichtigen
+        valid = trap_dist[escaped == 1]
+
+        if len(valid) == 0:
+            return image
+
+        d_min = np.min(valid)
+        d_max = np.max(valid)
+
+        # Schutz gegen Division durch 0
+        if d_max == d_min:
+            d_max = d_min + 1e-12
+
+        # Optional: log-Skalierung (stark empfohlen)
+        log_min = np.log(d_min + 1e-12)
+        log_max = np.log(d_max + 1e-12)
 
         for y in range(height):
             for x in range(width):
 
                 if not escaped[y, x]:
                     image[y, x] = (0, 0, 0)
-                else:
-                    # Iterierter Punkt als komplexe Zahl
-                    z = self.iterated_points[y, x]  # du musst dafür das Array der letzten z-Werte speichern
+                    continue
 
-                    # Abstand zur Trap
-                    dist = np.abs(np.array([z.real, z.imag]) - trap_center)
+                d = trap_dist[y, x]
 
-                    # Skalierung auf [0,1] (0 = auf der Trap, 1 = weit weg)
-                    t = min(dist / trap_radius, 1.0)
+                # --- Log-Skalierung für bessere Dynamik ---
+                ld = np.log(d + 1e-12)
 
-                    # Palette index
-                    index = int(t * (palette_size - 1))
-                    image[y, x] = self.palette[index]
+                t = (ld - log_min) / (log_max - log_min)
+
+                # Clamp
+                if t < 0.0:
+                    t = 0.0
+                elif t > 1.0:
+                    t = 1.0
+
+                # --- Palette Interpolation ---
+                idx = t * (palette_size - 1)
+
+                i0 = int(idx)
+                i1 = min(i0 + 1, palette_size - 1)
+
+                frac = idx - i0
+
+                c0 = self.palette[i0]
+                c1 = self.palette[i1]
+
+                r = int(c0[0] + frac * (c1[0] - c0[0]))
+                g = int(c0[1] + frac * (c1[1] - c0[1]))
+                b = int(c0[2] + frac * (c1[2] - c0[2]))
+
+                image[y, x] = (r, g, b)
 
         return image

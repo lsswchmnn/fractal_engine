@@ -196,7 +196,7 @@ class Visualizer():
 def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                        xmin, xmax, ymin, ymax, max_iter, escape_radius,
                        pixel_is_c, c_real, c_imag, start_real, start_imag,
-                       trap, exp_real=2.0, exp_imag=0.0):
+                       exp_real, exp_imag, trap, trap_y_offset, trap_x_offset):
     
     # Einmalige Unterscheidung
     if pixel_is_c:
@@ -232,7 +232,9 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                 z_real=z_r,
                 z_imag=z_i,
                 exp_real=exp_real,
-                exp_imag=exp_imag
+                exp_imag=exp_imag,
+                trap_y_offset=trap_y_offset,
+                trap_x_offset=trap_x_offset
             )
 
             # Speichern der Ergebnisse
@@ -290,9 +292,13 @@ class Renderer():
                 fractal.c_imag,
                 fractal.start_real,
                 fractal.start_imag,
-                trap,    # für Orbit-Trap
                 fractal.exp_real,
                 fractal.exp_imag,
+
+                # Speziell für Orbit-Trap
+                trap,
+                fractal.trap_x,
+                fractal.trap_y,
             )
 
             printProgressBar(y1, height, prefix="Rendering:", suffix="Complete", length=50)

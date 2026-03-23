@@ -11,7 +11,8 @@ def mandelbrot_kernel(
     max_iter,
     escape_radius,
     z_real=0.0, z_imag=0.0,
-    exp_real=2.0, exp_imag=0.0):
+    exp_real=2.0, exp_imag=0.0,
+    trap_y_offset=0.1, trap_x_offset=0.1):
 
     trap_min = 1e10     # Für Orbit-Trap
     escape_sq = escape_radius * escape_radius
@@ -24,8 +25,8 @@ def mandelbrot_kernel(
         for i in range(max_iter):
 
             # Für Orbit-Trap
-            d1 = (zr - 0.3)**2 + (zi - 0.2)**2
-            d2 = (zr + 0.4)**2 + (zi - 0.1)**2
+            d1 = (zr - trap_x_offset)**2 + (zi - trap_x_offset)**2
+            d2 = (zr + trap_y_offset)**2 + (zi - trap_y_offset)**2
             dist = min(d1, d2)
             if dist < trap_min:
                 trap_min = dist

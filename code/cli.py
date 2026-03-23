@@ -189,16 +189,11 @@ class CLI():
                     print_thin_separation()
                     print()
 
-                    try:
-                        real = input_float(-100.0, 100.0, 0.0, msg="Enter real part of startvalue z0", cli=True, loop=True)
-                        imag = input_float(-100.0, 100.0, 0.0, msg="Enter imaginary part of startvalue z0", cli=True, loop=True)
-                        self.fractal.start_real = real
-                        self.fractal.start_imag = imag
-                        enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue.", seperation=False)
-
-                    except ValueError:
-                        show_error(True, "InputError", "Invalid input. Please enter valid numbers.")
-                        continue
+                    real = input_float(-100.0, 100.0, 0.0, msg="Enter real part of startvalue z0", cli=True, loop=True)
+                    imag = input_float(-100.0, 100.0, 0.0, msg="Enter imaginary part of startvalue z0", cli=True, loop=True)
+                    self.fractal.start_real = real
+                    self.fractal.start_imag = imag
+                    enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue.", seperation=False)
 
                     # Warnungen für potenziell instabile Einstellungen
                     if imag != 0 or real != 2:
@@ -212,16 +207,11 @@ class CLI():
                     print_thin_separation()
                     print()
 
-                    try:
-                        real = input_float(-20.0, 20.0, 2.0, [1], msg="Enter real part of Exponent", cli=True, loop=False)
-                        imag = input_float(-20.0, 20.0, 0.0,      msg="Enter imaginary part of Exponent", cli=True, loop=False)
-                        self.fractal.exp_real = real
-                        self.fractal.exp_imag = imag
-                        enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue.", seperation=False)
-
-                    except ValueError:
-                        show_error(True, "InputError", "Invalid input. Please enter valid numbers.")
-                        continue
+                    real = input_float(-20.0, 20.0, 2.0, [1], msg="Enter real part of Exponent", cli=True, loop=False)
+                    imag = input_float(-20.0, 20.0, 0.0,      msg="Enter imaginary part of Exponent", cli=True, loop=False)
+                    self.fractal.exp_real = real
+                    self.fractal.exp_imag = imag
+                    enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue.", seperation=False)
 
                     # Warnungen für potenziell instabile Einstellungen
                     if imag != 0 or real != 2:
@@ -237,6 +227,89 @@ class CLI():
                 elif choice == "c":
                     break
     
+    # Einstellungen: Rendering (Basis-Iterationen und adaptiver Iterationsfaktor)
+    def cli_change_rendering_settings(self): 
+        while True:
+
+            print_heading("CHANGE RENDERING SETTINGS")
+            print(f"1 - Change base Iterations (current: {self.fractal.max_iterations})")
+            print(f"2 - Change factor for adaptive iteration depth (current: {self.visualizer.iterate_factor_k})")
+            print("H - Help")
+            print("C - Cancel")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "1":
+                print_heading("CHANGE BASE ITERATIONS")
+                print(f"Current base iterations: {self.fractal.max_iterations}\n")
+
+                max_iter = input_int(10, 100, 10000, "Enter new base iterations", True)
+                self.fractal.max_iterations = max_iter
+                enter_continue(f"Base iterations changed to {max_iter}. Press enter to continue.", seperation=False)
+
+            elif choice == "2":
+                print_heading("CHANGE ADAPTIVE ITERATION FACTOR")
+                print(f"Current adaptive iteration factor k: {self.visualizer.iterate_factor_k}\n")
+
+                k = input_int(1, 1000, 100, "Enter new adaptive iteration factor k", True)
+                self.visualizer.iterate_factor_k = k
+                enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
+
+            elif choice == "h":
+                print_heading("HELP - RENDERING SETTINGS")
+                print("Base iterations: Number of iterations used as a baseline for the adaptive iteration depth.")
+                print("Adaptive iteration factor (k): Tuning for quantitative improvement of detail accuracy at strong zooms. Higher k means more iterations added as you zoom in.")
+                enter_continue("Press enter to return to settings menu.", seperation=False)
+
+            elif choice == "c":
+                break
+
+    # Einstellungen: Formel-Trap-Coloring (Offset, Radius und Methode)
+    def cli_change_orbit_trap_settings(self):
+        while True:
+
+            print_heading("CHANGE ORBIT-TRAP-SETTINGS")
+            print(f"1 - Change Type (current: {self.fractal.trap_type})")
+            print(f"2 - Change X-Offset (current: {self.fractal.trap_x})")
+            print(f"3 - Change Y-Offset (current: {self.fractal.trap_y})")
+            print(f"4 - Change trap radius (current: {self.fractal.trap_radius})")
+            print("H - Help")
+            print("C - Cancel")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "1":
+                print_heading("CHANGE TYPE")
+                print(f"Current Type: {self.fractal.trap_type}\n")
+                # ... Auswahl aus Liste
+
+            elif choice == "2":
+                print_heading("CHANGE X-OFFSET")
+                print(f"Current X-Offset: {self.fractal.trap_x}\n")
+
+                x_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
+                self.fractal.trap_x = x_offset
+                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_x}. Press enter to continue.", seperation=False)
+
+            elif choice == "3":
+                print_heading("CHANGE Y-OFFSET")
+                print(f"Current Y-Offset: {self.fractal.trap_y}\n")
+
+                y_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
+                self.fractal.trap_y = y_offset
+                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_y}. Press enter to continue.", seperation=False)
+
+            elif choice == "3":
+                print_heading("CHANGE RADIUS")
+                print(f"Current Radius: {self.fractal.trap_radius}\n")
+
+                radius = input_float(0.0, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
+                self.fractal.trap_radius = radius
+                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_radius}. Press enter to continue.", seperation=False)
+
+            elif choice == "c":
+                break
+
     # Warnungen für potenziell instabile Einstellungen bei Formelmanipulation
     def cli_settings_warning(self, imag: float, real: float, setting_type: str):
         print_heading("STABILITY WARNING")
@@ -271,102 +344,3 @@ class CLI():
             show_error(False, "StabilityWarning", "Unusual settings can lead to unpredictable results, long rendering times and inappropriate image cropping. Experiment with caution!")
 
         enter_continue("Press enter to continue.")
-
-    # Einstellungen: Rendering (Basis-Iterationen und adaptiver Iterationsfaktor)
-    def cli_change_rendering_settings(self): 
-        while True:
-
-            print_heading("CHANGE RENDERING SETTINGS")
-            print(f"1 - Change base Iterations (current: {self.fractal.max_iterations})")
-            print(f"2 - Change factor for adaptive iteration depth (current: {self.visualizer.iterate_factor_k})")
-            print("H - Help")
-            print("C - Cancel")
-            print_thin_separation(linebreak=False)
-            choice = input("> ").strip().lower()
-
-            if choice == "1":
-                print_heading("CHANGE BASE ITERATIONS")
-                print(f"Current base iterations: {self.fractal.max_iterations}\n")
-                try:
-                    max_iter = input_int(10, 100, 10000, "Enter new base iterations", True)
-                    self.fractal.max_iterations = max_iter
-                    enter_continue(f"Base iterations changed to {max_iter}. Press enter to continue.", seperation=False)
-                except ValueError:
-                    show_error(True, "InputError", "Invalid input. Please enter a valid number.")
-                    continue
-
-            elif choice == "2":
-                print_heading("CHANGE ADAPTIVE ITERATION FACTOR")
-                print(f"Current adaptive iteration factor k: {self.visualizer.iterate_factor_k}\n")
-                try:
-                    k = input_int(1, 1000, 100, "Enter new adaptive iteration factor k", True)
-                    self.visualizer.iterate_factor_k = k
-                    enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
-                except ValueError:
-                    show_error(True, "InputError", "Invalid input. Please enter a valid number.")
-                    continue
-
-            elif choice == "h":
-                print_heading("HELP - RENDERING SETTINGS")
-                print("Base iterations: Number of iterations used as a baseline for the adaptive iteration depth.")
-                print("Adaptive iteration factor (k): Tuning for quantitative improvement of detail accuracy at strong zooms. Higher k means more iterations added as you zoom in.")
-                enter_continue("Press enter to return to settings menu.", seperation=False)
-
-            elif choice == "c":
-                break
-
-    def cli_change_orbit_trap_settings(self):
-        while True:
-
-            print_heading("CHANGE ORBIT-TRAP-SETTINGS")
-            print(f"1 - Change Type (current: {self.fractal.trap_type})")
-            print(f"2 - Change X-Offset (current: {self.visualizer.trap_x})")
-            print(f"3 - Change Y-Offset (current: {self.visualizer.trap_y})")
-            print(f"4 - Change trap radius (current: {self.visualizer.trap_radius})")
-            print("H - Help")
-            print("C - Cancel")
-            print_thin_separation(linebreak=False)
-            choice = input("> ").strip().lower()
-
-            if choice == "1":
-                print_heading("CHANGE TYPE")
-                print(f"Current Type: {self.fractal.trap_type}\n")
-                #try:
-                    # ... Auswahl aus Liste, ggf mapping anfertigen!
-                    #enter_continue(f"Base iterations changed to {}. Press enter to continue.", seperation=False)
-                # except ValueError:
-                #     show_error(True, "InputError", "Invalid input. Please enter a valid number.")
-                #     continue
-
-            elif choice == "2":
-                print_heading("CHANGE X-OFFSET")
-                print(f"Current X-Offset: {self.fractal.trap_x}\n")
-                try:
-                    x_offset = input_float(-5, 0.2, 5, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
-                    self.fractal.trap_x = x_offset
-                    enter_continue(f"Adaptive iteration factor changed to {fractal.trap_x}. Press enter to continue.", seperation=False)
-                except ValueError:
-                    show_error(True, "InputError", "Invalid input. Please enter a valid number.")
-                    continue
-
-            elif choice == "3":
-                print_heading("CHANGE Y-OFFSET")
-                print(f"Current Y-Offset: {self.fractal.trap_y}\n")
-                try:
-                    y_offset = input_float(-5, 0.2, 5, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
-                    self.fractal.trap_y = y_offset
-                    enter_continue(f"Adaptive iteration factor changed to {fractal.trap_y}. Press enter to continue.", seperation=False)
-                except ValueError:
-                    show_error(True, "InputError", "Invalid input. Please enter a valid number.")
-                    continue
-
-            elif choice == "3":
-                print_heading("CHANGE RADIUS")
-                print(f"Current Radius: {self.fractal.trap_radius}\n")
-                try:
-                    radius = input_float(0.0, 0.2, 5, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
-                    self.fractal.trap_radius = radius
-                    enter_continue(f"Adaptive iteration factor changed to {fractal.trap_radius}. Press enter to continue.", seperation=False)
-                except ValueError:
-                    show_error(True, "InputError", "Invalid input. Please enter a valid number.")
-                    continue

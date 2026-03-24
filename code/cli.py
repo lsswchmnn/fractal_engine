@@ -1,6 +1,6 @@
 from utils import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int
 from visualize import Visualizer
-from mapping import FRACTALS_MAP
+from mapping import FRACTALS_MAP, ORBIT_TRAP_MAP
 import fractal
 #============================================================
 class CLI():
@@ -278,12 +278,37 @@ class CLI():
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
-            if choice == "1":
-                print_heading("CHANGE TYPE")
-                print(f"Current Type: {self.fractal.trap_type}\n")
-                # ... Auswahl aus Liste
+            if choice == "1":       # Type
+                trap_keys = list(ORBIT_TRAP_MAP.keys())
+                
+                while True:
+                    print_heading("CHANGE TYPE")
+                    print(f"Current Type: {self.fractal.trap_type}\n")
 
-            elif choice == "2":
+                    for i, key in enumerate(trap_keys, start=1):
+                        label = ORBIT_TRAP_MAP[key]["label"]
+                        print(f"{i} - {label}")
+
+                    print_thin_separation(linebreak=False)
+                    choice = input("> ").strip().lower()
+
+                    if not choice.isdigit():
+                        continue
+
+                    idx = int(choice) - 1
+
+                    if idx < 0 or idx >= len(trap_keys):
+                        continue
+
+                    selected_key = trap_keys[idx]
+                    trap_info = ORBIT_TRAP_MAP[selected_key]
+
+                    fractal.trap_type = trap_info["idx"]
+
+                    enter_continue(f"\nOrbit trap set to: {trap_info['label']}. Press Enter to continue")
+                    break
+
+            elif choice == "2":     # X-Offset
                 print_heading("CHANGE X-OFFSET")
                 print(f"Current X-Offset: {self.fractal.trap_x}\n")
 
@@ -291,7 +316,7 @@ class CLI():
                 self.fractal.trap_x = x_offset
                 enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_x}. Press enter to continue.", seperation=False)
 
-            elif choice == "3":
+            elif choice == "3":     # Y-Offset
                 print_heading("CHANGE Y-OFFSET")
                 print(f"Current Y-Offset: {self.fractal.trap_y}\n")
 
@@ -299,7 +324,7 @@ class CLI():
                 self.fractal.trap_y = y_offset
                 enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_y}. Press enter to continue.", seperation=False)
 
-            elif choice == "3":
+            elif choice == "4":     # Radius
                 print_heading("CHANGE RADIUS")
                 print(f"Current Radius: {self.fractal.trap_radius}\n")
 

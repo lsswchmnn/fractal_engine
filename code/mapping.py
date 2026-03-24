@@ -34,6 +34,25 @@ FRACTALS_MAP =  {
 }
 
 #------------------------------------------------------------
+# Mapping für Orbit-Traps
+ORBIT_TRAP_MAP = {
+    "point": {
+        "idx": 0,
+        "label": "Point"
+    },
+
+    "circle": {
+        "idx": 1,
+        "label": "Circle"
+    },
+
+    "line": {
+        "idx": 2,
+        "label": "Line"
+    }
+}
+
+#------------------------------------------------------------
 # Farbpaletten
 PALETTES = {
 

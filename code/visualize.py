@@ -196,7 +196,8 @@ class Visualizer():
 def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                        xmin, xmax, ymin, ymax, max_iter, escape_radius,
                        pixel_is_c, c_real, c_imag, start_real, start_imag,
-                       exp_real, exp_imag, trap, trap_y_offset, trap_x_offset):
+                       exp_real, exp_imag,
+                       trap, trap_type, trap_x, trap_y, trap_radius):
     
     # Einmalige Unterscheidung
     if pixel_is_c:
@@ -224,17 +225,14 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
                 c_r, c_i = c_real, c_imag
                 z_r, z_i = real, imag
 
-            # Aufruf des Fraktal-Kernels (fractal.py)
+            # Aufruf des Fraktal-Kernels (fractal.py) (Positionsbasiert wegen Numba)
             it, esc, zr, zi, trap_val = kernel(
                 c_r, c_i,
                 max_iter,
                 escape_radius,
-                z_real=z_r,
-                z_imag=z_i,
-                exp_real=exp_real,
-                exp_imag=exp_imag,
-                trap_y_offset=trap_y_offset,
-                trap_x_offset=trap_x_offset
+                z_r, z_i,
+                exp_real, exp_imag,
+                trap_type, trap_x, trap_y, trap_radius
             )
 
             # Speichern der Ergebnisse
@@ -295,10 +293,12 @@ class Renderer():
                 fractal.exp_real,
                 fractal.exp_imag,
 
-                # Speziell für Orbit-Trap
+                # Orbit-Trap (neu, vollständig)
                 trap,
+                fractal.trap_type,
                 fractal.trap_x,
                 fractal.trap_y,
+                fractal.trap_radius
             )
 
             printProgressBar(y1, height, prefix="Rendering:", suffix="Complete", length=50)
@@ -318,6 +318,9 @@ class Renderer():
         print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
         print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
         print(f"Rendering-Time:         {length} sec")
+
+        print(np.min(trap[np.isfinite(trap)]), np.max(trap[np.isfinite(trap)])) # // DEBUG
+        
         print_thin_separation(linebreak=False)
         print()
 

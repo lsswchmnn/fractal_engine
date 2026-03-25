@@ -5,8 +5,10 @@ import math
 #============================================================
 # ITERATIONSKERNELS (eigentliche Berechnungen, vom Render-Kernel aus aufgerufen)
 @njit
-def calulate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius):
+def calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius):
     
+    trap_type = int(trap_type)
+
     if trap_type == 0:  # POINT
         dx = zr - trap_x
         dy = zi - trap_y
@@ -30,11 +32,11 @@ def calulate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius):
 @njit
 def mandelbrot_kernel(
     c_real, c_imag,
-    max_iter,
-    escape_radius,
+    max_iter, escape_radius,
     z_real=0.0, z_imag=0.0,
     exp_real=2.0, exp_imag=0.0,
-    trap_y_offset=0.1, trap_x_offset=0.1):
+    trap_y=0.1, trap_x=0.1,
+    trap_type=0, trap_radius=0.5):
 
     trap_min = 1e10     # Für Orbit-Trap
     escape_sq = escape_radius * escape_radius
@@ -47,9 +49,7 @@ def mandelbrot_kernel(
         for i in range(max_iter):
 
             # Für Orbit-Trap
-            d1 = (zr - trap_x_offset)**2 + (zi - trap_x_offset)**2
-            d2 = (zr + trap_y_offset)**2 + (zi - trap_y_offset)**2
-            dist = min(d1, d2)
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
             if dist < trap_min:
                 trap_min = dist
 
@@ -58,7 +58,6 @@ def mandelbrot_kernel(
             r2 = zr2 + zi2
 
             if r2 > escape_sq:
-
                 abs_z = math.sqrt(r2)
                 nu = i + 1 - math.log(math.log(abs_z)) / math.log(2)
                 return float(nu), 1, zr, zi, trap_min
@@ -75,6 +74,11 @@ def mandelbrot_kernel(
         log_exp = math.log(exp_real)
 
         for i in range(max_iter):
+
+            # Orbit-Trap
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
 
             r2 = zr * zr + zi * zi
 
@@ -100,36 +104,43 @@ def mandelbrot_kernel(
         return float(max_iter), 0, zr, zi, trap_min
 
     # 3) Komplexer Exponent (allgemeiner Fall)
-    a = exp_real
-    b = exp_imag
-    log_exp = math.log(math.sqrt(a*a + b*b))
+    else:
+        a = exp_real
+        b = exp_imag
+        log_exp = math.log(math.sqrt(a*a + b*b))
 
-    for i in range(max_iter):
-        r2 = zr * zr + zi * zi
-        
-        if r2 > escape_sq:
-            abs_z = math.sqrt(r2)
-            nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-            return float(nu), 1, zr, zi, trap_min
+        for i in range(max_iter):
+            
+            # Orbit-Trap
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
+            
+            r2 = zr * zr + zi * zi
+            
+            if r2 > escape_sq:
+                abs_z = math.sqrt(r2)
+                nu = i + 1 - math.log(math.log(abs_z)) / log_exp
+                return float(nu), 1, zr, zi, trap_min
 
-        if r2 == 0.0:
-            zr = c_real
-            zi = c_imag
-            continue
+            if r2 == 0.0:
+                zr = c_real
+                zi = c_imag
+                continue
 
-        r = math.sqrt(r2)
-        log_r = math.log(r)
-        theta = math.atan2(zi, zr)
+            r = math.sqrt(r2)
+            log_r = math.log(r)
+            theta = math.atan2(zi, zr)
 
-        real_part = a * log_r - b * theta
-        imag_part = a * theta + b * log_r
+            real_part = a * log_r - b * theta
+            imag_part = a * theta + b * log_r
 
-        exp_r = math.exp(real_part)
+            exp_r = math.exp(real_part)
 
-        zr = exp_r * math.cos(imag_part) + c_real
-        zi = exp_r * math.sin(imag_part) + c_imag
+            zr = exp_r * math.cos(imag_part) + c_real
+            zi = exp_r * math.sin(imag_part) + c_imag
 
-    return float(max_iter), 0, zr, zi, trap_min
+        return float(max_iter), 0, zr, zi, trap_min
 
 @njit
 def inverted_mandelbrot_kernel(
@@ -491,7 +502,7 @@ class Fractal(ABC):
         self.c_imag = 0.0
 
         # Für Orbit-Trap
-        self.trap_type = 0  # 0 = Punkt, 1 = Kreis, 2 = Linie etc.
+        self.trap_type = 1  # 0 = Punkt, 1 = Kreis, 2 = Linie etc.
         self.trap_x = 0.3
         self.trap_y = 0.2
         self.trap_radius = 0.05

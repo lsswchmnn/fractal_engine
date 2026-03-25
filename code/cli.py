@@ -268,8 +268,14 @@ class CLI():
     def cli_change_orbit_trap_settings(self):
         while True:
 
+            # aktuelles Label anhand des Index finden
+            current_type_idx = self.fractal.trap_type
+            current_label = next(
+                (info["label"] for info in ORBIT_TRAP_MAP.values() if info["idx"] == current_type_idx),
+                "Unknown")
+
             print_heading("CHANGE ORBIT-TRAP-SETTINGS")
-            print(f"1 - Change Type (current: {self.fractal.trap_type})")
+            print(f"1 - Change Type (current: {current_label})")
             print(f"2 - Change X-Offset (current: {self.fractal.trap_x})")
             print(f"3 - Change Y-Offset (current: {self.fractal.trap_y})")
             print(f"4 - Change trap radius (current: {self.fractal.trap_radius})")

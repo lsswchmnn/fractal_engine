@@ -196,13 +196,14 @@ class ColorMap():
 
         palette_size = len(self.palette)
 
-        # --- Normalisierung vorbereiten ---
         # Nur escaped Punkte berücksichtigen
-        valid = trap_dist[escaped == 1]
+        #valid = trap_dist[escaped == 1]
+        valid = trap_dist[(escaped == 1) & np.isfinite(trap_dist)]
 
         if len(valid) == 0:
             return image
 
+        # Min/Max
         d_min = np.min(valid)
         d_max = np.max(valid)
 
@@ -213,6 +214,8 @@ class ColorMap():
         # Optional: log-Skalierung (stark empfohlen)
         log_min = np.log(d_min + 1e-12)
         log_max = np.log(d_max + 1e-12)
+        if log_max == log_min:
+            log_max = log_min + 1e-12
 
         for y in range(height):
             for x in range(width):
@@ -223,16 +226,16 @@ class ColorMap():
 
                 d = trap_dist[y, x]
 
+                if not np.isfinite(d):
+                    image[y, x] = (0, 0, 0)
+                    continue
+
                 # --- Log-Skalierung für bessere Dynamik ---
                 ld = np.log(d + 1e-12)
-
                 t = (ld - log_min) / (log_max - log_min)
 
                 # Clamp
-                if t < 0.0:
-                    t = 0.0
-                elif t > 1.0:
-                    t = 1.0
+                t = max(0.0, min(1.0, t))
 
                 # --- Palette Interpolation ---
                 idx = t * (palette_size - 1)

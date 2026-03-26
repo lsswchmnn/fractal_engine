@@ -114,22 +114,8 @@ class CLI():
         self.visualizer.start()
         clear_cli()
         return
-    
-    # Menü: Hilfe
-    def menu_help(self):
-        print_heading("HELP MENU")
-        print(
-            "This program allows you to load and visualize different types of fractals, " \
-            "as well as manipulate the underlying formula and rendering settings for more customized results." \
-            "\n\n" \
-            "Fractals are complex mathematical sets that exhibit self-similarity and intricate patterns at every scale. " \
-            "The Mandelbrot set, for example, is defined by iterating the formula z = z^2 + c, where z and c are complex " \
-            "numbers. By changing the parameters of this formula, you can create a wide variety of fractal images." 
-        )
 
-        enter_continue("Press enter to return to main menu.")
-
-    # Menü: Einstellungen
+    # Menüpunkt 3: Einstellungen
     def menu_settings(self):
         while True:
             print_heading("SETTINGS")
@@ -164,69 +150,82 @@ class CLI():
             elif choice == "c":
                 break
 
+    # Menü: Hilfe
+    def menu_help(self):
+        print_heading("HELP MENU")
+        print(
+            "This program allows you to load and visualize different types of fractals, " \
+            "as well as manipulate the underlying formula and rendering settings for more customized results." \
+            "\n\n" \
+            "Fractals are complex mathematical sets that exhibit self-similarity and intricate patterns at every scale. " \
+            "The Mandelbrot set, for example, is defined by iterating the formula z = z^2 + c, where z and c are complex " \
+            "numbers. By changing the parameters of this formula, you can create a wide variety of fractal images." 
+        )
+
+        enter_continue("Press enter to return to main menu.")
+
 #------------------------------------------------------------
 # EINSTELLUNGEN
 
     # Einstellungen: Formelmanipulation (Startwert und Exponent)
     def cli_manipulate_formula(self):
-        if self.fractal._name is not None:  # später Einschränkung, falls manche Fraktale bestimmte Manipulationen nicht unterstützen
+        while True:
 
-            while True:
-                print_heading("MANIPULATE FORMULA")
-                print(f"Current formula: {self.fractal._formula}")
-                print("\nAvailable manipulations:")
-                print(f"1 - Change startvalue (current: {self.fractal.start_real} + {self.fractal.start_imag}i)")
-                print(f"2 - Change exponent (current: {self.fractal.exp_real} + {self.fractal.exp_imag}i)")
-                print("H - Help")
-                print("C - Cancel")
-                print_thin_separation(linebreak=False)
-                choice = input("> ").strip().lower()
+            print_heading("MANIPULATE FORMULA")
+            print(f"Current formula: {self.fractal._formula}")
+            print("\nAvailable manipulations:")
+            print(f"1 - Change startvalue (current: {self.fractal.start_real} + {self.fractal.start_imag}i)")
+            print(f"2 - Change exponent (current: {self.fractal.exp_real} + {self.fractal.exp_imag}i)")
+            print("H - Help")
+            print("C - Cancel")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
 
-                if choice == "1":
-                    print_heading("CHANGE STARTVALUE")
-                    print(f"Current startvalue: z0 = {self.fractal.start_real} + {self.fractal.start_imag}i\n")
-                    print("Recommended: Startvalue close to the critical point (0 for Mandelbrot) for more interesting results, but feel free to experiment!\n")
-                    print_thin_separation()
-                    print()
+            if choice == "1":
+                print_heading("CHANGE STARTVALUE")
+                print(f"Current startvalue: z0 = {self.fractal.start_real} + {self.fractal.start_imag}i\n")
+                print("Recommended: Startvalue close to the critical point (0 for Mandelbrot) for more interesting results, but feel free to experiment!\n")
+                print_thin_separation()
+                print()
 
-                    real = input_float(-100.0, 100.0, 0.0, msg="Enter real part of startvalue z0", cli=True, loop=True)
-                    imag = input_float(-100.0, 100.0, 0.0, msg="Enter imaginary part of startvalue z0", cli=True, loop=True)
-                    self.fractal.start_real = real
-                    self.fractal.start_imag = imag
-                    enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue.", seperation=False)
+                real = input_float(-100.0, 100.0, 0.0, msg="Enter real part of startvalue z0", cli=True, loop=True)
+                imag = input_float(-100.0, 100.0, 0.0, msg="Enter imaginary part of startvalue z0", cli=True, loop=True)
+                self.fractal.start_real = real
+                self.fractal.start_imag = imag
+                enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue.", seperation=False)
 
-                    # Warnungen für potenziell instabile Einstellungen
-                    if imag != 0 or real != 2:
-                        self.cli_settings_warning(imag, real, "startvalue")
-                        break
-                
-                elif choice == "2":
-                    print_heading("CHANGE EXPONENT")
-                    print(f"Current exponent: {self.fractal.exp_real} + {self.fractal.exp_imag}i\n")
-                    print("Note: Changing the exponent can lead to very different and often less stable fractals, especially for non-integer or complex exponents. Experiment with caution!\n")
-                    print_thin_separation()
-                    print()
-
-                    real = input_float(-20.0, 20.0, 2.0, [1], msg="Enter real part of Exponent", cli=True, loop=False)
-                    imag = input_float(-20.0, 20.0, 0.0,      msg="Enter imaginary part of Exponent", cli=True, loop=False)
-                    self.fractal.exp_real = real
-                    self.fractal.exp_imag = imag
-                    enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue.", seperation=False)
-
-                    # Warnungen für potenziell instabile Einstellungen
-                    if imag != 0 or real != 2:
-                        self.cli_settings_warning(imag, real, "exponent")
-                        break
-
-                elif choice == "h":
-                    print_heading("HELP - MANIPULATE FORMULA")
-                    print("Startvalue: The initial value z0 used in the fractal formula. For the Mandelbrot set, z0 is typically 0, but changing it can produce different and interesting variations.")
-                    print("Exponent: The power to which z is raised in the formula. The standard Mandelbrot uses an exponent of 2, but changing it can create a wide variety of fractal shapes. Note that non-integer or complex exponents can lead to very different and often less stable fractals.")
-                    enter_continue("Press enter to return to formula manipulation menu.")
-
-                elif choice == "c":
+                # Warnungen für potenziell instabile Einstellungen
+                if imag != 0 or real != 2:
+                    self.cli_settings_warning(imag, real, "startvalue")
                     break
-    
+            
+            elif choice == "2":
+                print_heading("CHANGE EXPONENT")
+                print(f"Current exponent: {self.fractal.exp_real} + {self.fractal.exp_imag}i\n")
+                print("Note: Changing the exponent can lead to very different and often less stable fractals, especially for non-integer or complex exponents. Experiment with caution!\n")
+                print_thin_separation()
+                print()
+
+                real = input_float(-20.0, 20.0, 2.0, [1], msg="Enter real part of Exponent", cli=True, loop=False)
+                imag = input_float(-20.0, 20.0, 0.0,      msg="Enter imaginary part of Exponent", cli=True, loop=False)
+                self.fractal.exp_real = real
+                self.fractal.exp_imag = imag
+                enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue.", seperation=False)
+
+                # Warnungen für potenziell instabile Einstellungen
+                if imag != 0 or real != 2:
+                    self.cli_settings_warning(imag, real, "exponent")
+                    break
+
+            elif choice == "h":
+                print_heading("HELP - MANIPULATE FORMULA")
+                print("Startvalue: The initial value z0 used in the fractal formula. For the Mandelbrot set, z0 is typically 0, but changing it can produce different and interesting variations.")
+                print("Exponent: The power to which z is raised in the formula. The standard Mandelbrot uses an exponent of 2, but changing it can create a wide variety of fractal shapes. Note that non-integer or complex exponents can lead to very different and often less stable fractals.")
+                enter_continue("Press enter to return to formula manipulation menu.")
+
+            elif choice == "c":
+                break
+
     # Einstellungen: Rendering (Basis-Iterationen und adaptiver Iterationsfaktor)
     def cli_change_rendering_settings(self): 
         while True:
@@ -274,7 +273,7 @@ class CLI():
                 (info["label"] for info in ORBIT_TRAP_MAP.values() if info["idx"] == current_type_idx),
                 "Unknown")
 
-            print_heading("CHANGE ORBIT-TRAP-SETTINGS")
+            print_heading("CHANGE ORBIT-TRAP SETTINGS")
             print(f"1 - Change Type (current: {current_label})")
             print(f"2 - Change X-Offset (current: {self.fractal.trap_x})")
             print(f"3 - Change Y-Offset (current: {self.fractal.trap_y})")
@@ -309,7 +308,9 @@ class CLI():
                     selected_key = trap_keys[idx]
                     trap_info = ORBIT_TRAP_MAP[selected_key]
 
-                    fractal.trap_type = trap_info["idx"]
+                    # Einstellungen übernehmen
+                    self.fractal.trap_type = trap_info["idx"]
+                    self.fractal.trap_type_name = trap_info["label"]
 
                     enter_continue(f"\nOrbit trap set to: {trap_info['label']}. Press Enter to continue")
                     break

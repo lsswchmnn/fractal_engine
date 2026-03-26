@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from numba import njit
 import math
 #============================================================
-# ITERATIONSKERNELS (eigentliche Berechnungen, vom Render-Kernel aus aufgerufen)
+# ORBITTRAP-KERNEL (aufgerufen von Iterationskernel)
 @njit
 def calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius):
     
@@ -21,13 +21,13 @@ def calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius):
         return abs(dist - trap_radius)
 
     elif trap_type == 2:  # LINE (horizontal)
-        return abs(zi - trap_y)
+        return abs(zr - trap_x)
 
     else:
         return 1e10
-    
+
 #============================================================
-# ITERATIONSKERNELS (eigentliche Berechnungen, vom Render-Kernel aus aufgerufen)
+# ITERATIONSKERNELS (aufgerufen von Renderkernel in visualize.py)
 
 @njit
 def mandelbrot_kernel(
@@ -502,7 +502,8 @@ class Fractal(ABC):
         self.c_imag = 0.0
 
         # Für Orbit-Trap
-        self.trap_type = 1  # 0 = Punkt, 1 = Kreis, 2 = Linie etc.
+        self.trap_type = 1          # 0 = Punkt, 1 = Kreis, 2 = Linie etc.
+        self.trap_type_name = "circle"    # Für Anzeige
         self.trap_x = 0.3
         self.trap_y = 0.2
         self.trap_radius = 0.05

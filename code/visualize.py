@@ -314,12 +314,12 @@ class Renderer():
         print(f"Startvalue:             {fractal.start_real} + {fractal.start_imag}i")
         print(f"Exponent:               {fractal.exp_real} + {fractal.exp_imag}i")
         print(f"Coloring mode:          {coloring_mode}")
+        if coloring_mode == "orbit trap":
+            print(f"Orbit-Trap type:        {fractal.trap_type_name}")
         print(f"Palette:                {colormap.palette_name}")
         print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
         print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
         print(f"Rendering-Time:         {length} sec")
-
-        print(np.min(trap[np.isfinite(trap)]), np.max(trap[np.isfinite(trap)])) # // DEBUG
         
         print_thin_separation(linebreak=False)
         print()

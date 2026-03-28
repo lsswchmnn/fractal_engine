@@ -145,16 +145,18 @@ def mandelbrot_kernel(
 @njit
 def inverted_mandelbrot_kernel(
     c_real, c_imag,
-    max_iter,
-    escape_radius,
+    max_iter, escape_radius,
     z_real=0.0, z_imag=0.0,
-    exp_real=2.0, exp_imag=0.0):
+    exp_real=2.0, exp_imag=0.0,
+    trap_y=0.1, trap_x=0.1,
+    trap_type=0, trap_radius=0.5):
 
     # Singularität vermeiden (c = 0)
     if c_real == 0.0 and c_imag == 0.0:
         c_real = 1e10
         c_imag = 0.0
 
+    trap_min = 1e10
     escape_sq = escape_radius * escape_radius
 
     # 1/c einmal berechnen
@@ -168,27 +170,27 @@ def inverted_mandelbrot_kernel(
     # 1) Exponent = 2 (Fast Path)
     if exp_imag == 0.0 and exp_real == 2.0:
 
-        log_exp = math.log(2.0)
-
         for i in range(max_iter):
+
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
 
             zr2 = zr * zr
             zi2 = zi * zi
             r2 = zr2 + zi2
 
             if r2 > escape_sq:
-
                 abs_z = math.sqrt(r2)
-                nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-
-                return float(nu), 1, zr, zi
+                nu = i + 1 - math.log(math.log(abs_z)) / math.log(2)
+                return float(nu), 1, zr, zi, trap_min
 
             zi = 2.0 * zr * zi + c_inv_imag
             zr = zr2 - zi2 + c_inv_real
 
-        return float(max_iter), 0, zr, zi
+        return float(max_iter), 0, zr, zi, trap_min
 
-    # 2) Ganzzahliger Exponent
+    # 2) Höhere ganzzahlige Exponenten
     if exp_imag == 0.0 and exp_real == float(int(exp_real)):
 
         d = int(exp_real)
@@ -196,14 +198,16 @@ def inverted_mandelbrot_kernel(
 
         for i in range(max_iter):
 
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
+
             r2 = zr * zr + zi * zi
 
             if r2 > escape_sq:
-
                 abs_z = math.sqrt(r2)
                 nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-
-                return float(nu), 1, zr, zi
+                return float(nu), 1, zr, zi, trap_min
 
             zr_pow = zr
             zi_pow = zi
@@ -216,77 +220,88 @@ def inverted_mandelbrot_kernel(
             zr = zr_pow + c_inv_real
             zi = zi_pow + c_inv_imag
 
-        return float(max_iter), 0, zr, zi
+        return float(max_iter), 0, zr, zi, trap_min
 
     # 3) Komplexer Exponent (allgemeiner Fall)
-    a = exp_real
-    b = exp_imag
-    log_exp = math.log(math.sqrt(a*a + b*b))
+    else:
+        a = exp_real
+        b = exp_imag
+        log_exp = math.log(math.sqrt(a*a + b*b))
 
-    for i in range(max_iter):
-        r2 = zr * zr + zi * zi
+        for i in range(max_iter):
 
-        if r2 > escape_sq:
-            abs_z = math.sqrt(r2)
-            nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-            return float(nu), 1, zr, zi
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
 
-        if r2 == 0.0:
-            zr = c_inv_real
-            zi = c_inv_imag
-            continue
+            r2 = zr * zr + zi * zi
 
-        r = math.sqrt(r2)
-        log_r = math.log(r)
-        theta = math.atan2(zi, zr)
+            if r2 > escape_sq:
+                abs_z = math.sqrt(r2)
+                nu = i + 1 - math.log(math.log(abs_z)) / log_exp
+                return float(nu), 1, zr, zi, trap_min
 
-        real_part = a * log_r - b * theta
-        imag_part = a * theta + b * log_r
+            if r2 == 0.0:
+                zr = c_inv_real
+                zi = c_inv_imag
+                continue
 
-        exp_r = math.exp(real_part)
+            r = math.sqrt(r2)
+            log_r = math.log(r)
+            theta = math.atan2(zi, zr)
 
-        zr = exp_r * math.cos(imag_part) + c_inv_real
-        zi = exp_r * math.sin(imag_part) + c_inv_imag
+            real_part = a * log_r - b * theta
+            imag_part = a * theta + b * log_r
 
-    return float(max_iter), 0, zr, zi
+            exp_r = math.exp(real_part)
+
+            zr = exp_r * math.cos(imag_part) + c_inv_real
+            zi = exp_r * math.sin(imag_part) + c_inv_imag
+
+        return float(max_iter), 0, zr, zi, trap_min
 
 @njit
 def julia_kernel(
     c_real, c_imag,
-    max_iter,
-    escape_radius,
-    z_real, z_imag,
-    exp_real=2.0, exp_imag=0.0):
+    max_iter, escape_radius,
+    z_real=0.0, z_imag=0.0,
+    exp_real=2.0, exp_imag=0.0,
+    trap_y=0.1, trap_x=0.1,
+    trap_type=0, trap_radius=0.5):
 
     # Julia: z0 = Pixel, c = konstante Parameter
     return mandelbrot_kernel(
-        c_real,
-        c_imag,
-        max_iter,
-        escape_radius,
-        z_real,
-        z_imag,
-        exp_real,
-        exp_imag
+        c_real, c_imag,
+        max_iter, escape_radius,
+        z_real, z_imag,
+        exp_real, exp_imag,
+        trap_y, trap_x,
+        trap_type, trap_radius
     )
 
 @njit
 def burning_ship_kernel(
     c_real, c_imag,
-    max_iter,
-    escape_radius,
+    max_iter, escape_radius,
     z_real=0.0, z_imag=0.0,
-    exp_real=2.0, exp_imag=0.0):
+    exp_real=2.0, exp_imag=0.0,
+    trap_y=0.1, trap_x=0.1,
+    trap_type=0, trap_radius=0.5):
 
+    trap_min = 1e10
     escape_sq = escape_radius * escape_radius
     zr = z_real
     zi = z_imag
 
     # 1) Standard Burning Ship (Exponent 2)
     if exp_imag == 0.0 and exp_real == 2.0:
-        log_exp = math.log(2.0)
 
         for i in range(max_iter):
+
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
+
             zr_abs = abs(zr)
             zi_abs = abs(zi)
 
@@ -296,21 +311,26 @@ def burning_ship_kernel(
 
             if r2 > escape_sq:
                 abs_z = math.sqrt(r2)
-                nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-                return float(nu), 1, zr, zi
+                nu = i + 1 - math.log(math.log(abs_z)) / math.log(2)
+                return float(nu), 1, zr, zi, trap_min
 
             zi = 2.0 * zr_abs * zi_abs + c_imag
             zr = zr2 - zi2 + c_real
 
-        return float(max_iter), 0, zr, zi
+        return float(max_iter), 0, zr, zi, trap_min
 
-    # 2) Ganzzahliger Exponent
+    # 2) Höhere ganzzahlige Exponenten
     if exp_imag == 0.0 and exp_real == float(int(exp_real)):
 
         d = int(exp_real)
         log_exp = math.log(exp_real)
 
         for i in range(max_iter):
+
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
+
             zr_abs = abs(zr)
             zi_abs = abs(zi)
 
@@ -327,68 +347,74 @@ def burning_ship_kernel(
             if r2 > escape_sq:
                 abs_z = math.sqrt(r2)
                 nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-                return float(nu), 1, zr, zi
+                return float(nu), 1, zr, zi, trap_min
 
             zr = zr_pow + c_real
             zi = zi_pow + c_imag
 
-        return float(max_iter), 0, zr, zi
+        return float(max_iter), 0, zr, zi, trap_min
 
-    # 3) Komplexer Exponent
-    a = exp_real
-    b = exp_imag
-    log_exp = math.log(math.sqrt(a*a + b*b))
+    # 3) Komplexer Exponent (allgemeiner Fall)
+    else:
+        a = exp_real
+        b = exp_imag
+        log_exp = math.log(math.sqrt(a*a + b*b))
 
-    for i in range(max_iter):
-        zr_abs = abs(zr)
-        zi_abs = abs(zi)
+        for i in range(max_iter):
 
-        r2 = zr_abs * zr_abs + zi_abs * zi_abs
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
 
-        if r2 > escape_sq:
-            abs_z = math.sqrt(r2)
-            nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-            return float(nu), 1, zr, zi
+            zr_abs = abs(zr)
+            zi_abs = abs(zi)
 
-        if r2 == 0.0:
-            zr = c_real
-            zi = c_imag
-            continue
+            r2 = zr_abs * zr_abs + zi_abs * zi_abs
 
-        r = math.sqrt(r2)
-        log_r = math.log(r)
-        theta = math.atan2(zi_abs, zr_abs)
+            if r2 > escape_sq:
+                abs_z = math.sqrt(r2)
+                nu = i + 1 - math.log(math.log(abs_z)) / log_exp
+                return float(nu), 1, zr, zi, trap_min
 
-        real_part = a * log_r - b * theta
-        imag_part = a * theta + b * log_r
+            if r2 == 0.0:
+                zr = c_real
+                zi = c_imag
+                continue
 
-        exp_r = math.exp(real_part)
+            r = math.sqrt(r2)
+            log_r = math.log(r)
+            theta = math.atan2(zi_abs, zr_abs)
 
-        zr = exp_r * math.cos(imag_part) + c_real
-        zi = exp_r * math.sin(imag_part) + c_imag
+            real_part = a * log_r - b * theta
+            imag_part = a * theta + b * log_r
 
-    return float(max_iter), 0, zr, zi
+            exp_r = math.exp(real_part)
+
+            zr = exp_r * math.cos(imag_part) + c_real
+            zi = exp_r * math.sin(imag_part) + c_imag
+
+        return float(max_iter), 0, zr, zi, trap_min
 
 @njit
 def tricorn_kernel(
     c_real, c_imag,
-    max_iter,
-    escape_radius,
+    max_iter, escape_radius,
     z_real=0.0, z_imag=0.0,
-    exp_real=2.0, exp_imag=0.0):
+    exp_real=2.0, exp_imag=0.0,
+    trap_y=0.1, trap_x=0.1,
+    trap_type=0, trap_radius=0.5):
 
+    trap_min = 1e10
     escape_sq = escape_radius * escape_radius
-
     zr = z_real
     zi = z_imag
 
     # 1) Standard Tricorn (Exponent 2)
     if exp_imag == 0.0 and exp_real == 2.0:
-        log_exp = math.log(2.0)
 
         for i in range(max_iter):
 
-            # komplexe Konjugation
+            # Komplexe Konjugation
             zr_c = zr
             zi_c = -zi
 
@@ -396,21 +422,22 @@ def tricorn_kernel(
             zr2 = zr_c * zr_c
             zi2 = zi_c * zi_c
 
-            zr_new = zr2 - zi2 + c_real
-            zi_new = 2.0 * zr_c * zi_c + c_imag
+            zr = zr2 - zi2 + c_real
+            zi = 2.0 * zr_c * zi_c + c_imag
 
-            zr = zr_new
-            zi = zi_new
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
 
             r2 = zr * zr + zi * zi
             if r2 > escape_sq:
                 abs_z = math.sqrt(r2)
-                nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-                return float(nu), 1, zr, zi
+                nu = i + 1 - math.log(math.log(abs_z)) / math.log(2)
+                return float(nu), 1, zr, zi, trap_min
 
-        return float(max_iter), 0, zr, zi
+        return float(max_iter), 0, zr, zi, trap_min
 
-    # 2) Ganzzahliger Exponent
+    # 2) Höhere ganzzahlige Exponenten
     if exp_imag == 0.0 and exp_real == float(int(exp_real)):
 
         d = int(exp_real)
@@ -418,7 +445,7 @@ def tricorn_kernel(
 
         for i in range(max_iter):
 
-            # komplexe Konjugation
+            # Komplexe Konjugation
             zr_c = zr
             zi_c = -zi
 
@@ -433,47 +460,205 @@ def tricorn_kernel(
             zr = zr_pow + c_real
             zi = zi_pow + c_imag
 
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
+
             r2 = zr * zr + zi * zi
             if r2 > escape_sq:
                 abs_z = math.sqrt(r2)
                 nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-                return float(nu), 1, zr, zi
+                return float(nu), 1, zr, zi, trap_min
 
-        return float(max_iter), 0, zr, zi
+        return float(max_iter), 0, zr, zi, trap_min
 
     # 3) Komplexer Exponent (allgemeiner Fall)
-    a = exp_real
-    b = exp_imag
-    log_exp = math.log(math.sqrt(a*a + b*b))
+    else:
+        a = exp_real
+        b = exp_imag
+        log_exp = math.log(math.sqrt(a*a + b*b))
 
-    for i in range(max_iter):
-        # komplexe Konjugation
-        zr_c = zr
-        zi_c = -zi
+        for i in range(max_iter):
 
-        r2 = zr_c * zr_c + zi_c * zi_c
-        if r2 > escape_sq:
-            abs_z = math.sqrt(r2)
-            nu = i + 1 - math.log(math.log(abs_z)) / log_exp
-            return float(nu), 1, zr, zi
+            # Komplexe Konjugation
+            zr_c = zr
+            zi_c = -zi
 
-        if r2 == 0.0:
-            zr = c_real
-            zi = c_imag
-            continue
+            r2 = zr_c * zr_c + zi_c * zi_c
 
-        r = math.sqrt(r2)
-        log_r = math.log(r)
-        theta = math.atan2(zi_c, zr_c)
+            if r2 > escape_sq:
+                abs_z = math.sqrt(r2)
+                nu = i + 1 - math.log(math.log(abs_z)) / log_exp
+                return float(nu), 1, zr, zi, trap_min
 
-        real_part = a * log_r - b * theta
-        imag_part = a * theta + b * log_r
+            if r2 == 0.0:
+                zr = c_real
+                zi = c_imag
+                continue
 
-        exp_r = math.exp(real_part)
-        zr = exp_r * math.cos(imag_part) + c_real
-        zi = exp_r * math.sin(imag_part) + c_imag
+            r = math.sqrt(r2)
+            log_r = math.log(r)
+            theta = math.atan2(zi_c, zr_c)
 
-    return float(max_iter), 0, zr, zi
+            real_part = a * log_r - b * theta
+            imag_part = a * theta + b * log_r
+
+            exp_r = math.exp(real_part)
+            zr = exp_r * math.cos(imag_part) + c_real
+            zi = exp_r * math.sin(imag_part) + c_imag
+
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
+
+        return float(max_iter), 0, zr, zi, trap_min
+
+@njit
+def phoenix_kernel(
+    c_real, c_imag,
+    max_iter, escape_radius,
+    z_real=0.0, z_imag=0.0,
+    exp_real=2.0, exp_imag=0.0,
+    trap_y=0.1, trap_x=0.1,
+    trap_type=0, trap_radius=0.5):
+
+    # z_{n+1} = z_n^exp + c_real + c_imag * z_{n-1}
+    # z_{n-1} startet bei (0, 0)
+
+    trap_min = 1e10
+    escape_sq = escape_radius * escape_radius
+    zr = z_real
+    zi = z_imag
+    zr_prev = 0.0
+    zi_prev = 0.0
+
+    # 1) Exponent 2
+    if exp_imag == 0.0 and exp_real == 2.0:
+
+        for i in range(max_iter):
+
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
+
+            zr2 = zr * zr
+            zi2 = zi * zi
+            r2 = zr2 + zi2
+
+            if r2 > escape_sq:
+                abs_z = math.sqrt(r2)
+                nu = i + 1 - math.log(math.log(abs_z)) / math.log(2)
+                return float(nu), 1, zr, zi, trap_min
+
+            zr_new = zr2 - zi2 + c_real + c_imag * zr_prev
+            zi_new = 2.0 * zr * zi  + c_imag * zi_prev
+
+            zr_prev = zr
+            zi_prev = zi
+            zr = zr_new
+            zi = zi_new
+
+        return float(max_iter), 0, zr, zi, trap_min
+
+    # 2) Höhere ganzzahlige Exponenten
+    if exp_imag == 0.0 and exp_real == float(int(exp_real)):
+
+        d = int(exp_real)
+        log_exp = math.log(exp_real)
+
+        for i in range(max_iter):
+
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
+
+            r2 = zr * zr + zi * zi
+
+            if r2 > escape_sq:
+                abs_z = math.sqrt(r2)
+                nu = i + 1 - math.log(math.log(abs_z)) / log_exp
+                return float(nu), 1, zr, zi, trap_min
+
+            zr_pow = zr
+            zi_pow = zi
+            for _ in range(d - 1):
+                temp = zr_pow * zr - zi_pow * zi
+                zi_pow = zr_pow * zi + zi_pow * zr
+                zr_pow = temp
+
+            zr_new = zr_pow + c_real + c_imag * zr_prev
+            zi_new = zi_pow         + c_imag * zi_prev
+
+            zr_prev = zr
+            zi_prev = zi
+            zr = zr_new
+            zi = zi_new
+
+        return float(max_iter), 0, zr, zi, trap_min
+
+    # 3) Komplexer Exponent (allgemeiner Fall)
+    else:
+        a = exp_real
+        b = exp_imag
+        log_exp = math.log(math.sqrt(a*a + b*b))
+
+        for i in range(max_iter):
+
+            dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
+            if dist < trap_min:
+                trap_min = dist
+
+            r2 = zr * zr + zi * zi
+
+            if r2 > escape_sq:
+                abs_z = math.sqrt(r2)
+                nu = i + 1 - math.log(math.log(abs_z)) / log_exp
+                return float(nu), 1, zr, zi, trap_min
+
+            if r2 == 0.0:
+                zr_prev = zr
+                zi_prev = zi
+                zr = c_real
+                zi = 0.0
+                continue
+
+            r = math.sqrt(r2)
+            log_r = math.log(r)
+            theta = math.atan2(zi, zr)
+
+            real_part = a * log_r - b * theta
+            imag_part = a * theta + b * log_r
+
+            exp_r = math.exp(real_part)
+
+            zr_new = exp_r * math.cos(imag_part) + c_real + c_imag * zr_prev
+            zi_new = exp_r * math.sin(imag_part)          + c_imag * zi_prev
+
+            zr_prev = zr
+            zi_prev = zi
+            zr = zr_new
+            zi = zi_new
+
+        return float(max_iter), 0, zr, zi, trap_min
+
+@njit
+def phoenix_julia_kernel(
+    c_real, c_imag,
+    max_iter, escape_radius,
+    z_real=0.0, z_imag=0.0,
+    exp_real=2.0, exp_imag=0.0,
+    trap_y=0.1, trap_x=0.1,
+    trap_type=0, trap_radius=0.5):
+
+    # Julia-Variante: z_0 = Pixel, c = feste Parameter
+    return phoenix_kernel(
+        c_real, c_imag,
+        max_iter, escape_radius,
+        z_real, z_imag,
+        exp_real, exp_imag,
+        trap_y, trap_x,
+        trap_type, trap_radius
+    )
 
 #============================================================
 # KLASSEN für Fraktale
@@ -555,3 +740,26 @@ class TricornFractal(Fractal):
         self.kernel = tricorn_kernel
         self._name = "Tricorn"
         self._formula = "z_{n+1} = conjugate(z_n)^2 + c"
+
+#------------------------------------------------------------
+class PhoenixFractal(Fractal):
+    def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
+        super().__init__(max_iterations, escape_radius)
+        self._default_bounds = (-2.0, 2.0, -1.5, 1.5)
+        self._name = "Phoenix"
+        self._formula = "z_{n+1} = z_n^exp + c_real + c_imag · z_{n-1}"
+        self.kernel = phoenix_kernel
+
+        # Klassische Phoenix-Startparameter
+        self.c_real =  0.5667
+        self.c_imag = -0.5
+
+#------------------------------------------------------------
+class PhoenixJuliaFractal(Fractal):
+    def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
+        super().__init__(max_iterations, escape_radius)
+        self._default_bounds = (-2.0, 2.0, -1.5, 1.5)
+        self._name = "Phoenix Julia"
+        self._formula = "z_{n+1} = z_n^exp + c_real + c_imag · z_{n-1}"
+        self.kernel = phoenix_julia_kernel
+        self.pixel_is_c = False     # Pixel → z_0, c ist fest

@@ -31,6 +31,19 @@ FRACTALS_MAP =  {
         "formula": "z_{n+1} = conj(z_n)^2 + c"
     },
 
+    "PhoenixFractal": {
+        "name": "Phoenix",
+        "desc": ("..."),
+        "formula": "z_{n+1} = z_n^2 + c + p * z_{n-1}",
+    },
+
+    "PhoenixJuliaFractal": {
+        "name": "Phoenix Julia",
+        "desc": ("..."),
+        "formula": "z_{n+1} = z_n^2 + c + p * z_{n-1}",
+    }
+
+
 }
 
 #------------------------------------------------------------

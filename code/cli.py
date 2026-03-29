@@ -122,6 +122,7 @@ class CLI():
             print("1 - Formula manipulation")
             print("2 - Rendering")
             print("3 - Orbit trap")
+            print("4 - Export")
             print("H - Help")
             print("C - Close")
             print_thin_separation(linebreak=False)
@@ -139,11 +140,19 @@ class CLI():
                 self.cli_change_orbit_trap_settings()
                 continue
 
+            elif choice == "4":
+                self.cli_export_settings()
+                continue
+
             elif choice == "h":
                 print_heading("HELP - SETTINGS")
                 print("Manipulate Formula: Change the start value and exponent used in the fractal formula. Note that non-standard settings can lead to very different and often less stable fractals, especially for complex exponents.")
                 print()
-                print("Rendering settings: Adjust the base number of iterations and the adaptive iteration factor k, which controls how many additional iterations are added as you zoom in. Higher k can improve detail accuracy at strong zooms but also increases rendering time.")
+                print("Rendering settings: Adjust the base number of iterations and the adaptive iteration factor k, which controls how many additional iterations are added as you zoom in. Higher k can improve detail accuracy at strong zooms but also increases rendering time and can lead to more fragile images at less deep zooms.")
+                print()
+                print("Orbit trap settings: Customize the type of orbit trap used for coloring, as well as the position and radius of the trap. Different types and settings can produce a wide variety of visual effects.")
+                print()
+                print("Export settings: Adjust the export resolution factor, which determines how much the resolution is increased when exporting the fractal image. Higher factors produce higher resolution images suitable for printing or detailed viewing, but also increase export time and file size.")
                 enter_continue("Press enter to return to settings menu.")
                 continue
 
@@ -242,7 +251,7 @@ class CLI():
                 print_heading("CHANGE BASE ITERATIONS")
                 print(f"Current base iterations: {self.fractal.max_iterations}\n")
 
-                max_iter = input_int(10, 100, 10000, "Enter new base iterations", True)
+                max_iter = input_int(10, 10000, 100, msg="Enter new base iterations", cli=True)
                 self.fractal.max_iterations = max_iter
                 enter_continue(f"Base iterations changed to {max_iter}. Press enter to continue.", seperation=False)
 
@@ -250,7 +259,7 @@ class CLI():
                 print_heading("CHANGE ADAPTIVE ITERATION FACTOR")
                 print(f"Current adaptive iteration factor k: {self.visualizer.iterate_factor_k}\n")
 
-                k = input_int(1, 1000, 100, "Enter new adaptive iteration factor k", True)
+                k = input_int(1, 1000, 100, msg="Enter new adaptive iteration factor k", cli=True)
                 self.visualizer.iterate_factor_k = k
                 enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
 
@@ -338,6 +347,43 @@ class CLI():
                 radius = input_float(0.0, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
                 self.fractal.trap_radius = radius
                 enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_radius}. Press enter to continue.", seperation=False)
+
+            elif choice == "h":
+                print_heading("HELP - ORBIT TRAP SETTINGS")
+                print("Type: Choose the method used for orbit trap coloring. Different methods can produce very different visual effects.")
+                print("X-Offset and Y-Offset: Adjust the position of the trap in the complex plane. This can create interesting variations in the resulting image.")
+                print("Trap Radius: The radius around the trap point that determines how close an orbit must come to be affected by the trap. Smaller radii create sharper features, while larger radii produce softer effects.")
+                enter_continue("Press enter to return to settings menu.", seperation=False)
+
+            elif choice == "c":
+                break
+
+    # Einsellungen: Export
+    def cli_export_settings(self):
+        while True:
+            res_x = self.visualizer.viewport.width_px * self.visualizer.export_factor
+            res_y = self.visualizer.viewport.height_px * self.visualizer.export_factor
+            res = f"{res_x:.0f} x {res_y:.0f}"
+
+            print_heading("EXPORT SETTINGS")
+            print(f"1 - Change export resolution factor (current: {self.visualizer.export_factor})")
+            print("H - Help")
+            print("C - Cancel")
+            choice = input("> ").strip().lower()
+
+            if choice == "1":
+                print_heading("CHANGE EXPORT RESOLUTION FACTOR")
+                print(f"Current export resolution factor: {self.visualizer.export_factor}")
+                print(f"Current export resolution: {res} (Viewport size multiplied by export factor)\n")
+
+                factor = input_int(1, 10, 4, msg="Enter new export resolution factor", cli=True)
+                self.visualizer.export_factor = factor
+                enter_continue(f"Export resolution factor changed to {factor}. Press enter to continue.", seperation=False)
+
+            elif choice == "h":
+                print_heading("HELP - EXPORT SETTINGS")
+                print("Export resolution factor: This factor determines how much the resolution is increased when exporting the fractal image. For example, a factor of 4 means that the exported image will have 4 times the width and height of the current viewport, resulting in a much higher resolution suitable for printing or detailed viewing.")
+                enter_continue("Press enter to return to settings menu.", seperation=False)
 
             elif choice == "c":
                 break

@@ -26,6 +26,7 @@ class Visualizer():
         self.palette_names    : list         = list(PALETTES.keys())                       # Verfügbare Paletten
         self.palette_index    : int          = self.palette_names.index("default")         # Start mit "default"-Palette
         self.iterate_factor_k : int          = 250                                         # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
+        self.export_factor    : int          = 4                                           # Faktor für die Hochskalierung bei Export
 
 # ------------------------------------------------------------
 
@@ -132,9 +133,8 @@ class Visualizer():
 
     def _handle_export(self):
         # Hochauflösende Größe definieren (z.B. 4K)
-        factor = 4
-        highres_width = self.viewport.width_px * factor
-        highres_height = self.viewport.height_px * factor
+        highres_width = self.viewport.width_px * self.export_factor
+        highres_height = self.viewport.height_px * self.export_factor
 
         # Neues Viewport für Export
         export_viewport = self.viewport.copy()  # wir nehmen den gleichen Ausschnitt

@@ -1,5 +1,5 @@
 import numpy as np
-import time
+from time import perf_counter
 from color import ColorMap
 from gui import GUI
 from utils import printProgressBar, clear_cli, print_thin_separation
@@ -27,6 +27,10 @@ class Visualizer():
         self.palette_index    : int          = self.palette_names.index("default")         # Start mit "default"-Palette
         self.iterate_factor_k : int          = 250                                         # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
         self.export_factor    : int          = 4                                           # Faktor für die Hochskalierung bei Export
+        
+        # Postprocessing-Faktoren
+        self.gamma_factor     : float        = 1.2                                         # Gamma-Korrektur-Faktor für Postprocessing
+        self.contrast_factor  : float        = 1.2                                         # Kontrast-Faktor für Postprocessing
 
 # ------------------------------------------------------------
 
@@ -59,8 +63,8 @@ class Visualizer():
         self.gui.set_palette_menu(self.palette_names, self._handle_palette_select)      # Farbpalette Dropdown-Menü
 
         # Methoden aufrufen
-        self._push_history()                                   
-        self._rerender()                      # Erstes Bild rendern (inkl. Anzeige)
+        self._push_history()                # Start-Viewport in History speichern                   
+        self._rerender()                    # Erstes Bild rendern (inkl. Anzeige)
         self.gui.run()                      # Eventloop starten
 
     # Callback: Für Zoom in GUI
@@ -96,7 +100,9 @@ class Visualizer():
             self.viewport,
             self.colormap,
             coloring_mode=self.coloring_mode,
-            k = self.iterate_factor_k,
+            k=self.iterate_factor_k,
+            gamma=self.gamma_factor,
+            contrast=self.contrast_factor
         )
         self.gui.display_image(pixels)
 
@@ -148,13 +154,18 @@ class Visualizer():
         original_iter = self.fractal.max_iterations
         self.fractal.max_iterations = max_iter
 
-        # Neues Rendering
-        pixels = self.renderer.render(
-            self.fractal,
-            export_viewport,
-            self.colormap,
-            coloring_mode=self.coloring_mode,
-            k = self.iterate_factor_k)
+        try:
+            pixels = self.renderer.render(
+                self.fractal,
+                export_viewport,
+                self.colormap,
+                coloring_mode=self.coloring_mode,
+                k=self.iterate_factor_k,
+                gamma=self.gamma_factor,
+                contrast=self.contrast_factor
+            )
+        finally:
+            self.fractal.max_iterations = original_iter
 
         # Speicherort
         default_name = self.exporter.generate_default_filename(name=f"{self.fractal_name}")
@@ -244,8 +255,8 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
 # RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an
 class Renderer():
 
-    def render(self, fractal, viewport, colormap, coloring_mode="smooth", k=40):
-        start = time.time()
+    def render(self, fractal, viewport, colormap, coloring_mode="smooth", k=40, gamma=1.5, contrast=1.2):
+        start = perf_counter()
 
         span = viewport.xmax - viewport.xmin
 
@@ -303,7 +314,7 @@ class Renderer():
 
             printProgressBar(y1, height, prefix="Rendering:", suffix="Complete", length=50)
 
-        end = time.time()
+        end = perf_counter()
         length = round(number=end - start, ndigits=4)
 
         # Debug-Ausgabe der aktuellen Einstellungen im CLI; gehört eigentlich nicht hierher, aber so haben wir es an einer zentralen Stelle, wo alle relevanten Informationen vorliegen
@@ -337,7 +348,14 @@ class Renderer():
         elif coloring_mode == "orbit trap":
             image = colormap.apply_orbit_trap(trap, escaped)
 
+        else:
+            raise ValueError(f"Unknown coloring mode: {coloring_mode}")
+
         fractal.max_iterations = original_iter
+
+        # Postprocessing
+        image = colormap.apply_contrast(image, contrast=contrast)
+        image = colormap.apply_gamma(image, gamma=gamma)
 
         return image
 

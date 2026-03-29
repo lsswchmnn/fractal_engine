@@ -193,7 +193,7 @@ class CLI():
             if choice == "1":
                 print_heading("CHANGE STARTVALUE")
                 print(f"Current startvalue: z0 = {self.fractal.start_real} + {self.fractal.start_imag}i\n")
-                print("Recommended: Startvalue close to the critical point (0 for Mandelbrot) for more interesting results, but feel free to experiment!\n")
+                print("Recommended: Startvalue close to the critical point (0 for Mandelbrot) for more interesting results, but feel free to experiment!")
                 print_thin_separation()
                 print()
 
@@ -211,7 +211,7 @@ class CLI():
             elif choice == "2":
                 print_heading("CHANGE EXPONENT")
                 print(f"Current exponent: {self.fractal.exp_real} + {self.fractal.exp_imag}i\n")
-                print("Note: Changing the exponent can lead to very different and often less stable fractals, especially for non-integer or complex exponents. Experiment with caution!\n")
+                print("Note: Changing the exponent can lead to very different and often less stable fractals, especially for non-integer or complex exponents. Experiment with caution!")
                 print_thin_separation()
                 print()
 
@@ -242,6 +242,8 @@ class CLI():
             print_heading("CHANGE RENDERING SETTINGS")
             print(f"1 - Change base Iterations (current: {self.fractal.max_iterations})")
             print(f"2 - Change factor for adaptive iteration depth (current: {self.visualizer.iterate_factor_k})")
+            print(f"3 - Change gamma factor for postprocessing (current: {self.visualizer.gamma_factor})")
+            print(f"4 - Change contrast factor for postprocessing (current: {self.visualizer.contrast_factor})")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
@@ -249,7 +251,9 @@ class CLI():
 
             if choice == "1":
                 print_heading("CHANGE BASE ITERATIONS")
-                print(f"Current base iterations: {self.fractal.max_iterations}\n")
+                print(f"Current base iterations: {self.fractal.max_iterations}")
+                print_thin_separation()
+                print()
 
                 max_iter = input_int(10, 10000, 100, msg="Enter new base iterations", cli=True)
                 self.fractal.max_iterations = max_iter
@@ -257,11 +261,35 @@ class CLI():
 
             elif choice == "2":
                 print_heading("CHANGE ADAPTIVE ITERATION FACTOR")
-                print(f"Current adaptive iteration factor k: {self.visualizer.iterate_factor_k}\n")
+                print(f"Current adaptive iteration factor k: {self.visualizer.iterate_factor_k}")
+                print_thin_separation()
+                print()
 
                 k = input_int(1, 1000, 100, msg="Enter new adaptive iteration factor k", cli=True)
                 self.visualizer.iterate_factor_k = k
                 enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
+
+            elif choice == "3":
+                print_heading("CHANGE GAMMA FACTOR")
+                print(f"Current gamma factor: {self.visualizer.gamma_factor}")
+                print("Choose gamma = 1 for no correction, gamma < 1 for brighter images, gamma > 1 for darker images.")
+                print_thin_separation()
+                print()
+
+                gamma = input_float(0.1, 5.0, 1.5, msg="Enter new gamma factor for postprocessing", cli=True)
+                self.visualizer.gamma_factor = gamma
+                enter_continue(f"Gamma factor changed to {gamma}. Press enter to continue.", seperation=False)
+
+            elif choice == "4":
+                print_heading("CHANGE CONTRAST FACTOR")
+                print(f"Current contrast factor: {self.visualizer.contrast_factor}")
+                print("Choose contrast = 1 for no change, contrast < 1 for lower contrast, contrast > 1 for higher contrast.")
+                print_thin_separation()
+                print()
+
+                contrast = input_float(0.1, 5.0, 1.2, msg="Enter new contrast factor for postprocessing", cli=True)
+                self.visualizer.contrast_factor = contrast
+                enter_continue(f"Contrast factor changed to {contrast}. Press enter to continue.", seperation=False)
 
             elif choice == "h":
                 print_heading("HELP - RENDERING SETTINGS")
@@ -326,7 +354,9 @@ class CLI():
 
             elif choice == "2":     # X-Offset
                 print_heading("CHANGE X-OFFSET")
-                print(f"Current X-Offset: {self.fractal.trap_x}\n")
+                print(f"Current X-Offset: {self.fractal.trap_x}")
+                print_thin_separation()
+                print()
 
                 x_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
                 self.fractal.trap_x = x_offset
@@ -334,7 +364,9 @@ class CLI():
 
             elif choice == "3":     # Y-Offset
                 print_heading("CHANGE Y-OFFSET")
-                print(f"Current Y-Offset: {self.fractal.trap_y}\n")
+                print(f"Current Y-Offset: {self.fractal.trap_y}")
+                print_thin_separation()
+                print()
 
                 y_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
                 self.fractal.trap_y = y_offset
@@ -342,7 +374,9 @@ class CLI():
 
             elif choice == "4":     # Radius
                 print_heading("CHANGE RADIUS")
-                print(f"Current Radius: {self.fractal.trap_radius}\n")
+                print(f"Current Radius: {self.fractal.trap_radius}")
+                print_thin_separation()
+                print()
 
                 radius = input_float(0.0, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
                 self.fractal.trap_radius = radius
@@ -374,7 +408,9 @@ class CLI():
             if choice == "1":
                 print_heading("CHANGE EXPORT RESOLUTION FACTOR")
                 print(f"Current export resolution factor: {self.visualizer.export_factor}")
-                print(f"Current export resolution: {res} (Viewport size multiplied by export factor)\n")
+                print(f"Current export resolution: {res} (Viewport size multiplied by export factor)")
+                print_thin_separation()
+                print()
 
                 factor = input_int(1, 10, 4, msg="Enter new export resolution factor", cli=True)
                 self.visualizer.export_factor = factor

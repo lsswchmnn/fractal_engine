@@ -1,3 +1,4 @@
+from matplotlib import image
 import numpy as np
 from mapping import PALETTES
 #============================================================
@@ -255,3 +256,21 @@ class ColorMap():
                 image[y, x] = (r, g, b)
 
         return image
+    
+#------------------------------------------------------------
+# POSTPROCESSING für Farbgebungsergebnisse
+
+    def apply_gamma(self, image: np.ndarray, gamma: float = 2.2) -> np.ndarray:
+        if gamma <= 0:
+            return image
+
+        img = image.astype(np.float64) / 255.0
+        img = np.power(img, 1.0 / gamma)
+        img = np.clip(img * 255.0, 0, 255).astype(np.uint8)
+        return img
+    
+    def apply_contrast(self, image: np.ndarray, contrast: float = 1.2) -> np.ndarray:
+        img = image.astype(np.float64) / 255.0
+        img = (img - 0.5) * contrast + 0.5
+        img = np.clip(img, 0.0, 1.0)
+        return (img * 255).astype(np.uint8)

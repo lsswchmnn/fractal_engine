@@ -2,19 +2,51 @@
 #============================================================
 # VIEWPORT: Definiert den sichtbaren Ausschnitt der komplexen Zahlenebene
 class Viewport():
-    def __init__(self, bounds:tuple):
+    def __init__(self, bounds:tuple[float, float, float, float],
+                 width_px:int=800, height_px:int=600):
+        
+        '''
+        bounds: (xmin, xmax, ymin, ymax)
+        width_px, height_px: Auflösung des Viewports in Pixeln
+        '''
+
         self.bounds = bounds
         self.reset()
-        self.width_px  : int    = 800
-        self.height_px : int    = 600
+        self.width_px  : int    = width_px
+        self.height_px : int    = height_px
 
 #------------------------------------------------------------
+# Properties: Berechnung von Breite, Höhe und Zentrum des Viewports
+
+    @property
+    def width(self) -> float:
+        return self.xmax - self.xmin
+
+    @property
+    def height(self) -> float:
+        return self.ymax - self.ymin
+
+    @property
+    def center(self) -> complex:
+        real = 0.5 * (self.xmin + self.xmax)
+        imag = 0.5 * (self.ymin + self.ymax)
+        return complex(real, imag)
+
+#------------------------------------------------------------
+# Methoden
+
     def reset(self):
         self.xmin, self.xmax, self.ymin, self.ymax = self.bounds
 
     def pixel_to_complex(self, x, y) -> complex:
-        real = self.xmin + (x / (self.width_px - 1)) * (self.xmax - self.xmin)
-        imag = self.ymax - (y / (self.height_px - 1)) * (self.ymax - self.ymin)
+
+        # Vermeidung von Division durch Null
+        width_den = max(self.width_px - 1, 1)
+        height_den = max(self.height_px - 1, 1)
+
+        real = self.xmin + (x / width_den) * (self.xmax - self.xmin)
+        imag = self.ymax - (y / height_den) * (self.ymax - self.ymin)
+
         num = complex(real, imag)
         return num
     
@@ -35,8 +67,13 @@ class Viewport():
 
     # Für Export: Kopie des Viewports mit neuer Pixelgröße, um GUI nicht zu beeinflussen
     def copy(self):
-        new_vp = Viewport(self.bounds)
-        new_vp.xmin, new_vp.xmax, new_vp.ymin, new_vp.ymax = self.xmin, self.xmax, self.ymin, self.ymax
-        new_vp.width_px = self.width_px
-        new_vp.height_px = self.height_px
+        new_vp = Viewport(
+            bounds=self.bounds,
+            width_px=self.width_px,
+            height_px=self.height_px
+        )
+        new_vp.xmin = self.xmin
+        new_vp.xmax = self.xmax
+        new_vp.ymin = self.ymin
+        new_vp.ymax = self.ymax
         return new_vp

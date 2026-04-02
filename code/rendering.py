@@ -1,7 +1,6 @@
 import numpy as np
 from numba import njit
 from time import perf_counter
-from color import ColorMap
 from utils import printProgressBar, clear_cli, print_thin_separation
 #============================================================
 # NUMBAR-RENDERING-Funktion (Unterscheidung zwischen zwei Typen, nötig für Julia)
@@ -51,25 +50,18 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
 
             # Speichern der Ergebnisse
             iterations[y, x] = it           # Iterations (Geometrie)
-            escaped[y, x] = esc             # Escaped (Topologie)+
+            escaped[y, x] = esc             # Escaped (Topologie)
             trap[y, x] = trap_val           # Orbit-Trap-Wert
 
 #------------------------------------------------------------
 # RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an
 class Renderer():
 
-    def render(self, fractal, viewport, colormap, coloring_mode="smooth", k=40, gamma=1.5, contrast=1.2):
+    def render(self, fractal, viewport, Colorizer, coloring_mode="smooth", k=40, tile_h=32, gamma=1.5, contrast=1.2):
         start = perf_counter()
 
-        span = viewport.xmax - viewport.xmin
-
-        original_iter = fractal.max_iterations
-        safe_span = max(span, 1e-16)
-        zoom_factor = 1.0 / safe_span
-
-        adaptive_iter = int(original_iter + k * max(0, np.log10(zoom_factor)))
-        adaptive_iter = max(original_iter, adaptive_iter)
-
+        # Adaptive Iterationsberechnung
+        adaptive_iter, original_iter, span = self._compute_adaptive_iterations(fractal, viewport, k=k)
         effective_max_iter = adaptive_iter
 
         height, width = viewport.height_px, viewport.width_px
@@ -78,13 +70,13 @@ class Renderer():
         escaped = np.zeros((height, width), dtype=np.uint8)
         trap = np.full((height, width), np.inf, dtype=np.float64)
 
-        tile_h = 32        
+        tile_h = tile_h
 
+        # Rendering in Kacheln (Tile-basiert)
         for y0 in range(0, height, tile_h):
 
             y1 = min(y0 + tile_h, height)
 
-            # Allgemeinen Rendering-Kernel (NJIT) aufrufen
             render_tile_kernel(
                 fractal.kernel,
                 iterations,
@@ -119,20 +111,31 @@ class Renderer():
         end = perf_counter()
         length = round(number=end - start, ndigits=4)
 
-        self._print_debug_info(fractal, viewport, colormap, coloring_mode, adaptive_iter, original_iter, span, length)  # Debug-Info
+        self._print_debug_info(fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length)  # Debug-Info
 
-        fractal.max_iterations = original_iter
+        fractal.max_iterations = original_iter  # Iterationszahl zurücksetzen
 
         # Farbzuweisung und Postprocessing
-        image = self._apply_coloring(colormap, iterations, escaped, effective_max_iter, trap, coloring_mode)
-        image = self._apply_postprocessing(colormap, image, contrast, gamma)
+        image = self._apply_coloring(Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode)
+        image = self._apply_postprocessing(Colorizer, image, contrast, gamma)
 
         return image
 
-    def _compute_adaptive_iterations():
-        pass
+#------------------------------------------------------------
+# Hilfsfunktionen für Renderer.render
 
-    def _print_debug_info(self, fractal, viewport, colormap, coloring_mode, adaptive_iter, original_iter, span, length):
+    def _compute_adaptive_iterations(self, fractal, viewport, k=40):
+        span = viewport.width
+        original_iter = fractal.max_iterations
+        safe_span = max(span, 1e-16)
+        zoom_factor = 1.0 / safe_span
+
+        adaptive_iter = int(original_iter + k * max(0, np.log10(zoom_factor)))
+        adaptive_iter = max(original_iter, adaptive_iter)
+
+        return adaptive_iter, original_iter, span
+
+    def _print_debug_info(self, fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length):
         clear_cli()
         print_thin_separation(linebreak=False)
         print(f"Fractal:                {fractal._name}")
@@ -142,32 +145,32 @@ class Renderer():
         print(f"Coloring mode:          {coloring_mode}")
         if coloring_mode == "orbit trap":
             print(f"Orbit-Trap type:        {fractal.trap_type_name}")
-        print(f"Palette:                {colormap.palette_name}")
+        print(f"Palette:                {Colorizer.palette_name}")
         print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
         print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
         print(f"Rendering-Time:         {length} sec")        
         print_thin_separation(linebreak=False)
         print()
 
-    def _apply_coloring(self, colormap, iterations, escaped, effective_max_iter, trap, coloring_mode):
+    def _apply_coloring(self, Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode):
         if coloring_mode == "basic":
-            image = colormap.apply_basic(iterations, escaped, effective_max_iter)
+            image = Colorizer.apply_basic(iterations, escaped)   # max_iter nicht nötig
 
         elif coloring_mode == "histogram":
-            image = colormap.apply_histogram(iterations, escaped, effective_max_iter)
+            image = Colorizer.apply_histogram(iterations, escaped, effective_max_iter)
 
         elif coloring_mode == "smooth":
-            image = colormap.apply_smooth(iterations, escaped, effective_max_iter)
+            image = Colorizer.apply_smooth(iterations, escaped, effective_max_iter)
 
         elif coloring_mode == "orbit trap":
-            image = colormap.apply_orbit_trap(trap, escaped)
+            image = Colorizer.apply_orbit_trap(trap, escaped)
 
         else:
             raise ValueError(f"Unknown coloring mode: {coloring_mode}")
         
         return image
 
-    def _apply_postprocessing(self, colormap, image, contrast, gamma):
-        image = colormap.apply_contrast(image, contrast=contrast)
-        image = colormap.apply_gamma(image, gamma=gamma)
+    def _apply_postprocessing(self, Colorizer, image, contrast, gamma):
+        image = Colorizer.apply_contrast(image, contrast=contrast)
+        image = Colorizer.apply_gamma(image, gamma=gamma)
         return image

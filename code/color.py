@@ -1,15 +1,14 @@
-from matplotlib import image
 import numpy as np
 from mapping import PALETTES
 #============================================================
-class ColorMap():
+class Colorizer():
     def __init__(self):
         self.palette_name   = "default"
         self.palette        = []
         self.set_palette("default")
 
 #------------------------------------------------------------
-# FPALETTE MANAGEMENT
+# PALETTE-MANAGEMENT (definieren, interpolieren, sampeln)
 
     # Palette als Attribut setzen
     def set_palette(self, name:str):
@@ -21,11 +20,36 @@ class ColorMap():
         key_colors = PALETTES[name]
         self.palette = self._interpolate_palette(key_colors, 256)
 
-#------------------------------------------------------------
-# INTERPOLATION für Palette
+    # Palette sampeln (t in [0,1])
+    def _sample_palette(self, t: float) -> tuple[int, int, int]:
+        t = max(0.0, min(1.0, t))   # Sicherstellen, dass t in [0,1] liegt
+        
+        # lineare Interpolation
+        palette_size = len(self.palette)
+        idx = t * (palette_size - 1)
+
+        # Indizes für die beiden nächsten Farben in der Palette
+        i0 = int(idx)
+        i1 = min(i0 + 1, palette_size - 1)
+
+        frac = idx - i0     # Bruchteil für die Interpolation
+
+        # Interpolierte Farbe berechnen
+        c0 = self.palette[i0]
+        c1 = self.palette[i1]
+
+        # lineare Interpolation der RGB-Komponenten
+        r = int(c0[0] + frac * (c1[0] - c0[0]))
+        g = int(c0[1] + frac * (c1[1] - c0[1]))
+        b = int(c0[2] + frac * (c1[2] - c0[2]))
+
+        return (r, g, b)
 
     # sauber interpolieren
     def _interpolate_palette(self, key_colors, size):
+        if len(key_colors) < 2:
+            raise ValueError("At least two key colors are required for interpolation.")
+        
         palette = []
         segments = len(key_colors) - 1
 
@@ -47,12 +71,11 @@ class ColorMap():
         return palette
 
 #------------------------------------------------------------
-# FÄRBUNGSMETHODEN für Iterationsergebnisse
+# FÄRBUNGSMETHODEN für Iterationsergebnisse (Jede Methode berechnet t, _sample_palette(t) wird für die Farbzuweisung aufgerufen)
 
-    # Förbung: simpel und grundlegend (spezielle, kristalline Struktur, allerdings etwas pixelig)
+    # Förbung: Basic (spezielle, kristalline Struktur, allerdings etwas pixelig)
     def apply_basic(self, iterations: np.ndarray,
-                    escaped: np.ndarray,
-                    max_iterations: int) -> np.ndarray:
+                    escaped: np.ndarray) -> np.ndarray:
 
         height, width = iterations.shape
         image = np.zeros((height, width, 3), dtype=np.uint8)
@@ -74,7 +97,28 @@ class ColorMap():
 
         return image
 
-    # Färbung: Histogramm. int(iterations[y,x]) muss smooth und kein roher int sein!
+    # Färbung: Smooth (gut für mitteltiefe Zooms und stark abhängig von Iterationszahl)
+    def apply_smooth(self, iterations: np.ndarray,
+                    escaped: np.ndarray,
+                    max_iterations: int) -> np.ndarray:
+
+        height, width = iterations.shape
+        image = np.zeros((height, width, 3), dtype=np.uint8)
+        palette_size = len(self.palette)
+
+        for y in range(height):
+            for x in range(width):
+
+                if not escaped[y, x]:
+                    image[y, x] = (0, 0, 0)
+
+                else:
+                    t = iterations[y, x] / max_iterations   # Normalisierung auf [0,1]
+                    image[y, x] = self._sample_palette(t)   # Palette-Interpolation
+
+        return image
+
+    # Färbung: Histogramm (gut für tiefe Zooms, da höhere Detailgenauigkeit durch unabhängigkeit von Iterationszahl)
     def apply_histogram(self, iterations: np.ndarray,
                         escaped: np.ndarray,
                         max_iterations: int) -> np.ndarray:
@@ -114,7 +158,6 @@ class ColorMap():
 
                 nu = iterations[y, x]
 
-
                 i0 = int(np.floor(nu))
                 if i0 < 0:
                     i0 = 0
@@ -123,7 +166,6 @@ class ColorMap():
 
                 i1 = min(i0 + 1, max_iterations)
 
-
                 f = nu - i0
 
                 t0 = cumulative[i0]
@@ -131,63 +173,11 @@ class ColorMap():
 
                 t = (1 - f) * t0 + f * t1
 
-                # Palette-Interpolation
-                idx = t * (palette_size - 1)
-
-                p0 = int(np.floor(idx))
-                p1 = min(p0 + 1, palette_size - 1)
-
-                frac = idx - p0
-
-                c0 = self.palette[p0]
-                c1 = self.palette[p1]
-
-                r = int(c0[0] + frac * (c1[0] - c0[0]))
-                g = int(c0[1] + frac * (c1[1] - c0[1]))
-                b = int(c0[2] + frac * (c1[2] - c0[2]))
-
-                image[y, x] = (r, g, b)
+                image[y, x] = self._sample_palette(t)   # Palette-Interpolation
 
         return image
 
-    # Färbung: Smooth (gut für mitteltiefe Zooms und stark abhängig von Iterationszahl)
-    def apply_smooth(self, iterations: np.ndarray,
-                    escaped: np.ndarray,
-                    max_iterations: int) -> np.ndarray:
-
-        height, width = iterations.shape
-        image = np.zeros((height, width, 3), dtype=np.uint8)
-        palette_size = len(self.palette)
-
-        for y in range(height):
-            for x in range(width):
-
-                if not escaped[y, x]:
-                    image[y, x] = (0, 0, 0)
-
-                else:
-                    t = iterations[y, x] / max_iterations
-
-                    t = max(0.0, min(1.0,t))    # t dampen (wichtig)
-
-                    idx = t * (palette_size - 1)
-                    i0 = int(idx)
-                    i1 = min(i0 + 1, palette_size - 1)
-
-                    frac = idx - i0
-
-                    c0 = self.palette[i0]
-                    c1 = self.palette[i1]
-
-                    r = int(c0[0] + frac * (c1[0] - c0[0]))
-                    g = int(c0[1] + frac * (c1[1] - c0[1]))
-                    b = int(c0[2] + frac * (c1[2] - c0[2]))
-
-                    image[y, x] = (r, g, b)
-
-        return image
-
-    # Färbung: Orbit-Trap (noch unvollständig)
+    # Färbung: Orbit-Trap (Sehr spezielle, experimentelle Färbung)
     def apply_orbit_trap(self,
                         trap_dist: np.ndarray,
                         escaped: np.ndarray) -> np.ndarray:
@@ -198,7 +188,6 @@ class ColorMap():
         palette_size = len(self.palette)
 
         # Nur escaped Punkte berücksichtigen
-        #valid = trap_dist[escaped == 1]
         valid = trap_dist[(escaped == 1) & np.isfinite(trap_dist)]
 
         if len(valid) == 0:
@@ -221,6 +210,7 @@ class ColorMap():
         for y in range(height):
             for x in range(width):
 
+                # Innenpunkte hart schwarz setzen; orbit-trap kann eigentlich auch für Innenpunkte definiert werden, evtl später erweitern
                 if not escaped[y, x]:
                     image[y, x] = (0, 0, 0)
                     continue
@@ -235,25 +225,7 @@ class ColorMap():
                 ld = np.log(d + 1e-12)
                 t = (ld - log_min) / (log_max - log_min)
 
-                # Clamp
-                t = max(0.0, min(1.0, t))
-
-                # --- Palette Interpolation ---
-                idx = t * (palette_size - 1)
-
-                i0 = int(idx)
-                i1 = min(i0 + 1, palette_size - 1)
-
-                frac = idx - i0
-
-                c0 = self.palette[i0]
-                c1 = self.palette[i1]
-
-                r = int(c0[0] + frac * (c1[0] - c0[0]))
-                g = int(c0[1] + frac * (c1[1] - c0[1]))
-                b = int(c0[2] + frac * (c1[2] - c0[2]))
-
-                image[y, x] = (r, g, b)
+                image[y, x] = self._sample_palette(t)   # Palette-Interpolation
 
         return image
     

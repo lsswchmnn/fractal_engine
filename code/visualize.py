@@ -1,11 +1,8 @@
-import numpy as np
-from time import perf_counter
-from color import ColorMap
+from color import Colorizer
 from viewport import Viewport
 from rendering import Renderer
 from gui import GUI
 from utils import print_thin_separation
-from numba import njit
 from fractal import Fractal, MandelbrotFractal
 from mapping import PALETTES
 from export import PNGExporter
@@ -15,7 +12,7 @@ class Visualizer():
     def __init__(self, fractal, fractal_name=None):
         # Klasseninstanzen
         self.fractal          : Fractal      = fractal                                     # Aktuelles Fraktal
-        self.colormap         : ColorMap     = ColorMap()                                  # Management der Färbung
+        self.Colorizer         : Colorizer     = Colorizer()                                  # Management der Färbung
         self.viewport         : Viewport     = Viewport(self.fractal._default_bounds)      # Aktueller Ausschnitt, mit dem gearbeitet wird
         self.renderer         : Renderer     = Renderer()                                  # Numerische Berechnung
         self.exporter         : PNGExporter  = PNGExporter()                               # Export-Funktionalität
@@ -29,7 +26,8 @@ class Visualizer():
         self.palette_index    : int          = self.palette_names.index("default")         # Start mit "default"-Palette
         self.iterate_factor_k : int          = 250                                         # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
         self.export_factor    : int          = 4                                           # Faktor für die Hochskalierung bei Export
-        
+        self.tile_h           : int          = 32                                          # Höhe der Kacheln für das tile-basierte Rendering (Performance-Optimierung)
+
         # Postprocessing-Faktoren
         self.gamma_factor     : float        = 1.2                                         # Gamma-Korrektur-Faktor für Postprocessing
         self.contrast_factor  : float        = 1.2                                         # Kontrast-Faktor für Postprocessing
@@ -100,7 +98,7 @@ class Visualizer():
         pixels = self.renderer.render(
             self.fractal,
             self.viewport,
-            self.colormap,
+            self.Colorizer,
             coloring_mode=self.coloring_mode,
             k=self.iterate_factor_k,
             gamma=self.gamma_factor,
@@ -127,7 +125,7 @@ class Visualizer():
             self._apply_history()
 
     def _handle_palette_select(self, palette_name):
-        self.colormap.set_palette(palette_name)
+        self.Colorizer.set_palette(palette_name)
         self.palette_index = self.palette_names.index(palette_name)
         self._rerender()
 
@@ -160,7 +158,7 @@ class Visualizer():
             pixels = self.renderer.render(
                 self.fractal,
                 export_viewport,
-                self.colormap,
+                self.Colorizer,
                 coloring_mode=self.coloring_mode,
                 k=self.iterate_factor_k,
                 gamma=self.gamma_factor,
@@ -184,7 +182,7 @@ class Visualizer():
         pixels = self.renderer.render(
             mandelbrot,
             self.viewport,
-            self.colormap,
+            self.Colorizer,
             coloring_mode=self.coloring_mode
         )
 

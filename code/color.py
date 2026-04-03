@@ -118,62 +118,103 @@ class Colorizer():
 
         return image
 
-    # Färbung: Histogramm (gut für tiefe Zooms, da höhere Detailgenauigkeit durch unabhängigkeit von Iterationszahl)
-    def apply_histogram(self, iterations: np.ndarray,
+    # Färbung: Histogramm
+    def apply_histogram(self,
+                        iterations: np.ndarray,
                         escaped: np.ndarray,
                         max_iterations: int) -> np.ndarray:
 
+        # Grundstrukturen vorbereiten
         height, width = iterations.shape
         image = np.zeros((height, width, 3), dtype=np.uint8)
 
-        histogram = np.zeros(max_iterations + 1, dtype=np.int64)
+        histogram = np.zeros(max_iterations + 1, dtype=np.float64)
 
-        for y in range(height):
-            for x in range(width):
-                if escaped[y, x]:
-
-                    nu = iterations[y, x]
-
-                    idx = int(nu)
-                    if idx < 0:
-                        idx = 0
-                    elif idx > max_iterations:
-                        idx = max_iterations
-
-                    histogram[idx] += 1
-
-
-        cumulative = np.cumsum(histogram)
-        total = cumulative[-1] if cumulative[-1] > 0 else 1
-        cumulative = cumulative / total
-
-        palette_size = len(self.palette)
-
+        # Histogramm aufbauen
         for y in range(height):
             for x in range(width):
 
+                # Punkte innerhalb der Menge werden nicht eingefärbt
+                if not escaped[y, x]:
+                    continue
+
+                nu = iterations[y, x]
+
+                # Diskreten Bin bestimmen
+                i = int(np.floor(nu))
+
+                # Sicherheits-Clamp
+                if i < 0:
+                    i = 0
+                elif i > max_iterations:
+                    i = max_iterations
+
+                histogram[i] += 1.0
+
+        # Spezialfall: keine escaped Punkte
+        total_escaped = np.sum(histogram)
+        if total_escaped == 0:
+            return image
+
+        # Histogramm glätten
+        smoothed = histogram.copy()
+
+        # Nur innere Werte glätten; Randwerte bleiben unverändert
+        for i in range(1, max_iterations):
+            smoothed[i] = (
+                0.25 * histogram[i - 1] +
+                0.50 * histogram[i] +
+                0.25 * histogram[i + 1]
+            )
+
+        # 5) Kumulative Verteilung (CDF) berechnen
+        cumulative = np.cumsum(smoothed)
+
+        # Normierung auf [0,1]
+        total = cumulative[-1]
+        if total <= 0.0:
+            return image
+
+        cumulative /= total
+
+        # Pixel einfärben
+        for y in range(height):
+            for x in range(width):
+
+                # Punkte innerhalb der Menge bleiben schwarz
                 if not escaped[y, x]:
                     image[y, x] = (0, 0, 0)
                     continue
 
                 nu = iterations[y, x]
 
+                # Unteren Nachbar-Bin bestimmen
                 i0 = int(np.floor(nu))
+
+                # Clamp
                 if i0 < 0:
                     i0 = 0
                 elif i0 > max_iterations:
                     i0 = max_iterations
 
+                # Oberen Nachbar-Bin bestimmen
                 i1 = min(i0 + 1, max_iterations)
 
+                # Fraktionaler Anteil zwischen i0 und i1
                 f = nu - i0
 
+                # CDF-Werte der beiden Nachbar-Bins
                 t0 = cumulative[i0]
                 t1 = cumulative[i1]
 
-                t = (1 - f) * t0 + f * t1
+                # Lineare Interpolation zwischen den CDF-Werten
+                t = (1.0 - f) * t0 + f * t1
 
-                image[y, x] = self._sample_palette(t)   # Palette-Interpolation
+                # Sicherheitshalber clampen
+                t = max(0.0, min(1.0, t))
+
+                # Farbe aus Palette sampeln
+                image[y, x] = self._sample_palette(t)
 
         return image
 

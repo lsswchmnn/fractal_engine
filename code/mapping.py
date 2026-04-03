@@ -59,10 +59,15 @@ ORBIT_TRAP_MAP = {
         "label": "Circle"
     },
 
-    "line": {
+    "horizontal_line": {
         "idx": 2,
-        "label": "Line"
-    }
+        "label": "Horizontal Line"
+    },
+
+    "vertical_line": {
+        "idx": 3,
+        "label": "Vertical Line"
+    },
 }
 
 #------------------------------------------------------------

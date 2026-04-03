@@ -1,4 +1,5 @@
 from color import Colorizer
+from settings import RenderSettings
 from viewport import Viewport
 from rendering import Renderer
 from gui import GUI
@@ -11,26 +12,20 @@ from export import PNGExporter
 class Visualizer():
     def __init__(self, fractal, fractal_name=None):
         # Klasseninstanzen
-        self.fractal          : Fractal      = fractal                                     # Aktuelles Fraktal
-        self.Colorizer         : Colorizer     = Colorizer()                                  # Management der Färbung
-        self.viewport         : Viewport     = Viewport(self.fractal._default_bounds)      # Aktueller Ausschnitt, mit dem gearbeitet wird
-        self.renderer         : Renderer     = Renderer()                                  # Numerische Berechnung
-        self.exporter         : PNGExporter  = PNGExporter()                               # Export-Funktionalität
-        self.gui              : GUI          = None                                        # Graphische Schnittstelle zum User
+        self.fractal        : Fractal           = fractal                                  # Aktuelles Fraktal
+        self.colorizer      : Colorizer         = Colorizer()                              # Management der Färbung
+        self.viewport       : Viewport          = Viewport(self.fractal._default_bounds)   # Aktueller Ausschnitt, mit dem gearbeitet wird
+        self.renderer       : Renderer          = Renderer()                               # Numerische Berechnung
+        self.exporter       : PNGExporter       = PNGExporter()                            # Export-Funktionalität
+        self.gui            : GUI               = None                                     # Graphische Schnittstelle zum User
+        self.render_settings: RenderSettings    = RenderSettings()                         # Alle einstellbaren Parameter für Rendering und Postprocessing
 
         # Zustände und Settings
         self.fractal_name     : str          = fractal_name                                # Name des Fraktals für Anzeige und Export
         self.history          : list         = []                                          # Für Zoom-History
         self.history_index    : int          = -1                                          # Aktuelle Position in der Zoom-History
         self.palette_names    : list         = list(PALETTES.keys())                       # Verfügbare Paletten
-        self.palette_index    : int          = self.palette_names.index("default")         # Start mit "default"-Palette
-        self.iterate_factor_k : int          = 250                                         # Feintuning-Faktor für quantitative Verbesserung der Detailgenauigkeit bei starken Zooms
-        self.export_factor    : int          = 4                                           # Faktor für die Hochskalierung bei Export
-        self.tile_h           : int          = 32                                          # Höhe der Kacheln für das tile-basierte Rendering (Performance-Optimierung)
-
-        # Postprocessing-Faktoren
-        self.gamma_factor     : float        = 1.2                                         # Gamma-Korrektur-Faktor für Postprocessing
-        self.contrast_factor  : float        = 1.2                                         # Kontrast-Faktor für Postprocessing
+        self.palette_index    : int          = self.palette_names.index("default")         # Start mit "default"-Palette                                   # Höhe der Kacheln für das tile-basierte Rendering (Performance-Optimierung)
 
 # ------------------------------------------------------------
 
@@ -98,11 +93,9 @@ class Visualizer():
         pixels = self.renderer.render(
             self.fractal,
             self.viewport,
-            self.Colorizer,
+            self.colorizer,
             coloring_mode=self.coloring_mode,
-            k=self.iterate_factor_k,
-            gamma=self.gamma_factor,
-            contrast=self.contrast_factor
+            render_settings=self.render_settings
         )
         self.gui.display_image(pixels)
 
@@ -125,7 +118,7 @@ class Visualizer():
             self._apply_history()
 
     def _handle_palette_select(self, palette_name):
-        self.Colorizer.set_palette(palette_name)
+        self.colorizer.set_palette(palette_name)
         self.palette_index = self.palette_names.index(palette_name)
         self._rerender()
 
@@ -158,7 +151,7 @@ class Visualizer():
             pixels = self.renderer.render(
                 self.fractal,
                 export_viewport,
-                self.Colorizer,
+                self.colorizer,
                 coloring_mode=self.coloring_mode,
                 k=self.iterate_factor_k,
                 gamma=self.gamma_factor,
@@ -182,7 +175,7 @@ class Visualizer():
         pixels = self.renderer.render(
             mandelbrot,
             self.viewport,
-            self.Colorizer,
+            self.colorizer,
             coloring_mode=self.coloring_mode
         )
 

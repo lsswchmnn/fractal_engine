@@ -6,7 +6,10 @@ import math
 @njit
 def calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius):
     
-    trap_type = int(trap_type)
+    try:
+        trap_type = int(trap_type)
+    except:
+        trap_type = 0
 
     if trap_type == 0:  # POINT
         dx = zr - trap_x
@@ -21,6 +24,9 @@ def calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius):
 
     elif trap_type == 2:  # LINE (horizontal)
         return abs(zr - trap_x)
+
+    elif trap_type == 3:  # LINE (vertical)
+        return abs(zi - trap_y)
 
     else:
         return 1e10

@@ -240,10 +240,11 @@ class CLI():
         while True:
 
             print_heading("CHANGE RENDERING SETTINGS")
-            print(f"1 - Change base Iterations (current: {self.fractal.max_iterations})")
-            print(f"2 - Change factor for adaptive iteration depth (current: {self.visualizer.iterate_factor_k})")
-            print(f"3 - Change gamma factor for postprocessing (current: {self.visualizer.gamma_factor})")
-            print(f"4 - Change contrast factor for postprocessing (current: {self.visualizer.contrast_factor})")
+            print(f"1 - Base Iterations (current: {self.fractal.max_iterations})")
+            print(f"2 - Factor for adaptive iteration depth (current: {self.visualizer.render_settings.iterate_factor_k})")
+            print(f"3 - Activate/Deactivate postprocessing (current: {'On' if self.visualizer.render_settings.post_process_bool else 'Off'})")
+            print(f"4 - Contrast factor for postprocessing (current: {self.visualizer.render_settings.contrast_factor})")
+            print(f"5 - Gamma factor for postprocessing (current: {self.visualizer.render_settings.gamma_factor})")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
@@ -261,35 +262,42 @@ class CLI():
 
             elif choice == "2":
                 print_heading("CHANGE ADAPTIVE ITERATION FACTOR")
-                print(f"Current adaptive iteration factor k: {self.visualizer.iterate_factor_k}")
+                print(f"Current adaptive iteration factor k: {self.visualizer.render_settings.iterate_factor_k}")
                 print_thin_separation()
                 print()
 
                 k = input_int(1, 1000, 100, msg="Enter new adaptive iteration factor k", cli=True)
-                self.visualizer.iterate_factor_k = k
+                self.visualizer.render_settings.iterate_factor_k = k
                 enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
 
             elif choice == "3":
-                print_heading("CHANGE GAMMA FACTOR")
-                print(f"Current gamma factor: {self.visualizer.gamma_factor}")
-                print("Choose gamma = 1 for no correction, gamma < 1 for brighter images, gamma > 1 for darker images.")
-                print_thin_separation()
-                print()
-
-                gamma = input_float(0.1, 5.0, 1.5, msg="Enter new gamma factor for postprocessing", cli=True)
-                self.visualizer.gamma_factor = gamma
-                enter_continue(f"Gamma factor changed to {gamma}. Press enter to continue.", seperation=False)
+                print_heading("TOGGLE POSTPROCESSING")
+                current_state = self.visualizer.render_settings.post_process_bool
+                new_state = not current_state
+                self.visualizer.render_settings.post_process_bool = new_state
+                enter_continue(f"Postprocessing turned {'On' if new_state else 'Off'}. Press enter to continue.", seperation=False)
 
             elif choice == "4":
                 print_heading("CHANGE CONTRAST FACTOR")
-                print(f"Current contrast factor: {self.visualizer.contrast_factor}")
+                print(f"Current contrast factor: {self.visualizer.render_settings.contrast_factor}")
                 print("Choose contrast = 1 for no change, contrast < 1 for lower contrast, contrast > 1 for higher contrast.")
                 print_thin_separation()
                 print()
 
                 contrast = input_float(0.1, 5.0, 1.2, msg="Enter new contrast factor for postprocessing", cli=True)
-                self.visualizer.contrast_factor = contrast
+                self.visualizer.render_settings.contrast_factor = contrast
                 enter_continue(f"Contrast factor changed to {contrast}. Press enter to continue.", seperation=False)
+
+            elif choice == "5":
+                print_heading("CHANGE GAMMA FACTOR")
+                print(f"Current gamma factor: {self.visualizer.render_settings.gamma_factor}")
+                print("Choose gamma = 1 for no correction, gamma < 1 for brighter images, gamma > 1 for darker images.")
+                print_thin_separation()
+                print()
+
+                gamma = input_float(0.1, 5.0, 1.5, msg="Enter new gamma factor for postprocessing", cli=True)
+                self.visualizer.render_settings.gamma_factor = gamma
+                enter_continue(f"Gamma factor changed to {gamma}. Press enter to continue.", seperation=False)
 
             elif choice == "h":
                 print_heading("HELP - RENDERING SETTINGS")
@@ -395,25 +403,25 @@ class CLI():
     # Einsellungen: Export
     def cli_export_settings(self):
         while True:
-            res_x = self.visualizer.viewport.width_px * self.visualizer.export_factor
-            res_y = self.visualizer.viewport.height_px * self.visualizer.export_factor
+            res_x = self.visualizer.viewport.width_px * self.visualizer.render_settings.export_factor
+            res_y = self.visualizer.viewport.height_px * self.visualizer.render_settings.export_factor
             res = f"{res_x:.0f} x {res_y:.0f}"
 
             print_heading("EXPORT SETTINGS")
-            print(f"1 - Change export resolution factor (current: {self.visualizer.export_factor})")
+            print(f"1 - Change export resolution factor (current: {self.visualizer.render_settings.export_factor})")
             print("H - Help")
             print("C - Cancel")
             choice = input("> ").strip().lower()
 
             if choice == "1":
                 print_heading("CHANGE EXPORT RESOLUTION FACTOR")
-                print(f"Current export resolution factor: {self.visualizer.export_factor}")
+                print(f"Current export resolution factor: {self.visualizer.render_settings.export_factor}")
                 print(f"Current export resolution: {res} (Viewport size multiplied by export factor)")
                 print_thin_separation()
                 print()
 
                 factor = input_int(1, 10, 4, msg="Enter new export resolution factor", cli=True)
-                self.visualizer.export_factor = factor
+                self.visualizer.render_settings.export_factor = factor
                 enter_continue(f"Export resolution factor changed to {factor}. Press enter to continue.", seperation=False)
 
             elif choice == "h":

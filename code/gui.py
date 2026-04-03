@@ -121,10 +121,10 @@ class GUI():
         self.canvas.bind("<B3-Motion>", self._on_right_click)
 
         # - Julia-/Spezialzustände
-        self._change_c_callback = None
-        self._c_select_mode = False
-        self._c_callback = None
-        self._mandelbrot_overlay = None
+        self._change_c_callback     = None
+        self._c_select_mode         = False
+        self._c_callback            = None
+        self._mandelbrot_overlay    = None
 
 # ------------------------------------------------------------
 # BUTTONS in der Control Bar (Zoom-Interaktion links, Farbwechsel rechts)

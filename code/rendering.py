@@ -57,11 +57,11 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
 # RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an
 class Renderer():
 
-    def render(self, fractal, viewport, Colorizer, coloring_mode="smooth", k=40, tile_h=32, gamma=1.5, contrast=1.2):
+    def render(self, fractal, viewport, Colorizer, coloring_mode="smooth", render_settings=None):
         start = perf_counter()
 
         # Adaptive Iterationsberechnung
-        adaptive_iter, original_iter, span = self._compute_adaptive_iterations(fractal, viewport, k=k)
+        adaptive_iter, original_iter, span = self._compute_adaptive_iterations(fractal, viewport, k=render_settings.iterate_factor_k)
         effective_max_iter = adaptive_iter
 
         height, width = viewport.height_px, viewport.width_px
@@ -70,7 +70,7 @@ class Renderer():
         escaped = np.zeros((height, width), dtype=np.uint8)
         trap = np.full((height, width), np.inf, dtype=np.float64)
 
-        tile_h = tile_h
+        tile_h = render_settings.tile_height
 
         # Rendering in Kacheln (Tile-basiert)
         for y0 in range(0, height, tile_h):
@@ -117,7 +117,7 @@ class Renderer():
 
         # Farbzuweisung und Postprocessing
         image = self._apply_coloring(Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode)
-        image = self._apply_postprocessing(Colorizer, image, contrast, gamma)
+        image = self._apply_postprocessing(Colorizer, image, render_settings.contrast_factor, render_settings.gamma_factor)
 
         return image
 

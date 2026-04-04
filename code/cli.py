@@ -121,8 +121,9 @@ class CLI():
             print_heading("SETTINGS")
             print("1 - Formula manipulation")
             print("2 - Rendering")
-            print("3 - Orbit trap")
-            print("4 - Export")
+            print("3 - Postprocessing")
+            print("4 - Orbit trap")
+            print("5 - Export")
             print("H - Help")
             print("C - Close")
             print_thin_separation(linebreak=False)
@@ -137,10 +138,14 @@ class CLI():
                 continue
 
             elif choice == "3":
-                self.cli_change_orbit_trap_settings()
+                self.cli_change_postprocessing_settings()
                 continue
 
             elif choice == "4":
+                self.cli_change_orbit_trap_settings()
+                continue
+
+            elif choice == "5":
                 self.cli_export_settings()
                 continue
 
@@ -242,9 +247,6 @@ class CLI():
             print_heading("CHANGE RENDERING SETTINGS")
             print(f"1 - Base Iterations (current: {self.fractal.max_iterations})")
             print(f"2 - Factor for adaptive iteration depth (current: {self.visualizer.render_settings.iterate_factor_k})")
-            print(f"3 - Activate/Deactivate postprocessing (current: {'On' if self.visualizer.render_settings.post_process_bool else 'Off'})")
-            print(f"4 - Contrast factor for postprocessing (current: {self.visualizer.render_settings.contrast_factor})")
-            print(f"5 - Gamma factor for postprocessing (current: {self.visualizer.render_settings.gamma_factor})")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
@@ -270,14 +272,35 @@ class CLI():
                 self.visualizer.render_settings.iterate_factor_k = k
                 enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
 
-            elif choice == "3":
+
+            elif choice == "h":
+                print_heading("HELP - RENDERING SETTINGS")
+                print("Base iterations: Number of iterations used as a baseline for the adaptive iteration depth.")
+                print("Adaptive iteration factor (k): Tuning for quantitative improvement of detail accuracy at strong zooms. Higher k means more iterations added as you zoom in.")
+                enter_continue("Press enter to return to settings menu.", seperation=False)
+
+            elif choice == "c":
+                break
+
+    def cli_change_postprocessing_settings(self):
+        while True:
+
+            print_heading("CHANGE POSTPROCESSING SETTINGS")
+            print(f"1 - Activate/Deactivate postprocessing (current: {'On' if self.visualizer.render_settings.post_process_bool else 'Off'})")
+            print(f"2 - Contrast factor for postprocessing (current: {self.visualizer.render_settings.contrast_factor})")
+            print(f"3 - Gamma factor for postprocessing (current: {self.visualizer.render_settings.gamma_factor})")
+            print("H - Help")
+            print("C - Cancel")
+            choice = input("> ").strip().lower()
+
+            if choice == "1":
                 print_heading("TOGGLE POSTPROCESSING")
                 current_state = self.visualizer.render_settings.post_process_bool
                 new_state = not current_state
                 self.visualizer.render_settings.post_process_bool = new_state
                 enter_continue(f"Postprocessing turned {'On' if new_state else 'Off'}. Press enter to continue.", seperation=False)
 
-            elif choice == "4":
+            elif choice == "2":
                 print_heading("CHANGE CONTRAST FACTOR")
                 print(f"Current contrast factor: {self.visualizer.render_settings.contrast_factor}")
                 print("Choose contrast = 1 for no change, contrast < 1 for lower contrast, contrast > 1 for higher contrast.")
@@ -288,7 +311,7 @@ class CLI():
                 self.visualizer.render_settings.contrast_factor = contrast
                 enter_continue(f"Contrast factor changed to {contrast}. Press enter to continue.", seperation=False)
 
-            elif choice == "5":
+            elif choice == "3":
                 print_heading("CHANGE GAMMA FACTOR")
                 print(f"Current gamma factor: {self.visualizer.render_settings.gamma_factor}")
                 print("Choose gamma = 1 for no correction, gamma < 1 for brighter images, gamma > 1 for darker images.")
@@ -300,9 +323,10 @@ class CLI():
                 enter_continue(f"Gamma factor changed to {gamma}. Press enter to continue.", seperation=False)
 
             elif choice == "h":
-                print_heading("HELP - RENDERING SETTINGS")
-                print("Base iterations: Number of iterations used as a baseline for the adaptive iteration depth.")
-                print("Adaptive iteration factor (k): Tuning for quantitative improvement of detail accuracy at strong zooms. Higher k means more iterations added as you zoom in.")
+                print_heading("HELP - POSTPROCESSING SETTINGS")
+                print("Postprocessing: Toggle the application of postprocessing effects on the rendered image.")
+                print("Contrast factor: Adjusts the contrast of the image. A value of 1 means no change, less than 1 reduces contrast, and greater than 1 increases contrast.")
+                print("Gamma factor: Adjusts the gamma correction applied to the image. A value of 1 means no correction, less than 1 brightens the image, and greater than 1 darkens the image.")
                 enter_continue("Press enter to return to settings menu.", seperation=False)
 
             elif choice == "c":

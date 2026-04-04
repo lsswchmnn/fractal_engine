@@ -132,8 +132,8 @@ class Visualizer():
 
     def _handle_export(self):
         # Hochauflösende Größe definieren (z.B. 4K)
-        highres_width = self.viewport.width_px * self.export_factor
-        highres_height = self.viewport.height_px * self.export_factor
+        highres_width = self.viewport.width_px * self.render_settings.export_factor
+        highres_height = self.viewport.height_px * self.render_settings.export_factor
 
         # Neues Viewport für Export
         export_viewport = self.viewport.copy()  # wir nehmen den gleichen Ausschnitt
@@ -153,9 +153,7 @@ class Visualizer():
                 export_viewport,
                 self.colorizer,
                 coloring_mode=self.coloring_mode,
-                k=self.iterate_factor_k,
-                gamma=self.gamma_factor,
-                contrast=self.contrast_factor
+                render_settings=self.render_settings
             )
         finally:
             self.fractal.max_iterations = original_iter

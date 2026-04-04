@@ -164,8 +164,9 @@ class Visualizer():
 
         if path:
             self.exporter.save(pixels, path)
-            print(f"Image exported to {path}")
+            print(f"Image ({highres_height} x {highres_width} px) exported to {path}")
             print_thin_separation()
+            print()
 
     def _handle_change_c(self):
         mandelbrot = MandelbrotFractal()

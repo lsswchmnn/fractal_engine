@@ -247,6 +247,7 @@ class CLI():
             print_heading("CHANGE RENDERING SETTINGS")
             print(f"1 - Base Iterations (current: {self.fractal.max_iterations})")
             print(f"2 - Factor for adaptive iteration depth (current: {self.visualizer.render_settings.iterate_factor_k})")
+            print(f"3 - Toggle Supersampling (current: {'On' if self.visualizer.render_settings.supersampling_enabled else 'Off'})")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
@@ -272,6 +273,12 @@ class CLI():
                 self.visualizer.render_settings.iterate_factor_k = k
                 enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
 
+            if choice == "3":
+                print_heading("TOGGLE SUPERSAMPLING")
+                current_state = self.visualizer.render_settings.supersampling_enabled
+                new_state = not current_state
+                self.visualizer.render_settings.supersampling_enabled = new_state
+                enter_continue(f"Supersampling turned {'On' if new_state else 'Off'}. Press enter to continue.", seperation=False)
 
             elif choice == "h":
                 print_heading("HELP - RENDERING SETTINGS")
@@ -282,6 +289,7 @@ class CLI():
             elif choice == "c":
                 break
 
+    # Einstellungen: Postprocessing
     def cli_change_postprocessing_settings(self):
         while True:
 

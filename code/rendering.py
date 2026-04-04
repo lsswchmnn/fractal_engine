@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit
 from time import perf_counter
+from settings import RenderSettings
 from utils import printProgressBar, clear_cli, print_thin_separation
 #============================================================
 # NUMBAR-RENDERING-Funktion (Unterscheidung zwischen zwei Typen, nötig für Julia)
@@ -53,11 +54,30 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
             escaped[y, x] = esc             # Escaped (Topologie)
             trap[y, x] = trap_val           # Orbit-Trap-Wert
 
-#------------------------------------------------------------
+#============================================================
 # RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an
 class Renderer():
 
-    def render(self, fractal, viewport, Colorizer, coloring_mode="smooth", render_settings=None):
+    # Hauptfunktion: unterscheidet zwischen normalem Rendering und Supersampling
+    def render(self, fractal, viewport, colorizer, coloring_mode="smooth", render_settings=RenderSettings()):
+            
+        if not render_settings.supersampling_enabled:
+            image = self._render_single(fractal, viewport, colorizer, coloring_mode, render_settings)
+        
+        else:
+            high_res_viewport = viewport.copy()
+            high_res_viewport.width_px *= render_settings.supersampling_factor
+            high_res_viewport.height_px *= render_settings.supersampling_factor
+
+            image = self._render_single(fractal, high_res_viewport, colorizer, coloring_mode, render_settings)
+            image = self._downsample(image, factor=render_settings.supersampling_factor)
+                
+        image = self._apply_postprocessing(colorizer, image, render_settings)
+
+        return image
+
+    # Normales tile-basiertes Rendering
+    def _render_single(self, fractal, viewport, Colorizer, coloring_mode="smooth", render_settings=None):
         start = perf_counter()
 
         # Adaptive Iterationsberechnung
@@ -115,14 +135,29 @@ class Renderer():
 
         fractal.max_iterations = original_iter  # Iterationszahl zurücksetzen
 
-        # Farbzuweisung und Postprocessing
+        # Farbzuweisung
         image = self._apply_coloring(Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode)
-        image = self._apply_postprocessing(Colorizer, image, render_settings.contrast_factor, render_settings.gamma_factor)
 
         return image
 
 #------------------------------------------------------------
-# Hilfsfunktionen für Renderer.render
+# Private Hilfsfunktionen für Renderer
+
+    def _downsample(self, image: np.ndarray, factor: int=2) -> np.ndarray:
+        if factor <= 1:
+            return image
+        
+        h, w, c = image.shape
+
+        if h % factor != 0 or w % factor != 0:
+            raise ValueError(f"Image dimensions must be divisible by the downsampling factor. Got {h}x{w} with factor {factor}.")
+        
+        new_h = h // factor
+        new_w = w // factor
+
+        reshaped = image.reshape(new_h, factor, new_w, factor, c)
+        downsampled = reshaped.mean(axis=(1, 3)).astype(np.uint8)
+        return downsampled
 
     def _compute_adaptive_iterations(self, fractal, viewport, k=40):
         span = viewport.width
@@ -170,7 +205,9 @@ class Renderer():
         
         return image
 
-    def _apply_postprocessing(self, Colorizer, image, contrast, gamma):
-        image = Colorizer.apply_contrast(image, contrast=contrast)
-        image = Colorizer.apply_gamma(image, gamma=gamma)
+    def _apply_postprocessing(self, colorizer, image, render_settings):
+        if not render_settings.post_process_bool:
+            return image
+        image = colorizer.apply_contrast(image, contrast=render_settings.contrast_factor)
+        image = colorizer.apply_gamma(image, gamma=render_settings.gamma_factor)
         return image

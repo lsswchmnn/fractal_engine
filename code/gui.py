@@ -1,8 +1,8 @@
-import tkinter as tk
-import numpy as np
-from mapping import GUI_MAP
-from PIL import Image, ImageTk
-from tkinter import filedialog, Toplevel, Label, ttk
+import tkinter  as tk
+import numpy    as np
+from mapping    import GUI_MAP
+from PIL        import Image, ImageTk
+from tkinter    import filedialog, Toplevel, Label, ttk
 BG = GUI_MAP["canvas_bg"]
 #============================================================
 # Klasse für Text bei Hovern über Buttons

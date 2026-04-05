@@ -5,10 +5,10 @@ import time
 import threading
 import sys
 import tkinter as tk
-from typing import Iterable, Callable, Optional
-from tqdm import tqdm
-from tkinter import messagebox
-from tkinter import simpledialog
+from typing     import Iterable, Callable, Optional
+from tqdm       import tqdm
+from tkinter    import messagebox
+from tkinter    import simpledialog
 #=========================================================================
 '''
 Libraries, die installiert sein müssen: psutil, torch, tqdm (über pip install)

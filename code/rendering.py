@@ -1,8 +1,8 @@
-import numpy as np
-from numba import njit
-from time import perf_counter
-from settings import RenderSettings
-from utils import printProgressBar, clear_cli, print_thin_separation
+import numpy    as     np
+from numba      import njit
+from time       import perf_counter
+from settings   import RenderSettings
+from utils      import printProgressBar, clear_cli, print_thin_separation
 #============================================================
 # NUMBAR-RENDERING-Funktion (Unterscheidung zwischen zwei Typen, nötig für Julia)
 
@@ -42,11 +42,11 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
             # Aufruf des Fraktal-Kernels (fractal.py) (Positionsbasiert wegen Numba)
             it, esc, zr, zi, trap_val = kernel(
                 c_r, c_i,
-                max_iter,
-                escape_radius,
+                max_iter, escape_radius,
                 z_r, z_i,
                 exp_real, exp_imag,
-                trap_type, trap_x, trap_y, trap_radius
+                trap_y, trap_x, 
+                trap_type, trap_radius
             )
 
             # Speichern der Ergebnisse
@@ -206,7 +206,7 @@ class Renderer():
         return image
 
     def _apply_postprocessing(self, colorizer, image, render_settings):
-        if not render_settings.post_process_bool:
+        if not render_settings.post_process_enabled:
             return image
         image = colorizer.apply_contrast(image, contrast=render_settings.contrast_factor)
         image = colorizer.apply_gamma(image, gamma=render_settings.gamma_factor)

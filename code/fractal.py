@@ -1,6 +1,6 @@
-from abc import ABC
-from numba import njit
 import math
+from abc    import ABC
+from numba  import njit
 #============================================================
 # ORBITTRAP-KERNEL (aufgerufen von Iterationskernel)
 @njit
@@ -48,29 +48,36 @@ def mandelbrot_kernel(
     zr = z_real
     zi = z_imag
 
-    # 1) Standard Mandelbrot (Exponent 2)
+    # 1) Exponent = 2 (Fast Path)
+    # Reihenfolge dieses Zweiges auf alle anderen Übertragen!
     if exp_imag == 0.0 and exp_real == 2.0:
 
         for i in range(max_iter):
 
-            # Für Orbit-Trap
+            # Orbit-Trap auf aktuellem Zustand (okay so)
             dist = calculate_orbit_trap(zr, zi, trap_type, trap_x, trap_y, trap_radius)
             if dist < trap_min:
                 trap_min = dist
 
+            # Nächsten Iterationsschritt berechnen
             zr2 = zr * zr
             zi2 = zi * zi
-            r2 = zr2 + zi2
+
+            new_zi = 2.0 * zr * zi + c_imag
+            new_zr = zr2 - zi2 + c_real
+
+            zr = new_zr
+            zi = new_zi
+
+            r2 = zr * zr + zi * zi
 
             if r2 > escape_sq:
                 abs_z = math.sqrt(r2)
-                nu = i + 1 - math.log(math.log(abs_z)) / math.log(2)
+                nu = i + 1 - math.log(math.log(abs_z)) / math.log(2.0)
                 return float(nu), 1, zr, zi, trap_min
 
-            zi = 2.0 * zr * zi + c_imag
-            zr = zr2 - zi2 + c_real
-
         return float(max_iter), 0, zr, zi, trap_min
+
 
     # 2) Höhere ganzzahlige Exponenten
     if exp_imag == 0.0 and exp_real == float(int(exp_real)):

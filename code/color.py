@@ -1,5 +1,5 @@
-import numpy as np
-from mapping import PALETTES
+import  numpy as np
+from    mapping import PALETTES
 #============================================================
 class Colorizer():
     def __init__(self):
@@ -167,7 +167,7 @@ class Colorizer():
                 0.25 * histogram[i + 1]
             )
 
-        # 5) Kumulative Verteilung (CDF) berechnen
+        # Kumulative Verteilung (CDF) berechnen
         cumulative = np.cumsum(smoothed)
 
         # Normierung auf [0,1]
@@ -207,11 +207,8 @@ class Colorizer():
                 t0 = cumulative[i0]
                 t1 = cumulative[i1]
 
-                # Lineare Interpolation zwischen den CDF-Werten
-                t = (1.0 - f) * t0 + f * t1
-
-                # Sicherheitshalber clampen
-                t = max(0.0, min(1.0, t))
+                t = (1.0 - f) * t0 + f * t1     # Lineare Interpolation zwischen den CDF-Werten
+                t = max(0.0, min(1.0, t))       # Sicherheitshalber clampen
 
                 # Farbe aus Palette sampeln
                 image[y, x] = self._sample_palette(t)

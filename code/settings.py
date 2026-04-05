@@ -10,9 +10,9 @@ class RenderSettings:
     supersampling_factor    : int   = 2         # Faktor für Supersampling (z.B. 2 = 4x Supersampling, 3 = 9x Supersampling, etc.)
 
     # Postprocessing
-    post_process_bool   : bool         = True      # Postprocessing aktivieren/deaktivieren
-    gamma_factor        : float        = 1.2       # Gamma-Korrektur-Faktor für Postprocessing
-    contrast_factor     : float        = 1.2       # Kontrast-Faktor für Postprocessing
+    post_process_enabled    : bool  = True      # Postprocessing aktivieren/deaktivieren
+    gamma_factor            : float = 1.2       # Gamma-Korrektur-Faktor für Postprocessing
+    contrast_factor         : float = 1.2       # Kontrast-Faktor für Postprocessing
 
 @dataclass
 class DisplaySettings:

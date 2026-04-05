@@ -1,12 +1,12 @@
-from color import Colorizer
-from settings import RenderSettings
-from viewport import Viewport
-from rendering import Renderer
-from gui import GUI
-from utils import print_thin_separation
-from fractal import Fractal, MandelbrotFractal
-from mapping import PALETTES
-from export import PNGExporter
+from color      import Colorizer
+from settings   import RenderSettings
+from viewport   import Viewport
+from rendering  import Renderer
+from gui        import GUI
+from utils      import print_thin_separation
+from fractal    import Fractal, MandelbrotFractal
+from mapping    import PALETTES
+from export     import PNGExporter
 #============================================================
 # VISUALIZER: Verbindet Komponenten und steuert Ablauf der Visualisierung
 class Visualizer():

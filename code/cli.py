@@ -1,7 +1,7 @@
-from utils import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int
-from visualize import Visualizer
-from mapping import FRACTALS_MAP, ORBIT_TRAP_MAP
 import fractal
+from utils          import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int
+from visualize      import Visualizer
+from mapping        import FRACTALS_MAP, ORBIT_TRAP_MAP
 #============================================================
 class CLI():
     def __init__(self):
@@ -130,19 +130,19 @@ class CLI():
             choice = input("> ").strip().lower()
 
             if choice == "1":
-                self.cli_manipulate_formula()
+                self.cli_formula_settings()
                 continue
 
             elif choice == "2":
-                self.cli_change_rendering_settings()
+                self.cli_rendering_settings()
                 continue
 
             elif choice == "3":
-                self.cli_change_postprocessing_settings()
+                self.cli_postprocessing_settings()
                 continue
 
             elif choice == "4":
-                self.cli_change_orbit_trap_settings()
+                self.cli_orbit_trap_settings()
                 continue
 
             elif choice == "5":
@@ -154,6 +154,8 @@ class CLI():
                 print("Manipulate Formula: Change the start value and exponent used in the fractal formula. Note that non-standard settings can lead to very different and often less stable fractals, especially for complex exponents.")
                 print()
                 print("Rendering settings: Adjust the base number of iterations and the adaptive iteration factor k, which controls how many additional iterations are added as you zoom in. Higher k can improve detail accuracy at strong zooms but also increases rendering time and can lead to more fragile images at less deep zooms.")
+                print()
+                print("Postprocessing settings: Toggle postprocessing effects and adjust contrast and gamma factors to enhance the visual appearance of the fractal. Note that extreme values can lead to unnatural images.")
                 print()
                 print("Orbit trap settings: Customize the type of orbit trap used for coloring, as well as the position and radius of the trap. Different types and settings can produce a wide variety of visual effects.")
                 print()
@@ -168,12 +170,12 @@ class CLI():
     def menu_help(self):
         print_heading("HELP MENU")
         print(
-            "This program allows you to load and visualize different types of fractals, " \
-            "as well as manipulate the underlying formula and rendering settings for more customized results." \
-            "\n\n" \
-            "Fractals are complex mathematical sets that exhibit self-similarity and intricate patterns at every scale. " \
-            "The Mandelbrot set, for example, is defined by iterating the formula z = z^2 + c, where z and c are complex " \
-            "numbers. By changing the parameters of this formula, you can create a wide variety of fractal images." 
+            "Welcome to the Fractal Engine CLI Help Menu!\n\n"
+            "1 - Load Fractal: Choose from a variety of predefined fractals to load into the visualizer. Each fractal has its own unique formula and characteristics.\n\n"
+            "2 - Start Visualizer: Launch the graphical visualizer to explore the loaded fractal. Use mouse controls to zoom and pan around the fractal, and see the effects of your settings in real time.\n\n"
+            "3 - Settings: Access various settings to customize the fractal generation and visualization. This includes options for manipulating the formula, adjusting rendering parameters, enabling postprocessing effects, configuring orbit trap coloring, and setting export options.\n\n"
+            "H - Help: Access this help menu for guidance on how to use the CLI and understand the different features and settings available in the Fractal Engine.\n\n"
+            "C - Close Program: Exit the Fractal Engine CLI. Make sure to save any important settings or exported images before closing the program, as unsaved changes may be lost."
         )
 
         enter_continue("Press enter to return to main menu.")
@@ -182,7 +184,7 @@ class CLI():
 # EINSTELLUNGEN
 
     # Einstellungen: Formelmanipulation (Startwert und Exponent)
-    def cli_manipulate_formula(self):
+    def cli_formula_settings(self):
         while True:
 
             print_heading("MANIPULATE FORMULA")
@@ -241,7 +243,7 @@ class CLI():
                 break
 
     # Einstellungen: Rendering (Basis-Iterationen und adaptiver Iterationsfaktor)
-    def cli_change_rendering_settings(self): 
+    def cli_rendering_settings(self): 
         while True:
 
             print_heading("CHANGE RENDERING SETTINGS")
@@ -284,17 +286,18 @@ class CLI():
                 print_heading("HELP - RENDERING SETTINGS")
                 print("Base iterations: Number of iterations used as a baseline for the adaptive iteration depth.")
                 print("Adaptive iteration factor (k): Tuning for quantitative improvement of detail accuracy at strong zooms. Higher k means more iterations added as you zoom in.")
+                print("Supersampling: When enabled, the visualizer renders at a higher internal resolution and then downsamples the image for smoother results, especially at high zoom levels. This can significantly improve image quality but also increases rendering time.")
                 enter_continue("Press enter to return to settings menu.", seperation=False)
 
             elif choice == "c":
                 break
 
     # Einstellungen: Postprocessing
-    def cli_change_postprocessing_settings(self):
+    def cli_postprocessing_settings(self):
         while True:
 
             print_heading("CHANGE POSTPROCESSING SETTINGS")
-            print(f"1 - Activate/Deactivate postprocessing (current: {'On' if self.visualizer.render_settings.post_process_bool else 'Off'})")
+            print(f"1 - Toggle postprocessing (current: {'On' if self.visualizer.render_settings.post_process_enabled else 'Off'})")
             print(f"2 - Contrast factor for postprocessing (current: {self.visualizer.render_settings.contrast_factor})")
             print(f"3 - Gamma factor for postprocessing (current: {self.visualizer.render_settings.gamma_factor})")
             print("H - Help")
@@ -303,9 +306,9 @@ class CLI():
 
             if choice == "1":
                 print_heading("TOGGLE POSTPROCESSING")
-                current_state = self.visualizer.render_settings.post_process_bool
+                current_state = self.visualizer.render_settings.post_process_enabled
                 new_state = not current_state
-                self.visualizer.render_settings.post_process_bool = new_state
+                self.visualizer.render_settings.post_process_enabled = new_state
                 enter_continue(f"Postprocessing turned {'On' if new_state else 'Off'}. Press enter to continue.", seperation=False)
 
             elif choice == "2":
@@ -341,7 +344,7 @@ class CLI():
                 break
 
     # Einstellungen: Formel-Trap-Coloring (Offset, Radius und Methode)
-    def cli_change_orbit_trap_settings(self):
+    def cli_orbit_trap_settings(self):
         while True:
 
             # aktuelles Label anhand des Index finden

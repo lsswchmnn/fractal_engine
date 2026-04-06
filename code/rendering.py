@@ -131,7 +131,7 @@ class Renderer():
         end = perf_counter()
         length = round(number=end - start, ndigits=4)
 
-        self._print_debug_info(fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length)  # Debug-Info
+        self._print_debug_info(fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=render_settings)  # Debug-Info
 
         fractal.max_iterations = original_iter  # Iterationszahl zurücksetzen
 
@@ -170,17 +170,22 @@ class Renderer():
 
         return adaptive_iter, original_iter, span
 
-    def _print_debug_info(self, fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length):
+    def _print_debug_info(self, fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=None):
         clear_cli()
         print_thin_separation(linebreak=False)
+        print("FRACTAL:")
         print(f"Fractal:                {fractal._name}")
         print(f"Formula:                {fractal._formula}")
         print(f"Startvalue:             {fractal.start_real} + {fractal.start_imag}i")
         print(f"Exponent:               {fractal.exp_real} + {fractal.exp_imag}i")
+        print("\nCOLORING:")
         print(f"Coloring mode:          {coloring_mode}")
         if coloring_mode == "orbit trap":
             print(f"Orbit-Trap type:        {fractal.trap_type_name}")
         print(f"Palette:                {Colorizer.palette_name}")
+        print("\nRENDERING:")
+        if settings:
+            print(f"Supersampling:          {f'Enabled (factor: {settings.supersampling_factor})' if settings.supersampling_enabled else 'Disabled'}")
         print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
         print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
         print(f"Rendering-Time:         {length} sec")        

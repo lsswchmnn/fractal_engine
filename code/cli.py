@@ -250,6 +250,7 @@ class CLI():
             print(f"1 - Base Iterations (current: {self.fractal.max_iterations})")
             print(f"2 - Factor for adaptive iteration depth (current: {self.visualizer.render_settings.iterate_factor_k})")
             print(f"3 - Toggle Supersampling (current: {'On' if self.visualizer.render_settings.supersampling_enabled else 'Off'})")
+            print(f"4 - Supersampling factor (current: {self.visualizer.render_settings.supersampling_factor}x)")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
@@ -275,12 +276,22 @@ class CLI():
                 self.visualizer.render_settings.iterate_factor_k = k
                 enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
 
-            if choice == "3":
+            elif choice == "3":
                 print_heading("TOGGLE SUPERSAMPLING")
                 current_state = self.visualizer.render_settings.supersampling_enabled
                 new_state = not current_state
                 self.visualizer.render_settings.supersampling_enabled = new_state
                 enter_continue(f"Supersampling turned {'On' if new_state else 'Off'}. Press enter to continue.", seperation=False)
+
+            elif choice == "4":
+                print_heading("CHANGE SUPERSAMPLING FACTOR")
+                print(f"Current supersampling factor: {self.visualizer.render_settings.supersampling_factor}x")
+                print_thin_separation()
+                print()
+
+                factor = input_int(1, 10, 2, msg="Enter new supersampling factor", cli=True)
+                self.visualizer.render_settings.supersampling_factor = factor
+                enter_continue(f"Supersampling factor changed to {factor}x. Press enter to continue.", seperation=False)
 
             elif choice == "h":
                 print_heading("HELP - RENDERING SETTINGS")

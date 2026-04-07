@@ -71,7 +71,44 @@ class Colorizer():
         return palette
 
 #------------------------------------------------------------
-# FÄRBUNGSMETHODEN für Iterationsergebnisse (Jede Methode berechnet t, _sample_palette(t) wird für die Farbzuweisung aufgerufen)
+# VORVERARBEITUNG
+
+    def _build_histogram_cdf(self, iterations: np.ndarray, escaped: np.ndarray, max_iterations: int) -> np.ndarray:
+        pass
+
+    def _prepare_orbit_trap_range(self, trap_dist: np.ndarray, escaped: np.ndarray) -> tuple[float, float, float, float]:
+        valid = trap_dist[(escaped == 1) & np.isfinite(trap_dist)]
+        d_min = np.min(valid)
+        d_max = np.max(valid)
+        log_min = np.log(d_min + 1e-12)
+        log_max = np.log(d_max + 1e-12)
+        return d_min, d_max, log_min, log_max
+
+#------------------------------------------------------------
+# PIXELWEISE Signale
+
+    def _basic_phase(self, nu: float, band_width: float = 1.0) -> float:
+        return (nu / band_width)
+
+    def _smooth_t(self, nu: float, max_iterations: int) -> float:
+        if max_iterations <= 0:
+            return 0.0
+        t = nu / max_iterations
+        return max(0.0, min(1.0, t))
+
+    def _orbit_trap_t(self, d: float, log_min: float, log_max: float) -> float:
+        ld = np.log(d + 1e-12)
+        t = (ld - log_min) / (log_max - log_min)
+        return max(0.0, min(1.0, t))
+
+    def _histogram_t():
+        pass
+
+    def _paint_from_t_map():
+        pass
+    
+#------------------------------------------------------------
+# FÄRBUNGSMETHODEN als Kompositionsmethoden
 
     # Förbung: Basic (spezielle, kristalline Struktur, allerdings etwas pixelig)
     def apply_basic(self, iterations: np.ndarray,
@@ -267,6 +304,10 @@ class Colorizer():
 
         return image
     
+    # Färbung: Basic und histogramm kombiniert
+    def apply_super():
+        pass
+
 #------------------------------------------------------------
 # POSTPROCESSING für Farbgebungsergebnisse
 

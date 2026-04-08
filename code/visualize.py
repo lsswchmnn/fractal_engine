@@ -49,7 +49,7 @@ class Visualizer():
         self.gui.set_c_select_callback(self._handle_c_select)
         
         # Coloring initialisieren
-        self.coloring_modes = ["basic", "smooth", "histogram", "orbit trap"]              # Verfügbare Coloring-Methoden
+        self.coloring_modes = ["basic", "smooth", "histogram", "orbit trap", "hybrid"]              # Verfügbare Coloring-Methoden
         self.coloring_index = 1
         self.coloring_mode = self.coloring_modes[self.coloring_index]       # Aktuelle Coloring-Methode
 

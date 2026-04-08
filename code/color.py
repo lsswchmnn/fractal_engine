@@ -72,23 +72,74 @@ class Colorizer():
 
 #------------------------------------------------------------
 # VORVERARBEITUNG
+    def _build_histogram_cdf(self,
+                            iterations: np.ndarray,
+                            escaped: np.ndarray,
+                            max_iterations: int) -> np.ndarray:
+        
+        histogram = np.zeros(max_iterations + 1, dtype=np.float64)
 
-    def _build_histogram_cdf(self, iterations: np.ndarray, escaped: np.ndarray, max_iterations: int) -> np.ndarray:
-        pass
+        height, width = iterations.shape
 
-    def _prepare_orbit_trap_range(self, trap_dist: np.ndarray, escaped: np.ndarray) -> tuple[float, float, float, float]:
+        # Histogramm aufbauen
+        for y in range(height):
+            for x in range(width):
+                if not escaped[y, x]:
+                    continue
+
+                nu = iterations[y, x]
+                i = int(np.floor(nu))
+
+                if i < 0:
+                    i = 0
+                elif i > max_iterations:
+                    i = max_iterations
+
+                histogram[i] += 1.0
+
+        if np.sum(histogram) == 0:
+            return None
+
+        # leicht glätten
+        smoothed = histogram.copy()
+        for i in range(1, max_iterations):
+            smoothed[i] = (
+                0.25 * histogram[i - 1] +
+                0.50 * histogram[i] +
+                0.25 * histogram[i + 1]
+            )
+
+        cumulative = np.cumsum(smoothed)
+
+        total = cumulative[-1]
+        if total <= 0.0:
+            return None
+
+        cumulative /= total
+        return cumulative
+
+    def _prepare_orbit_trap_range(self, trap_dist: np.ndarray, escaped: np.ndarray) -> tuple[float, float, float, float] | None:
         valid = trap_dist[(escaped == 1) & np.isfinite(trap_dist)]
+
+        if len(valid) == 0:
+            return None
+        
         d_min = np.min(valid)
         d_max = np.max(valid)
+
+        if d_max == d_min:
+            d_max = d_min + 1e-12
+
         log_min = np.log(d_min + 1e-12)
         log_max = np.log(d_max + 1e-12)
+
+        if log_max == log_min:
+            log_max = log_min + 1e-12
+
         return d_min, d_max, log_min, log_max
 
 #------------------------------------------------------------
 # PIXELWEISE Signale
-
-    def _basic_phase(self, nu: float, band_width: float = 1.0) -> float:
-        return (nu / band_width)
 
     def _smooth_t(self, nu: float, max_iterations: int) -> float:
         if max_iterations <= 0:
@@ -101,11 +152,36 @@ class Colorizer():
         t = (ld - log_min) / (log_max - log_min)
         return max(0.0, min(1.0, t))
 
-    def _histogram_t():
-        pass
+    def _histogram_t(self, nu: float, cumulative: np.ndarray, max_iterations: int) -> float:
+        i0 = int(np.floor(nu))
 
-    def _paint_from_t_map():
-        pass
+        if i0 < 0:
+            i0 = 0
+        elif i0 > max_iterations:
+            i0 = max_iterations
+
+        i1 = min(i0 + 1, max_iterations)
+        f = nu - i0
+
+        t0 = cumulative[i0]
+        t1 = cumulative[i1]
+
+        t = (1.0 - f) * t0 + f * t1
+        return max(0.0, min(1.0, t))
+
+    def _paint_from_t_map(self, t_map: np.ndarray, escaped: np.ndarray) -> np.ndarray:
+        height, width = t_map.shape
+        image = np.zeros((height, width, 3), dtype=np.uint8)
+
+        for y in range(height):
+            for x in range(width):
+                if not escaped[y, x]:
+                    image[y, x] = (0, 0, 0)
+                else:
+                    t = t_map[y, x]
+                    image[y, x] = self._sample_palette(t)
+
+        return image
     
 #------------------------------------------------------------
 # FÄRBUNGSMETHODEN als Kompositionsmethoden
@@ -140,19 +216,20 @@ class Colorizer():
                     max_iterations: int) -> np.ndarray:
 
         height, width = iterations.shape
-        image = np.zeros((height, width, 3), dtype=np.uint8)
-        palette_size = len(self.palette)
+        t_map = np.zeros((height, width), dtype=np.float64)
 
         for y in range(height):
             for x in range(width):
-
                 if not escaped[y, x]:
-                    image[y, x] = (0, 0, 0)
+                    continue
 
-                else:
-                    t = iterations[y, x] / max_iterations   # Normalisierung auf [0,1]
-                    image[y, x] = self._sample_palette(t)   # Palette-Interpolation
+                nu = iterations[y, x]
+                if not np.isfinite(nu):
+                        continue
 
+                t_map[y, x] = self._smooth_t(nu, max_iterations)
+
+        image = self._paint_from_t_map(t_map, escaped)
         return image
 
     # Färbung: Histogramm
@@ -161,95 +238,25 @@ class Colorizer():
                         escaped: np.ndarray,
                         max_iterations: int) -> np.ndarray:
 
-        # Grundstrukturen vorbereiten
         height, width = iterations.shape
-        image = np.zeros((height, width, 3), dtype=np.uint8)
+        t_map = np.zeros((height, width), dtype=np.float64)
 
-        histogram = np.zeros(max_iterations + 1, dtype=np.float64)
+        cumulative = self._build_histogram_cdf(iterations, escaped, max_iterations)
+        if cumulative is None:
+            return np.zeros((height, width, 3), dtype=np.uint8)
 
-        # Histogramm aufbauen
         for y in range(height):
             for x in range(width):
-
-                # Punkte innerhalb der Menge werden nicht eingefärbt
                 if not escaped[y, x]:
                     continue
 
                 nu = iterations[y, x]
-
-                # Diskreten Bin bestimmen
-                i = int(np.floor(nu))
-
-                # Sicherheits-Clamp
-                if i < 0:
-                    i = 0
-                elif i > max_iterations:
-                    i = max_iterations
-
-                histogram[i] += 1.0
-
-        # Spezialfall: keine escaped Punkte
-        total_escaped = np.sum(histogram)
-        if total_escaped == 0:
-            return image
-
-        # Histogramm glätten
-        smoothed = histogram.copy()
-
-        # Nur innere Werte glätten; Randwerte bleiben unverändert
-        for i in range(1, max_iterations):
-            smoothed[i] = (
-                0.25 * histogram[i - 1] +
-                0.50 * histogram[i] +
-                0.25 * histogram[i + 1]
-            )
-
-        # Kumulative Verteilung (CDF) berechnen
-        cumulative = np.cumsum(smoothed)
-
-        # Normierung auf [0,1]
-        total = cumulative[-1]
-        if total <= 0.0:
-            return image
-
-        cumulative /= total
-
-        # Pixel einfärben
-        for y in range(height):
-            for x in range(width):
-
-                # Punkte innerhalb der Menge bleiben schwarz
-                if not escaped[y, x]:
-                    image[y, x] = (0, 0, 0)
+                if not np.isfinite(nu):
                     continue
 
-                nu = iterations[y, x]
+                t_map[y, x] = self._histogram_t(nu, cumulative, max_iterations)
 
-                # Unteren Nachbar-Bin bestimmen
-                i0 = int(np.floor(nu))
-
-                # Clamp
-                if i0 < 0:
-                    i0 = 0
-                elif i0 > max_iterations:
-                    i0 = max_iterations
-
-                # Oberen Nachbar-Bin bestimmen
-                i1 = min(i0 + 1, max_iterations)
-
-                # Fraktionaler Anteil zwischen i0 und i1
-                f = nu - i0
-
-                # CDF-Werte der beiden Nachbar-Bins
-                t0 = cumulative[i0]
-                t1 = cumulative[i1]
-
-                t = (1.0 - f) * t0 + f * t1     # Lineare Interpolation zwischen den CDF-Werten
-                t = max(0.0, min(1.0, t))       # Sicherheitshalber clampen
-
-                # Farbe aus Palette sampeln
-                image[y, x] = self._sample_palette(t)
-
+        image = self._paint_from_t_map(t_map, escaped)
         return image
 
     # Färbung: Orbit-Trap (Sehr spezielle, experimentelle Färbung)
@@ -258,55 +265,71 @@ class Colorizer():
                         escaped: np.ndarray) -> np.ndarray:
 
         height, width = trap_dist.shape
+        t_map = np.zeros((height, width), dtype=np.float64)
+
+        prep = self._prepare_orbit_trap_range(trap_dist, escaped)
+        if prep is None:
+            return np.zeros((height, width, 3), dtype=np.uint8)
+
+        _, _, log_min, log_max = prep
+
+        for y in range(height):
+            for x in range(width):
+                if not escaped[y, x]:
+                    continue
+
+                d = trap_dist[y, x]
+                if not np.isfinite(d):
+                    continue
+
+                t_map[y, x] = self._orbit_trap_t(d, log_min, log_max)
+
+        return self._paint_from_t_map(t_map, escaped)   
+     
+    # Färbung: Basic und histogramm kombiniert+
+    def apply_hybrid(self,
+                    iterations: np.ndarray,
+                    escaped: np.ndarray,
+                    max_iterations: int,
+                    hist_strength: float = 0.45) -> np.ndarray:
+
+        height, width = iterations.shape
         image = np.zeros((height, width, 3), dtype=np.uint8)
 
-        palette_size = len(self.palette)
-
-        # Nur escaped Punkte berücksichtigen
-        valid = trap_dist[(escaped == 1) & np.isfinite(trap_dist)]
-
-        if len(valid) == 0:
+        cumulative = self._build_histogram_cdf(iterations, escaped, max_iterations)
+        if cumulative is None:
             return image
 
-        # Min/Max
-        d_min = np.min(valid)
-        d_max = np.max(valid)
-
-        # Schutz gegen Division durch 0
-        if d_max == d_min:
-            d_max = d_min + 1e-12
-
-        # Optional: log-Skalierung (stark empfohlen)
-        log_min = np.log(d_min + 1e-12)
-        log_max = np.log(d_max + 1e-12)
-        if log_max == log_min:
-            log_max = log_min + 1e-12
+        palette_size = len(self.palette)
 
         for y in range(height):
             for x in range(width):
 
-                # Innenpunkte hart schwarz setzen; orbit-trap kann eigentlich auch für Innenpunkte definiert werden, evtl später erweitern
                 if not escaped[y, x]:
                     image[y, x] = (0, 0, 0)
                     continue
 
-                d = trap_dist[y, x]
-
-                if not np.isfinite(d):
+                nu = iterations[y, x]
+                if not np.isfinite(nu):
                     image[y, x] = (0, 0, 0)
                     continue
 
-                # --- Log-Skalierung für bessere Dynamik ---
-                ld = np.log(d + 1e-12)
-                t = (ld - log_min) / (log_max - log_min)
+                # --- BASIC-KERN ---
+                base_index = int(nu) % palette_size
 
-                image[y, x] = self._sample_palette(t)   # Palette-Interpolation
+                # --- HISTOGRAMM-SKALIERUNG ---
+                hist_t = self._histogram_t(nu, cumulative, max_iterations)
+                hist_index = int(hist_t * (palette_size - 1))
+
+                # --- KOMPOSITION ---
+                mixed_index = int(
+                    (1.0 - hist_strength) * base_index +
+                    hist_strength * hist_index
+                ) % palette_size
+
+                image[y, x] = self.palette[mixed_index]
 
         return image
-    
-    # Färbung: Basic und histogramm kombiniert
-    def apply_super():
-        pass
 
 #------------------------------------------------------------
 # POSTPROCESSING für Farbgebungsergebnisse

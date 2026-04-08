@@ -205,6 +205,9 @@ class Renderer():
         elif coloring_mode == "orbit trap":
             image = Colorizer.apply_orbit_trap(trap, escaped)
 
+        elif coloring_mode == "hybrid":
+            image = Colorizer.apply_hybrid(iterations, escaped, effective_max_iter)
+
         else:
             raise ValueError(f"Unknown coloring mode: {coloring_mode}")
         

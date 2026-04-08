@@ -124,30 +124,34 @@ class CLI():
             print("3 - Postprocessing")
             print("4 - Orbit trap")
             print("5 - Export")
+            print("6 - Save current settings as template (not implemented)")    # IMPLEMENTIEREN
             print("H - Help")
             print("C - Close")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
             if choice == "1":
-                self.cli_formula_settings()
+                self._cli_formula_settings()
                 continue
 
             elif choice == "2":
-                self.cli_rendering_settings()
+                self._cli_rendering_settings()
                 continue
 
             elif choice == "3":
-                self.cli_postprocessing_settings()
+                self._cli_postprocessing_settings()
                 continue
 
             elif choice == "4":
-                self.cli_orbit_trap_settings()
+                self._cli_orbit_trap_settings()
                 continue
 
             elif choice == "5":
-                self.cli_export_settings()
+                self._cli_export_settings()
                 continue
+
+            elif choice == "6":
+                pass
 
             elif choice == "h":
                 print_heading("HELP - SETTINGS")
@@ -181,10 +185,10 @@ class CLI():
         enter_continue("Press enter to return to main menu.")
 
 #------------------------------------------------------------
-# EINSTELLUNGEN
+# EINSTELLUNGSMENÜS
 
     # Einstellungen: Formelmanipulation (Startwert und Exponent)
-    def cli_formula_settings(self):
+    def _cli_formula_settings(self):
         while True:
 
             print_heading("MANIPULATE FORMULA")
@@ -212,7 +216,7 @@ class CLI():
 
                 # Warnungen für potenziell instabile Einstellungen
                 if imag != 0 or real != 2:
-                    self.cli_settings_warning(imag, real, "startvalue")
+                    self._cli_settings_warning(imag, real, "startvalue")
                     break
             
             elif choice == "2":
@@ -230,7 +234,7 @@ class CLI():
 
                 # Warnungen für potenziell instabile Einstellungen
                 if imag != 0 or real != 2:
-                    self.cli_settings_warning(imag, real, "exponent")
+                    self._cli_settings_warning(imag, real, "exponent")
                     break
 
             elif choice == "h":
@@ -243,7 +247,7 @@ class CLI():
                 break
 
     # Einstellungen: Rendering (Basis-Iterationen und adaptiver Iterationsfaktor)
-    def cli_rendering_settings(self): 
+    def _cli_rendering_settings(self): 
         while True:
 
             print_heading("CHANGE RENDERING SETTINGS")
@@ -304,7 +308,7 @@ class CLI():
                 break
 
     # Einstellungen: Postprocessing
-    def cli_postprocessing_settings(self):
+    def _cli_postprocessing_settings(self):
         while True:
 
             print_heading("CHANGE POSTPROCESSING SETTINGS")
@@ -355,7 +359,7 @@ class CLI():
                 break
 
     # Einstellungen: Formel-Trap-Coloring (Offset, Radius und Methode)
-    def cli_orbit_trap_settings(self):
+    def _cli_orbit_trap_settings(self):
         while True:
 
             # aktuelles Label anhand des Index finden
@@ -446,8 +450,8 @@ class CLI():
             elif choice == "c":
                 break
 
-    # Einsellungen: Export
-    def cli_export_settings(self):
+    # Einstellungen: Export
+    def _cli_export_settings(self):
         while True:
             res_x = self.visualizer.viewport.width_px * self.visualizer.render_settings.export_factor
             res_y = self.visualizer.viewport.height_px * self.visualizer.render_settings.export_factor
@@ -478,8 +482,11 @@ class CLI():
             elif choice == "c":
                 break
 
+#------------------------------------------------------------
+# HILFS- UND WEITERE FUNKTIONEN
+
     # Warnungen für potenziell instabile Einstellungen bei Formelmanipulation
-    def cli_settings_warning(self, imag: float, real: float, setting_type: str):
+    def _cli_settings_warning(self, imag: float, real: float, setting_type: str):
         print_heading("STABILITY WARNING")
 
         if setting_type == "startvalue":

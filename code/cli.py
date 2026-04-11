@@ -152,8 +152,7 @@ class CLI():
                 continue
 
             elif choice == "6":
-
-                self._save_settings()
+                self._cli_settings_template()
                 continue
 
             elif choice == "h":

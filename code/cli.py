@@ -2,6 +2,7 @@ import fractal
 from utils          import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int
 from visualize      import Visualizer
 from mapping        import FRACTALS_MAP, ORBIT_TRAP_MAP
+from settings       import SettingsRepository
 #============================================================
 class CLI():
     def __init__(self):
@@ -124,7 +125,7 @@ class CLI():
             print("3 - Postprocessing")
             print("4 - Orbit trap")
             print("5 - Export")
-            print("6 - Save current settings as template (not implemented)")    # IMPLEMENTIEREN
+            print("6 - Load/Save settings template")
             print("H - Help")
             print("C - Close")
             print_thin_separation(linebreak=False)
@@ -151,7 +152,9 @@ class CLI():
                 continue
 
             elif choice == "6":
-                pass
+
+                self._save_settings()
+                continue
 
             elif choice == "h":
                 print_heading("HELP - SETTINGS")
@@ -519,3 +522,84 @@ class CLI():
             show_error(False, "StabilityWarning", "Unusual settings can lead to unpredictable results, long rendering times and inappropriate image cropping. Experiment with caution!")
 
         enter_continue("Press enter to continue.")
+
+    # Load/Save settings template
+    def _cli_settings_template(self):
+        while True:
+            print_heading("LOAD/SAVE SETTINGS TEMPLATE")
+            print("1 - Save current settings as template")
+            print("2 - Load settings from template")
+            print("C - Cancel")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "1":
+                self._save_settings()
+
+            elif choice == "2":
+                self._load_settings()
+
+            elif choice == "c":
+                return
+
+    # Einstellungen speichern
+    def _save_settings(self):
+        repo = SettingsRepository()
+
+        while True:
+            print_heading("SAVE SETTINGS")
+            name = input("Enter a name for the settings template (or 'C' to cancel): ").strip().lower()
+            print()
+
+            if name == "c":
+                break
+
+            if not name:
+                show_error(True, "InputError", "Name cannot be empty.")
+                continue
+
+            try:
+                repo.save(name, self.visualizer.render_settings)
+                print(f"Settings saved as '{name}'.")
+                enter_continue("Press enter to continue.")
+
+            except Exception as e:
+                show_error(True, "SaveError", f"Failed to save settings: {e}")
+                continue
+
+            break
+
+    # Einstellungen laden
+    def _load_settings(self):
+        repo = SettingsRepository()
+
+        print_heading("LOAD SETTINGS")
+
+        templates = repo.list()
+
+        if not templates:
+            print("No saved settings found.")
+            return
+
+        print("Available templates:")
+        for i, t in enumerate(templates, start=1):
+            print(f"{i} - {t}")
+        print_thin_separation(linebreak=False)
+        choice = input("Enter template number: ").strip()
+
+        if choice.isdigit():
+            choice = int(choice)
+            if 1 <= choice <= len(templates):
+                name = templates[choice - 1]
+            else:
+                print("Invalid template number.")
+                return
+        else:
+            name = choice
+
+        try:
+            settings = repo.load(name)
+            self.visualizer.render_settings = settings
+            print(f"Loaded '{name}'")
+        except Exception as e:
+            print(f"Error: {e}")

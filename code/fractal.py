@@ -682,8 +682,8 @@ class Fractal(ABC):
         self.kernel = None          # Platzhalter für die Iterationsfunktion, wird in den Unterklassen gesetzt
         self.pixel_is_c = True      # Pixel repräsentiert c (Alles außer Julia, standad)
 
-        # Anzeige
-        self._name = "Fractal"                              # Name des Fraktals (wird in Mapping überschrieben)
+        # Anzeige (wird überschrieben, basierend auf Mapping)
+        self._name = "Fractal"
         self._formula = "z_{n+1} = z_n^2 + c"
 
         # Startwert

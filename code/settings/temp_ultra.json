@@ -1,0 +1,10 @@
+{
+    "iterate_factor_k": 250,
+    "export_factor": 4,
+    "tile_height": 32,
+    "supersampling_enabled": true,
+    "supersampling_factor": 3,
+    "post_process_enabled": true,
+    "gamma_factor": 1.2,
+    "contrast_factor": 1.4
+}

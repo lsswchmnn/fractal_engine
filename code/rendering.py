@@ -172,6 +172,8 @@ class Renderer():
 
     def _print_debug_info(self, fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=None):
         clear_cli()
+        total_iter, total_pixels = self._estimate_workload(viewport, adaptive_iter, settings, render_settings=RenderSettings())
+
         print_thin_separation(linebreak=False)
         print("FRACTAL:")
         print(f"Fractal:                {fractal._name}")
@@ -188,9 +190,20 @@ class Renderer():
             print(f"Supersampling:          {f'Enabled (factor: {settings.supersampling_factor})' if settings.supersampling_enabled else 'Disabled'}")
         print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
         print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
-        print(f"Rendering-Time:         {length} sec")        
+        print(f"Rendering-Time:         {length} sec")
+        print(f"Estimated workload:     {total_iter:.2e} iterations ({total_pixels:.2e} pixels)")
         print_thin_separation(linebreak=False)
         print()
+
+    def _estimate_workload(self, viewport, adaptive_iter, settings, render_settings):
+        if settings.supersampling_enabled:
+            factor = render_settings.supersampling_factor
+            total_pixels = (viewport.width_px * factor) * (viewport.height_px * factor)
+        else:
+            total_pixels = viewport.width_px * viewport.height_px
+        
+        total_iterations = total_pixels * adaptive_iter
+        return total_iterations, total_pixels
 
     def _apply_coloring(self, Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode):
         if coloring_mode == "basic":

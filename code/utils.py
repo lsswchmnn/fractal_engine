@@ -40,6 +40,7 @@ class Spinner:
         self.running = False
         if self.thread:
             self.thread.join()
+
 #=========================================================================
 # Error-Utilities
 
@@ -62,12 +63,14 @@ def print_separation(length: int=50, linebreak: bool=True):
     else:
         print(f"{length*'='}")
 
+# Dünne Trennlinie
 def print_thin_separation(length: int=50, linebreak: bool=True):
     if linebreak:
         print(f"\n{length*'-'}")
     else:
         print(f"{length*'-'}")
 
+# Überschrift
 def print_heading(title: str="HEADING", length: int=50, clear: bool=True, linebreak: bool=True):
     if clear:
         clear_cli()
@@ -301,6 +304,9 @@ def input_float(min_value: float=0, max_value: float=10000, default: float=100,
             show_error(True, "InputError", "Input is empty. Returning Default")
             return default
 
+        # "," durch "." ersetzen
+        raw = raw.replace(',', '.')
+        
         # Ist Input ein float?
         try:
             value = float(raw)
@@ -357,13 +363,36 @@ def input_str(msg: str="value", cli: bool=True) -> str:
     return value
 
 # Ja/Nein Abfrage
-def input_confirm(msg: str="Are you sure?", cli: bool=True) -> True:
-    if cli:
+def input_confirm(msg: str="Are you sure?", cli: bool=True, default_true: bool=True) -> bool:
+    if not cli:
+        try:
+            root = tk.Tk()
+            root.withdraw()
+            result = messagebox.askyesno("Confirm", msg)
+            root.destroy()
+            choice = result
+        except:
+            cli = True
+
+    elif cli:
         choice = input(f"{msg} (y/n): ").strip().lower()
-        return choice == 'y'
-    else:
-        root = tk.Tk()
-        root.withdraw()
-        result = messagebox.askyesno("Confirm", msg)
-        root.destroy()
-        return result
+
+    if not default_true:
+
+        if choice == '':
+            choice = False
+
+        if choice == "y" or choice == True or choice == "yes":
+            return True
+        else:
+            return False
+        
+    elif default_true:
+
+        if choice == '':
+            choice = True
+
+        if choice == "n" or choice == False or choice == "no":
+            return False
+        else:
+            return True

@@ -1,5 +1,5 @@
 import fractal
-from utils          import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int
+from utils          import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int, input_confirm
 from visualize      import Visualizer
 from mapping        import FRACTALS_MAP, ORBIT_TRAP_MAP
 from settings       import SettingsRepository
@@ -50,12 +50,14 @@ class CLI():
 
             elif choice == "c":
                 clear_cli()
-                enter_continue("Press enter to leave the program", seperation=True)
-                clear_cli()
-                print("Goodbye!")
-                print_thin_separation()
-                print()
-                break
+                if input_confirm("Exiting the program", True, default_true=True) == True:
+                    clear_cli()
+                    print("Goodbye!")
+                    print_thin_separation()
+                    print()
+                    break
+                else:
+                    continue
 
             else:
                 continue
@@ -580,11 +582,11 @@ class CLI():
             print("No saved settings found.")
             return
 
-        print("Available templates:")
+        print("Input template number:")
         for i, t in enumerate(templates, start=1):
             print(f"{i} - {t}")
         print_thin_separation(linebreak=False)
-        choice = input("Enter template number: ").strip()
+        choice = input("> ").strip()
 
         if choice.isdigit():
             choice = int(choice)
@@ -602,3 +604,5 @@ class CLI():
             print(f"Loaded '{name}'")
         except Exception as e:
             print(f"Error: {e}")
+
+        enter_continue()

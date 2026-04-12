@@ -72,6 +72,7 @@ class Colorizer():
 
 #------------------------------------------------------------
 # VORVERARBEITUNG
+
     def _build_histogram_cdf(self,
                             iterations: np.ndarray,
                             escaped: np.ndarray,
@@ -286,7 +287,7 @@ class Colorizer():
 
         return self._paint_from_t_map(t_map, escaped)   
      
-    # Färbung: Basic und histogramm kombiniert+
+    # Färbung: Basic und histogramm kombiniert
     def apply_hybrid(self,
                     iterations: np.ndarray,
                     escaped: np.ndarray,

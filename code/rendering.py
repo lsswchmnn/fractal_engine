@@ -55,7 +55,7 @@ def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
             trap[y, x] = trap_val           # Orbit-Trap-Wert
 
 #============================================================
-# RENDERER: Berechnet die Iterationen und wendet die Farbzuweisung an
+# RENDERER (Berechnet die Iterationen, ruft Hilfsmethoden auf)
 class Renderer():
 
     # Hauptfunktion: unterscheidet zwischen normalem Rendering und Supersampling
@@ -91,6 +91,8 @@ class Renderer():
         trap = np.full((height, width), np.inf, dtype=np.float64)
 
         tile_h = render_settings.tile_height
+
+        clear_cli()     # Informationsausgabe vor Progressbar entfernen
 
         # Rendering in Kacheln (Tile-basiert)
         for y0 in range(0, height, tile_h):
@@ -141,7 +143,7 @@ class Renderer():
         return image
 
 #------------------------------------------------------------
-# Private Hilfsfunktionen für Renderer
+# PRIVATE HILFSMETHODEN für Renderer
 
     def _downsample(self, image: np.ndarray, factor: int=2) -> np.ndarray:
         if factor <= 1:
@@ -175,17 +177,17 @@ class Renderer():
         total_iter, total_pixels = self._estimate_workload(viewport, adaptive_iter, settings, render_settings=RenderSettings())
 
         print_thin_separation(linebreak=False)
-        print("FRACTAL:")
+        print("FRACTAL")
         print(f"Fractal:                {fractal._name}")
         print(f"Formula:                {fractal._formula}")
         print(f"Startvalue:             {fractal.start_real} + {fractal.start_imag}i")
         print(f"Exponent:               {fractal.exp_real} + {fractal.exp_imag}i")
-        print("\nCOLORING:")
+        print("\nCOLORING")
         print(f"Coloring mode:          {coloring_mode}")
         if coloring_mode == "orbit trap":
             print(f"Orbit-Trap type:        {fractal.trap_type_name}")
         print(f"Palette:                {Colorizer.palette_name}")
-        print("\nRENDERING:")
+        print("\nRENDERING")
         if settings:
             print(f"Supersampling:          {f'Enabled (factor: {settings.supersampling_factor})' if settings.supersampling_enabled else 'Disabled'}")
         print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")

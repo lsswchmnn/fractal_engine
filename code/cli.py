@@ -562,13 +562,13 @@ class CLI():
             try:
                 repo.save(name, self.visualizer.render_settings)
                 print(f"Settings saved as '{name}'.")
-                enter_continue("Press enter to continue.")
 
             except Exception as e:
                 show_error(True, "SaveError", f"Failed to save settings: {e}")
                 continue
 
-            break
+        print_heading("TEMPLATE SAVED")
+        enter_continue(seperation=False)
 
     # Einstellungen laden
     def _load_settings(self):
@@ -605,4 +605,5 @@ class CLI():
         except Exception as e:
             print(f"Error: {e}")
 
-        enter_continue()
+        print_heading(f"TEMPLATE LOADED")
+        enter_continue(seperation=False)

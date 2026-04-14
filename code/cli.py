@@ -107,7 +107,7 @@ class CLI():
             self.visualizer = Visualizer(self.fractal, self.fractal._name)  # Visualizer erstellen
 
             print_heading("FRACTAL LOADED")
-            enter_continue(f"Fractal {class_name} loaded. Press enter to continue.", seperation=False)
+            enter_continue(f"Fractal {class_name} loaded. Press enter to continue.", seperation=False, linebreak=False)
             return
 
     # Menüpunkt 2: Fraktal graphisch visualisieren (Visualizer bereit in load_fractal instanziert)
@@ -230,7 +230,7 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                real = input_float(-20.0, 20.0, 2.0, [1], msg="Enter real part of Exponent", cli=True, loop=False)
+                real = input_float(-20.0, 20.0, 2.0, [1], msg="Enter real part of Exponent",      cli=True, loop=False)
                 imag = input_float(-20.0, 20.0, 0.0,      msg="Enter imaginary part of Exponent", cli=True, loop=False)
                 self.fractal.exp_real = real
                 self.fractal.exp_imag = imag
@@ -491,38 +491,45 @@ class CLI():
 
     # Warnungen für potenziell instabile Einstellungen bei Formelmanipulation
     def _cli_settings_warning(self, imag: float, real: float, setting_type: str):
-        print_heading("STABILITY WARNING")
-
         if setting_type == "startvalue":
+
             if imag != 0:
+                print_heading("STABILITY WARNING")
                 show_error(
                     False, "StabilityWarning", 
                     "Complex startvalues are experimental and can cause inappropriate image cropping, long rendering-times and unpredictable results.")
+                enter_continue("Press enter to continue.")
 
             if abs(real) > 0.5 or abs(imag) > 0.5:
+                print_heading("STABILITY WARNING")
                 show_error(
                     False, "StabilityWarning", 
                     "Visualizer is not optimized for startvalues far from the critical point (0+0i for Mandelbrot); can cause inappropriate image cropping, long rendering-times and unpredictable results.")
+                enter_continue("Press enter to continue.")
 
         elif setting_type == "exponent":
 
             if real < 0:
+                print_heading("STABILITY WARNING")
                 show_error(
                     False, "StabilityWarning",
                     "Negative exponents introduce poles (1/z^n) and may cause numerical instability.")
+                enter_continue("Press enter to continue.")
 
             if abs(imag) > 0.5:
+                print_heading("STABILITY WARNING")
                 show_error(False, "StabilityWarning",
                     "Large imaginary parts of the exponent can strongly distort the dynamics and slow down rendering.")
+                enter_continue("Press enter to continue.")
 
             if real > 5:
+                print_heading("STABILITY WARNING")
                 show_error(False, "StabilityWarning",
                     "Very large exponents may produce extremely thin structures and long rendering times.")
+                enter_continue("Press enter to continue.")
 
         else:
             show_error(False, "StabilityWarning", "Unusual settings can lead to unpredictable results, long rendering times and inappropriate image cropping. Experiment with caution!")
-
-        enter_continue("Press enter to continue.")
 
     # Load/Save settings template
     def _cli_settings_template(self):

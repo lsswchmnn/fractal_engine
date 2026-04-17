@@ -2,7 +2,7 @@ import fractal
 from utils          import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int, input_confirm
 from visualize      import Visualizer
 from mapping        import FRACTALS_MAP, ORBIT_TRAP_MAP
-from settings       import SettingsRepository
+from repositorys    import SettingsRepository, ViewportRepository
 #============================================================
 class CLI():
     def __init__(self):
@@ -22,6 +22,7 @@ class CLI():
             if self.fractal:
                 print("2 - Start visualizer")
                 print("3 - Settings")
+                print("4 - Save/Load")
             print("H - Help")
             print("C - Close program")
             print_thin_separation(linebreak=False)
@@ -32,16 +33,15 @@ class CLI():
                 continue
 
             elif choice == "2" and self.fractal:
-                if not self.fractal:
-                    show_error(True, "AttributeError", "No Fractal loaded.")
-                    continue
                 self.menu_visualize()
                 continue
 
             elif choice == "3" and self.fractal:
-                if not self.fractal:
-                    show_error(True, "AttributeError", "No Fractal loaded.")
                 self.menu_settings()
+                continue
+
+            elif choice == "4" and self.fractal:
+                self.menu_save()
                 continue
 
             elif choice == "h":
@@ -127,7 +127,6 @@ class CLI():
             print("3 - Postprocessing")
             print("4 - Orbit trap")
             print("5 - Export")
-            print("6 - Load/Save settings template")
             print("H - Help")
             print("C - Close")
             print_thin_separation(linebreak=False)
@@ -153,10 +152,6 @@ class CLI():
                 self._cli_export_settings()
                 continue
 
-            elif choice == "6":
-                self._cli_settings_template()
-                continue
-
             elif choice == "h":
                 print_heading("HELP - SETTINGS")
                 print("Manipulate Formula: Change the start value and exponent used in the fractal formula. Note that non-standard settings can lead to very different and often less stable fractals, especially for complex exponents.")
@@ -168,7 +163,35 @@ class CLI():
                 print("Orbit trap settings: Customize the type of orbit trap used for coloring, as well as the position and radius of the trap. Different types and settings can produce a wide variety of visual effects.")
                 print()
                 print("Export settings: Adjust the export resolution factor, which determines how much the resolution is increased when exporting the fractal image. Higher factors produce higher resolution images suitable for printing or detailed viewing, but also increase export time and file size.")
-                enter_continue("Press enter to return to settings menu.")
+                enter_continue("Press enter to return to menu.")
+                continue
+
+            elif choice == "c":
+                break
+
+    # Menüpunkt 4: Einstellungen laden und speichern
+    def menu_save(self):
+        while True:
+            print_heading("SAVE/LOAD")
+            print("1 - Rendering-Settings")
+            print("2 - Viewport")
+            print("H - Help")
+            print("C - Close")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "1":
+                self._men_load_render_settings()
+                continue
+
+            elif choice == "2":
+                self._men_load_viewport_settings()
+                continue
+
+            elif choice == "h":
+                print_heading("HELP - LOAD/SAVE")
+                print("...")
+                enter_continue("Press enter to return to menu.")
                 continue
 
             elif choice == "c":
@@ -321,6 +344,7 @@ class CLI():
             print(f"3 - Gamma factor for postprocessing (current: {self.visualizer.render_settings.gamma_factor})")
             print("H - Help")
             print("C - Cancel")
+            print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
             if choice == "1":
@@ -465,6 +489,7 @@ class CLI():
             print(f"1 - Change export resolution factor (current: {self.visualizer.render_settings.export_factor})")
             print("H - Help")
             print("C - Cancel")
+            print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
             if choice == "1":
@@ -485,6 +510,199 @@ class CLI():
 
             elif choice == "c":
                 break
+
+#------------------------------------------------------------
+# LADE- UND SPEICHER-METHODEN
+
+    # Menü: Render-Settings speichern/laden
+    def _men_load_render_settings(self):
+        while True:
+            print_heading("RENDERING-SETTINGS")
+            print("1 - Save")
+            print("2 - Load")
+            print("C - Close")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "1":
+                self._save_render_settings()
+                continue
+
+            elif choice == "2":
+                self._load_render_settings()
+                continue
+
+            elif choice == "c":
+                break
+
+    # Einstellungen speichern
+    def _save_render_settings(self):
+        repo = SettingsRepository()
+
+        while True:
+            print_heading("SAVE RENDERING-SETTINGS")
+            name = input("Enter a name for the settings template (or 'C' to cancel): ").strip().lower()
+            print()
+
+            if name == "c":
+                break
+
+            if not name:
+                show_error(True, "InputError", "Name cannot be empty.")
+                continue
+
+            try:
+                repo.save(name, self.visualizer.render_settings)
+
+            except Exception as e:
+                show_error(True, "SaveError", f"Failed to save settings: {e}")
+                continue
+
+            break
+
+        print_heading("TEMPLATE SAVED")
+        print(f"Rendering-Settings saved as '{name}'.")
+        enter_continue(msg="Press enter to return to menu")
+
+    # Einstellungen laden
+    def _load_render_settings(self):
+        repo = SettingsRepository()
+
+        while True:
+            print_heading("LOAD SETTINGS")
+
+            templates = repo.list()
+
+            if not templates:
+                enter_continue("No saved settings found.")
+                return
+
+            print("Input template number or c to cancel:")
+            for i, t in enumerate(templates, start=1):
+                print(f"{i} - {t}")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "c":
+                break
+
+            if choice.isdigit():
+                choice = int(choice)
+                if 1 <= choice <= len(templates):
+                    name = templates[choice - 1]
+                else:
+                    print("Invalid template number.")
+                    return
+            else:
+                name = choice
+
+            try:
+                settings = repo.load(name)
+                self.visualizer.render_settings = settings
+
+            except Exception as e:
+                show_error(True, "SaveError", f"Failed to load settings: {e}")
+
+            break
+
+        print_heading(f"TEMPLATE LOADED")
+        print(f"Loaded '{name}'")
+        enter_continue(msg="Press enter to return to menu")
+
+    # Menü: Viewport speichern/laden
+    def _men_load_viewport_settings(self):
+        while True:
+            print_heading("VIEWPORT")
+            print("1 - Save")
+            print("2 - Load")
+            print("C - Close")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "1":
+                self._save_viewport()
+                continue
+
+            elif choice == "2":
+                self._load_viewport()
+                continue
+
+            elif choice == "c":
+                break
+
+    # Viewport speichern
+    def _save_viewport(self):
+        repo = ViewportRepository()
+
+        while True:
+            print_heading("SAVE Viewport")
+            name = input("Enter a name for the viewport template (or 'C' to cancel): ").strip().lower()
+            print()
+
+            if name == "c":
+                break
+
+            if not name:
+                show_error(True, "InputError", "Name cannot be empty.")
+                continue
+
+            try:
+                repo.save(name, self.visualizer.viewport)
+
+            except Exception as e:
+                show_error(True, "SaveError", f"Failed to save settings: {e}")
+                continue
+
+            break
+
+        print_heading("TEMPLATE SAVED")
+        print(f"Settings saved as '{name}'.")
+        enter_continue(msg="Press enter to return to menu")
+
+    # Viewport laden
+    def _load_viewport(self):
+        repo = ViewportRepository()
+
+        while True:
+            print_heading("LOAD SETTINGS")
+
+            templates = repo.list()
+
+            if not templates:
+                print("No saved settings found.")
+                return
+
+            print("Input template number or c to cancel:")
+            for i, t in enumerate(templates, start=1):
+                print(f"{i} - {t}")
+            print_thin_separation(linebreak=False)
+            choice = input("> ").strip().lower()
+
+            if choice == "c":
+                break
+
+            if choice.isdigit():
+                choice = int(choice)
+                if 1 <= choice <= len(templates):
+                    name = templates[choice - 1]
+                else:
+                    print("Invalid template number.")
+                    return
+            else:
+                name = choice
+
+            try:
+                viewport = repo.load(name)
+                self.visualizer.viewport = viewport
+
+            except Exception as e:
+                show_error(True, "SaveError", f"Failed to load viewport: {e}")
+
+            break
+
+        print_heading(f"TEMPLATE LOADED")
+        print(f"Loaded '{name}'")
+        enter_continue(msg="Press enter to return to menu")
 
 #------------------------------------------------------------
 # HILFS- UND WEITERE FUNKTIONEN
@@ -531,86 +749,3 @@ class CLI():
         else:
             show_error(False, "StabilityWarning", "Unusual settings can lead to unpredictable results, long rendering times and inappropriate image cropping. Experiment with caution!")
 
-    # Load/Save settings template
-    def _cli_settings_template(self):
-        while True:
-            print_heading("LOAD/SAVE SETTINGS TEMPLATE")
-            print("1 - Save current settings as template")
-            print("2 - Load settings from template")
-            print("C - Cancel")
-            print_thin_separation(linebreak=False)
-            choice = input("> ").strip().lower()
-
-            if choice == "1":
-                self._save_settings()
-
-            elif choice == "2":
-                self._load_settings()
-
-            elif choice == "c":
-                return
-
-    # Einstellungen speichern
-    def _save_settings(self):
-        repo = SettingsRepository()
-
-        while True:
-            print_heading("SAVE SETTINGS")
-            name = input("Enter a name for the settings template (or 'C' to cancel): ").strip().lower()
-            print()
-
-            if name == "c":
-                break
-
-            if not name:
-                show_error(True, "InputError", "Name cannot be empty.")
-                continue
-
-            try:
-                repo.save(name, self.visualizer.render_settings)
-                print(f"Settings saved as '{name}'.")
-
-            except Exception as e:
-                show_error(True, "SaveError", f"Failed to save settings: {e}")
-                continue
-
-        print_heading("TEMPLATE SAVED")
-        enter_continue(seperation=False)
-
-    # Einstellungen laden
-    def _load_settings(self):
-        repo = SettingsRepository()
-
-        print_heading("LOAD SETTINGS")
-
-        templates = repo.list()
-
-        if not templates:
-            print("No saved settings found.")
-            return
-
-        print("Input template number:")
-        for i, t in enumerate(templates, start=1):
-            print(f"{i} - {t}")
-        print_thin_separation(linebreak=False)
-        choice = input("> ").strip()
-
-        if choice.isdigit():
-            choice = int(choice)
-            if 1 <= choice <= len(templates):
-                name = templates[choice - 1]
-            else:
-                print("Invalid template number.")
-                return
-        else:
-            name = choice
-
-        try:
-            settings = repo.load(name)
-            self.visualizer.render_settings = settings
-            print(f"Loaded '{name}'")
-        except Exception as e:
-            print(f"Error: {e}")
-
-        print_heading(f"TEMPLATE LOADED")
-        enter_continue(seperation=False)

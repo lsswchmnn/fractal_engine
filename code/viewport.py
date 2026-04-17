@@ -1,5 +1,5 @@
 
-#============================================================
+#===================================================s=========
 # VIEWPORT: Definiert den sichtbaren Ausschnitt der komplexen Zahlenebene
 class Viewport():
     def __init__(self, bounds:tuple[float, float, float, float],
@@ -39,7 +39,6 @@ class Viewport():
         self.xmin, self.xmax, self.ymin, self.ymax = self.bounds
 
     def pixel_to_complex(self, x, y) -> complex:
-
         # Vermeidung von Division durch Null
         width_den = max(self.width_px - 1, 1)
         height_den = max(self.height_px - 1, 1)
@@ -77,3 +76,35 @@ class Viewport():
         new_vp.ymin = self.ymin
         new_vp.ymax = self.ymax
         return new_vp
+
+#------------------------------------------------------------
+# Speichern/Laden
+
+    # Für Speichern als Template
+    def to_dict(self) -> dict:
+        return {
+            "xmin": self.xmin,
+            "xmax": self.xmax,
+            "ymin": self.ymin,
+            "ymax": self.ymax,
+            "width_px": self.width_px,
+            "height_px": self.height_px,
+            "bounds": self.bounds
+        }
+
+    # Für Laden
+    @classmethod
+    def from_dict(cls, data: dict) -> "Viewport":
+        vp = cls(
+            bounds=tuple(data["bounds"]),
+            width_px=data["width_px"],
+            height_px=data["height_px"]
+        )
+
+        vp.xmin = data["xmin"]
+        vp.xmax = data["xmax"]
+        vp.ymin = data["ymin"]
+        vp.ymax = data["ymax"]
+
+        return vp
+    

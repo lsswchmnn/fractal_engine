@@ -107,7 +107,7 @@ class CLI():
             self.visualizer = Visualizer(self.fractal, self.fractal._name)  # Visualizer erstellen
 
             print_heading("FRACTAL LOADED")
-            enter_continue(f"Fractal {class_name} loaded. Press enter to continue.", seperation=False, linebreak=False)
+            enter_continue(f"Fractal {class_name} loaded. Press enter to continue", seperation=False, linebreak=False)
             return
 
     # Menüpunkt 2: Fraktal graphisch visualisieren (Visualizer bereit in load_fractal instanziert)
@@ -239,7 +239,7 @@ class CLI():
                 imag = input_float(-100.0, 100.0, 0.0, msg="Enter imaginary part of startvalue z0", cli=True, loop=True)
                 self.fractal.start_real = real
                 self.fractal.start_imag = imag
-                enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue.", seperation=False)
+                enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue", seperation=False)
 
                 # Warnungen für potenziell instabile Einstellungen
                 if imag != 0 or real != 2:
@@ -257,7 +257,7 @@ class CLI():
                 imag = input_float(-20.0, 20.0, 0.0,      msg="Enter imaginary part of Exponent", cli=True, loop=False)
                 self.fractal.exp_real = real
                 self.fractal.exp_imag = imag
-                enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue.", seperation=False)
+                enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue", seperation=False)
 
                 # Warnungen für potenziell instabile Einstellungen
                 if imag != 0 or real != 2:
@@ -295,7 +295,7 @@ class CLI():
 
                 max_iter = input_int(10, 10000, 100, msg="Enter new base iterations", cli=True)
                 self.fractal.max_iterations = max_iter
-                enter_continue(f"Base iterations changed to {max_iter}. Press enter to continue.", seperation=False)
+                enter_continue(f"Base iterations changed to {max_iter}. Press enter to continue", seperation=False)
 
             elif choice == "2":
                 print_heading("CHANGE ADAPTIVE ITERATION FACTOR")
@@ -305,14 +305,14 @@ class CLI():
 
                 k = input_int(1, 1000, 100, msg="Enter new adaptive iteration factor k", cli=True)
                 self.visualizer.render_settings.iterate_factor_k = k
-                enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue.", seperation=False)
+                enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue", seperation=False)
 
             elif choice == "3":
                 print_heading("TOGGLE SUPERSAMPLING")
                 current_state = self.visualizer.render_settings.supersampling_enabled
                 new_state = not current_state
                 self.visualizer.render_settings.supersampling_enabled = new_state
-                enter_continue(f"Supersampling turned {'On' if new_state else 'Off'}. Press enter to continue.", seperation=False)
+                enter_continue(f"Supersampling turned {'On' if new_state else 'Off'}. Press enter to continue", seperation=False)
 
             elif choice == "4":
                 print_heading("CHANGE SUPERSAMPLING FACTOR")
@@ -322,7 +322,7 @@ class CLI():
 
                 factor = input_int(1, 10, 2, msg="Enter new supersampling factor", cli=True)
                 self.visualizer.render_settings.supersampling_factor = factor
-                enter_continue(f"Supersampling factor changed to {factor}x. Press enter to continue.", seperation=False)
+                enter_continue(f"Supersampling factor changed to {factor}x. Press enter to continue", seperation=False)
 
             elif choice == "h":
                 print_heading("HELP - RENDERING SETTINGS")
@@ -332,6 +332,8 @@ class CLI():
                 enter_continue("Press enter to return to settings menu.", seperation=False)
 
             elif choice == "c":
+                if self.visualizer.render_settings.supersampling_enabled and self.visualizer.render_settings.supersampling_factor >= 4:
+                    self._cli_settings_warning(None, None, "supersampling")
                 break
 
     # Einstellungen: Postprocessing
@@ -352,7 +354,7 @@ class CLI():
                 current_state = self.visualizer.render_settings.post_process_enabled
                 new_state = not current_state
                 self.visualizer.render_settings.post_process_enabled = new_state
-                enter_continue(f"Postprocessing turned {'On' if new_state else 'Off'}. Press enter to continue.", seperation=False)
+                enter_continue(f"Postprocessing turned {'On' if new_state else 'Off'}. Press enter to continue", seperation=False)
 
             elif choice == "2":
                 print_heading("CHANGE CONTRAST FACTOR")
@@ -363,7 +365,7 @@ class CLI():
 
                 contrast = input_float(0.1, 5.0, 1.2, msg="Enter new contrast factor for postprocessing", cli=True)
                 self.visualizer.render_settings.contrast_factor = contrast
-                enter_continue(f"Contrast factor changed to {contrast}. Press enter to continue.", seperation=False)
+                enter_continue(f"Contrast factor changed to {contrast}. Press enter to continue", seperation=False)
 
             elif choice == "3":
                 print_heading("CHANGE GAMMA FACTOR")
@@ -374,7 +376,7 @@ class CLI():
 
                 gamma = input_float(0.1, 5.0, 1.5, msg="Enter new gamma factor for postprocessing", cli=True)
                 self.visualizer.render_settings.gamma_factor = gamma
-                enter_continue(f"Gamma factor changed to {gamma}. Press enter to continue.", seperation=False)
+                enter_continue(f"Gamma factor changed to {gamma}. Press enter to continue", seperation=False)
 
             elif choice == "h":
                 print_heading("HELP - POSTPROCESSING SETTINGS")
@@ -446,7 +448,7 @@ class CLI():
 
                 x_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
                 self.fractal.trap_x = x_offset
-                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_x}. Press enter to continue.", seperation=False)
+                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_x}. Press enter to continue", seperation=False)
 
             elif choice == "3":     # Y-Offset
                 print_heading("CHANGE Y-OFFSET")
@@ -456,7 +458,7 @@ class CLI():
 
                 y_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
                 self.fractal.trap_y = y_offset
-                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_y}. Press enter to continue.", seperation=False)
+                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_y}. Press enter to continue", seperation=False)
 
             elif choice == "4":     # Radius
                 print_heading("CHANGE RADIUS")
@@ -466,7 +468,7 @@ class CLI():
 
                 radius = input_float(0.0, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
                 self.fractal.trap_radius = radius
-                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_radius}. Press enter to continue.", seperation=False)
+                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_radius}. Press enter to continue", seperation=False)
 
             elif choice == "h":
                 print_heading("HELP - ORBIT TRAP SETTINGS")
@@ -501,7 +503,7 @@ class CLI():
 
                 factor = input_int(1, 10, 4, msg="Enter new export resolution factor", cli=True)
                 self.visualizer.render_settings.export_factor = factor
-                enter_continue(f"Export resolution factor changed to {factor}. Press enter to continue.", seperation=False)
+                enter_continue(f"Export resolution factor changed to {factor}. Press enter to continue", seperation=False)
 
             elif choice == "h":
                 print_heading("HELP - EXPORT SETTINGS")
@@ -541,7 +543,7 @@ class CLI():
 
         while True:
             print_heading("SAVE RENDERING-SETTINGS")
-            name = input("Enter a name for the settings template (or 'C' to cancel): ").strip().lower()
+            name = input("Enter template name or 'C' to cancel: ").strip().lower()
             print()
 
             if name == "c":
@@ -558,11 +560,11 @@ class CLI():
                 show_error(True, "SaveError", f"Failed to save settings: {e}")
                 continue
 
-            break
+            print_heading("TEMPLATE SAVED")
+            print(f"Rendering-Settings saved as '{name}'.")
+            enter_continue(msg="Press enter to return to menu")
 
-        print_heading("TEMPLATE SAVED")
-        print(f"Rendering-Settings saved as '{name}'.")
-        enter_continue(msg="Press enter to return to menu")
+            break
 
     # Einstellungen laden
     def _load_render_settings(self):
@@ -577,9 +579,10 @@ class CLI():
                 enter_continue("No saved settings found.")
                 return
 
-            print("Input template number or c to cancel:")
+            print("Input template number:")
             for i, t in enumerate(templates, start=1):
                 print(f"{i} - {t}")
+            print("C - Cancel")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
@@ -603,11 +606,14 @@ class CLI():
             except Exception as e:
                 show_error(True, "SaveError", f"Failed to load settings: {e}")
 
-            break
+            print_heading(f"TEMPLATE LOADED")
+            print(f"Loaded '{name}'")
+            enter_continue(msg="Press enter to return to menu")
 
-        print_heading(f"TEMPLATE LOADED")
-        print(f"Loaded '{name}'")
-        enter_continue(msg="Press enter to return to menu")
+            if self.visualizer.render_settings.supersampling_enabled and self.visualizer.render_settings.supersampling_factor >= 4:
+                self._cli_settings_warning(None, None, "supersampling")
+
+            break
 
     # Menü: Viewport speichern/laden
     def _men_load_viewport_settings(self):
@@ -636,7 +642,7 @@ class CLI():
 
         while True:
             print_heading("SAVE Viewport")
-            name = input("Enter a name for the viewport template (or 'C' to cancel): ").strip().lower()
+            name = input("Enter template name or 'C' to cancel: ").strip().lower()
             print()
 
             if name == "c":
@@ -653,11 +659,11 @@ class CLI():
                 show_error(True, "SaveError", f"Failed to save settings: {e}")
                 continue
 
-            break
+            print_heading("TEMPLATE SAVED")
+            print(f"Settings saved as '{name}'.")
+            enter_continue(msg="Press enter to return to menu")
 
-        print_heading("TEMPLATE SAVED")
-        print(f"Settings saved as '{name}'.")
-        enter_continue(msg="Press enter to return to menu")
+            break
 
     # Viewport laden
     def _load_viewport(self):
@@ -672,9 +678,10 @@ class CLI():
                 print("No saved settings found.")
                 return
 
-            print("Input template number or c to cancel:")
+            print("Input template number:")
             for i, t in enumerate(templates, start=1):
                 print(f"{i} - {t}")
+            print("C - Cancel")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
 
@@ -698,11 +705,11 @@ class CLI():
             except Exception as e:
                 show_error(True, "SaveError", f"Failed to load viewport: {e}")
 
-            break
+            print_heading(f"TEMPLATE LOADED")
+            print(f"Loaded '{name}'")
+            enter_continue(msg="Press enter to return to menu")
 
-        print_heading(f"TEMPLATE LOADED")
-        print(f"Loaded '{name}'")
-        enter_continue(msg="Press enter to return to menu")
+            break
 
 #------------------------------------------------------------
 # HILFS- UND WEITERE FUNKTIONEN
@@ -716,14 +723,14 @@ class CLI():
                 show_error(
                     False, "StabilityWarning", 
                     "Complex startvalues are experimental and can cause inappropriate image cropping, long rendering-times and unpredictable results.")
-                enter_continue("Press enter to continue.")
+                enter_continue("Press enter to continue")
 
             if abs(real) > 0.5 or abs(imag) > 0.5:
                 print_heading("STABILITY WARNING")
                 show_error(
                     False, "StabilityWarning", 
                     "Visualizer is not optimized for startvalues far from the critical point (0+0i for Mandelbrot); can cause inappropriate image cropping, long rendering-times and unpredictable results.")
-                enter_continue("Press enter to continue.")
+                enter_continue("Press enter to continue")
 
         elif setting_type == "exponent":
 
@@ -732,20 +739,25 @@ class CLI():
                 show_error(
                     False, "StabilityWarning",
                     "Negative exponents introduce poles (1/z^n) and may cause numerical instability.")
-                enter_continue("Press enter to continue.")
+                enter_continue("Press enter to continue")
 
             if abs(imag) > 0.5:
                 print_heading("STABILITY WARNING")
                 show_error(False, "StabilityWarning",
                     "Large imaginary parts of the exponent can strongly distort the dynamics and slow down rendering.")
-                enter_continue("Press enter to continue.")
+                enter_continue("Press enter to continue")
 
             if real > 5:
                 print_heading("STABILITY WARNING")
                 show_error(False, "StabilityWarning",
                     "Very large exponents may produce extremely thin structures and long rendering times.")
-                enter_continue("Press enter to continue.")
+                enter_continue("Press enter to continue")
+
+        elif setting_type == "supersampling":
+            print_heading("STABILITY WARNING")
+            show_error(False, "StabilityWarning",
+                       "Large supersampling factors can severely limit performance and lead to long loading times. ")
+            enter_continue("Press enter to continue")
 
         else:
             show_error(False, "StabilityWarning", "Unusual settings can lead to unpredictable results, long rendering times and inappropriate image cropping. Experiment with caution!")
-

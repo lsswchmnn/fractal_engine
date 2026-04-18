@@ -7,11 +7,13 @@ from utils      import printProgressBar, clear_cli, print_thin_separation
 # NUMBAR-RENDERING-Funktion (Unterscheidung zwischen zwei Typen, nötig für Julia)
 
 @njit
-def render_tile_kernel(kernel, iterations, escaped, y0, y1, width, height,
-                       xmin, xmax, ymin, ymax, max_iter, escape_radius,
-                       pixel_is_c, c_real, c_imag, start_real, start_imag,
-                       exp_real, exp_imag,
-                       trap, trap_type, trap_x, trap_y, trap_radius):
+def render_tile_kernel(
+    kernel, iterations, escaped, y0, y1, width, height,
+    xmin, xmax, ymin, ymax, max_iter, escape_radius,
+    pixel_is_c, c_real, c_imag, start_real, start_imag,
+    exp_real, exp_imag, 
+    trap, trap_type, trap_x, trap_y, trap_radius
+    ):
     
     # Einmalige Unterscheidung
     if pixel_is_c:
@@ -100,18 +102,27 @@ class Renderer():
             y1 = min(y0 + tile_h, height)
 
             render_tile_kernel(
-                fractal.kernel,
-                iterations,
-                escaped,
-                y0, y1,
-                width,
+
+                fractal.kernel,             # Kernel-Funktion des Fraktals (Callable)
+                iterations,                 # Output-Array: kontinuierliche Iterationszahl
+                escaped,                    # Punkt entkommen oder nicht (0/1)
+                y0, y1,                     # Typ: int | definiert den vertikalen Ausschnitt (Tile), der berechnet wird
+                
+                # Bilddimensionen
+                width,                     
                 height,
-                viewport.xmin,
+
+                # Ausschnitt der komplexen Ebene definieren          
+                viewport.xmin,              
                 viewport.xmax,
                 viewport.ymin,
                 viewport.ymax,
-                effective_max_iter,
-                fractal.escape_radius,
+                
+                # Iterationskontrolle
+                effective_max_iter,         # Abbruchbedingungen
+                fractal.escape_radius,      # Divergenz-Kriterium (Theoretisch unendlich, praktisch ein hoher Wert)
+
+                # Fraktalparameter (gesplittet in je zwei floats)
                 fractal.pixel_is_c,
                 fractal.c_real,
                 fractal.c_imag,
@@ -120,7 +131,7 @@ class Renderer():
                 fractal.exp_real,
                 fractal.exp_imag,
 
-                # Orbit-Trap (neu, vollständig)
+                # Orbit-Trap
                 trap,
                 fractal.trap_type,
                 fractal.trap_x,

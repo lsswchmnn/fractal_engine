@@ -29,23 +29,23 @@ class CLI():
             choice = input("> ").lower().strip()
 
             if choice == "1":
-                self.menu_load_fractal()
+                self._menu_load_fractal()
                 continue
 
             elif choice == "2" and self.fractal:
-                self.menu_visualize()
+                self._menu_visualize()
                 continue
 
             elif choice == "3" and self.fractal:
-                self.menu_settings()
+                self._menu_settings()
                 continue
 
             elif choice == "4" and self.fractal:
-                self.menu_save()
+                self._menu_save()
                 continue
 
             elif choice == "h":
-                self.menu_help()
+                self._menu_help()
                 continue
 
             elif choice == "c":
@@ -66,7 +66,7 @@ class CLI():
 # UNTERMENÜS
 
     # Menüpunkt 1: Fraktal als Instanz laden
-    def menu_load_fractal(self):
+    def _menu_load_fractal(self):
         while True:
             print_heading("LOAD FRACTAL")
             
@@ -111,7 +111,7 @@ class CLI():
             return
 
     # Menüpunkt 2: Fraktal graphisch visualisieren (Visualizer bereit in load_fractal instanziert)
-    def menu_visualize(self):
+    def _menu_visualize(self):
         clear_cli()
         print()
         self.visualizer.start()
@@ -119,7 +119,7 @@ class CLI():
         return
 
     # Menüpunkt 3: Einstellungen
-    def menu_settings(self):
+    def _menu_settings(self):
         while True:
             print_heading("SETTINGS")
             print("1 - Formula manipulation")
@@ -133,23 +133,23 @@ class CLI():
             choice = input("> ").strip().lower()
 
             if choice == "1":
-                self._cli_formula_settings()
+                self._menu_formula_settings()
                 continue
 
             elif choice == "2":
-                self._cli_rendering_settings()
+                self._menu_rendering_settings()
                 continue
 
             elif choice == "3":
-                self._cli_postprocessing_settings()
+                self._menu_postprocessing_settings()
                 continue
 
             elif choice == "4":
-                self._cli_orbit_trap_settings()
+                self._menu_orbit_trap_settings()
                 continue
 
             elif choice == "5":
-                self._cli_export_settings()
+                self._menu_export_settings()
                 continue
 
             elif choice == "h":
@@ -170,7 +170,7 @@ class CLI():
                 break
 
     # Menüpunkt 4: Einstellungen laden und speichern
-    def menu_save(self):
+    def _menu_save(self):
         while True:
             print_heading("SAVE/LOAD")
             print("1 - Rendering-Settings")
@@ -181,11 +181,11 @@ class CLI():
             choice = input("> ").strip().lower()
 
             if choice == "1":
-                self._men_load_render_settings()
+                self._menu_load_render_settings()
                 continue
 
             elif choice == "2":
-                self._men_load_viewport_settings()
+                self._menu_load_viewport_settings()
                 continue
 
             elif choice == "h":
@@ -198,7 +198,7 @@ class CLI():
                 break
 
     # Menü: Hilfe
-    def menu_help(self):
+    def _menu_help(self):
         print_heading("HELP MENU")
         print(
             "Welcome to the Fractal Engine CLI Help Menu!\n\n"
@@ -215,7 +215,7 @@ class CLI():
 # EINSTELLUNGSMENÜS
 
     # Einstellungen: Formelmanipulation (Startwert und Exponent)
-    def _cli_formula_settings(self):
+    def _menu_formula_settings(self):
         while True:
 
             print_heading("MANIPULATE FORMULA")
@@ -243,7 +243,7 @@ class CLI():
 
                 # Warnungen für potenziell instabile Einstellungen
                 if imag != 0 or real != 2:
-                    self._cli_settings_warning(imag, real, "startvalue")
+                    self._menu_settings_warning(imag, real, "startvalue")
                     break
             
             elif choice == "2":
@@ -261,7 +261,7 @@ class CLI():
 
                 # Warnungen für potenziell instabile Einstellungen
                 if imag != 0 or real != 2:
-                    self._cli_settings_warning(imag, real, "exponent")
+                    self._menu_settings_warning(imag, real, "exponent")
                     break
 
             elif choice == "h":
@@ -274,7 +274,7 @@ class CLI():
                 break
 
     # Einstellungen: Rendering (Basis-Iterationen und adaptiver Iterationsfaktor)
-    def _cli_rendering_settings(self): 
+    def _menu_rendering_settings(self): 
         while True:
 
             print_heading("CHANGE RENDERING SETTINGS")
@@ -333,11 +333,11 @@ class CLI():
 
             elif choice == "c":
                 if self.visualizer.render_settings.supersampling_enabled and self.visualizer.render_settings.supersampling_factor >= 4:
-                    self._cli_settings_warning(None, None, "supersampling")
+                    self._menu_settings_warning(None, None, "supersampling")
                 break
 
     # Einstellungen: Postprocessing
-    def _cli_postprocessing_settings(self):
+    def _menu_postprocessing_settings(self):
         while True:
 
             print_heading("CHANGE POSTPROCESSING SETTINGS")
@@ -389,7 +389,7 @@ class CLI():
                 break
 
     # Einstellungen: Formel-Trap-Coloring (Offset, Radius und Methode)
-    def _cli_orbit_trap_settings(self):
+    def _menu_orbit_trap_settings(self):
         while True:
 
             # aktuelles Label anhand des Index finden
@@ -481,7 +481,7 @@ class CLI():
                 break
 
     # Einstellungen: Export
-    def _cli_export_settings(self):
+    def _menu_export_settings(self):
         while True:
             res_x = self.visualizer.viewport.width_px * self.visualizer.render_settings.export_factor
             res_y = self.visualizer.viewport.height_px * self.visualizer.render_settings.export_factor
@@ -517,7 +517,7 @@ class CLI():
 # LADE- UND SPEICHER-METHODEN
 
     # Menü: Render-Settings speichern/laden
-    def _men_load_render_settings(self):
+    def _menu_load_render_settings(self):
         while True:
             print_heading("RENDERING-SETTINGS")
             print("1 - Save")
@@ -611,12 +611,12 @@ class CLI():
             enter_continue(msg="Press enter to return to menu")
 
             if self.visualizer.render_settings.supersampling_enabled and self.visualizer.render_settings.supersampling_factor >= 4:
-                self._cli_settings_warning(None, None, "supersampling")
+                self._menu_settings_warning(None, None, "supersampling")
 
             break
 
     # Menü: Viewport speichern/laden
-    def _men_load_viewport_settings(self):
+    def _menu_load_viewport_settings(self):
         while True:
             print_heading("VIEWPORT")
             print("1 - Save")
@@ -715,7 +715,7 @@ class CLI():
 # HILFS- UND WEITERE FUNKTIONEN
 
     # Warnungen für potenziell instabile Einstellungen bei Formelmanipulation
-    def _cli_settings_warning(self, imag: float, real: float, setting_type: str):
+    def _menu_settings_warning(self, imag: float, real: float, setting_type: str):
         if setting_type == "startvalue":
 
             if imag != 0:

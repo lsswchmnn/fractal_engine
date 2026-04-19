@@ -110,7 +110,7 @@ class Colorizer():
                 0.25 * histogram[i + 1]
             )
 
-        cumulative = np.cumsum(smoothed)
+        cumulative = np.cumsum(smoothed)    # Kumulative Summe
 
         total = cumulative[-1]
         if total <= 0.0:
@@ -119,18 +119,24 @@ class Colorizer():
         cumulative /= total
         return cumulative
 
-    def _prepare_orbit_trap_range(self, trap_dist: np.ndarray, escaped: np.ndarray) -> tuple[float, float, float, float] | None:
-        valid = trap_dist[(escaped == 1) & np.isfinite(trap_dist)]
+    def _prepare_orbit_trap_range(self, 
+                                  trap_dist: np.ndarray, 
+                                  escaped: np.ndarray
+                                  ) -> tuple[float, float, float, float] | None:
+
+        valid = trap_dist[(escaped == 1) & np.isfinite(trap_dist)]      # Gültige Werte filtern
 
         if len(valid) == 0:
             return None
         
+        # Minimum / Maximum
         d_min = np.min(valid)
         d_max = np.max(valid)
 
         if d_max == d_min:
             d_max = d_min + 1e-12
 
+        # Logarithmus-Skalierung für bessere Verteilung
         log_min = np.log(d_min + 1e-12)
         log_max = np.log(d_max + 1e-12)
 
@@ -150,7 +156,7 @@ class Colorizer():
 
     def _orbit_trap_t(self, d: float, log_min: float, log_max: float) -> float:
         ld = np.log(d + 1e-12)
-        t = (ld - log_min) / (log_max - log_min)
+        t = (ld - log_min) / (log_max - log_min)    # Normierung
         return max(0.0, min(1.0, t))
 
     def _histogram_t(self, nu: float, cumulative: np.ndarray, max_iterations: int) -> float:
@@ -167,20 +173,21 @@ class Colorizer():
         t0 = cumulative[i0]
         t1 = cumulative[i1]
 
-        t = (1.0 - f) * t0 + f * t1
+        t = (1.0 - f) * t0 + f * t1     # Kontinuierliche Transformationsfunktion
         return max(0.0, min(1.0, t))
 
     def _paint_from_t_map(self, t_map: np.ndarray, escaped: np.ndarray) -> np.ndarray:
         height, width = t_map.shape
-        image = np.zeros((height, width, 3), dtype=np.uint8)
+        image = np.zeros((height, width, 3), dtype=np.uint8)    # Bild initialisieren
 
+        # Pixelweise Mapping
         for y in range(height):
             for x in range(width):
                 if not escaped[y, x]:
                     image[y, x] = (0, 0, 0)
                 else:
                     t = t_map[y, x]
-                    image[y, x] = self._sample_palette(t)
+                    image[y, x] = self._sample_palette(t)   # Kontinuierlich interpolieren
 
         return image
     
@@ -188,64 +195,82 @@ class Colorizer():
 # FÄRBUNGSMETHODEN als Kompositionsmethoden
 
     # Förbung: Basic (spezielle, kristalline Struktur, allerdings etwas pixelig)
-    def apply_basic(self, iterations: np.ndarray,
-                    escaped: np.ndarray) -> np.ndarray:
+    def apply_basic(self, 
+                    iterations: np.ndarray,     # Iterationswerte (Im Rendering-Kernel berechnet)
+                    escaped: np.ndarray         # Punkt divergiert oder nicht (binäre Unterscheidung)
+                    ) -> np.ndarray:            # Rückgabe: RGB-Bild des Fraktal-Ausschnitts
 
+        # Bild initialisieren (leeres schwarzes RGB-Bild)
         height, width = iterations.shape
         image = np.zeros((height, width, 3), dtype=np.uint8)
 
+        # Palette vorbereiten
         palette_size = len(self.palette)
 
+        # 2D-Loop (Pixelweise Verarbeitung)
         for y in range(height):
             for x in range(width):
 
                 if not escaped[y, x]:
-                    # Punkt liegt in der Menge
-                    image[y, x] = (0, 0, 0)
+                    image[y, x] = (0, 0, 0)           # Punkte innerhalb von Menge schwarz
                 else:
-                    iteration = iterations[y, x]
+                    iteration = iterations[y, x]      # Iterationswert extrahieren
 
-                    # klassische Modulo-Färbung
-                    index = int(iteration) % palette_size
-                    image[y, x] = self.palette[index]
+                    # Färbung
+                    index = int(iteration) % palette_size   # Banding durch Diskretisierung; zyklisches Wiederholen durch % (Beispiel: int(257.4)%256 = int(513.8)%256)
+                    image[y, x] = self.palette[index]       # Farbzuweisung
 
         return image
 
-    # Färbung: Smooth (gut für mitteltiefe Zooms und stark abhängig von Iterationszahl)
-    def apply_smooth(self, iterations: np.ndarray,
-                    escaped: np.ndarray,
-                    max_iterations: int) -> np.ndarray:
+    # Färbung: Smooth (gut für mitteltiefe Zooms, stark abhängig von Iterationszahl, schlechter Kontrast in tiefen Zooms)
+    def apply_smooth(self, 
+                    iterations: np.ndarray,     # Iterationswerte (Im Rendering-Kernel berechnet)
+                    escaped: np.ndarray,        # Punkt divergiert oder nicht (binäre Unterscheidung)
+                    max_iterations: int         # Maximale Iterationszahl aus Rendering-Prozess
+                    ) -> np.ndarray:            # Rückgabe: RGB-Bild des Fraktal-Ausschnitts
 
+        # Initialisierung
         height, width = iterations.shape
         t_map = np.zeros((height, width), dtype=np.float64)
 
+        # 2D-Loop (Pixelweise Verarbeitung)
         for y in range(height):
             for x in range(width):
+
+                # Innenpunkte überspringen
                 if not escaped[y, x]:
                     continue
 
-                nu = iterations[y, x]
+                nu = iterations[y, x]   # Iterationswert laden
+
+                # Validitätsprüfung
                 if not np.isfinite(nu):
                         continue
 
+                # Normierung (zentraler Schritt)
                 t_map[y, x] = self._smooth_t(nu, max_iterations)
 
+        # Farbzuweisung (externalisiert)
         image = self._paint_from_t_map(t_map, escaped)
         return image
 
-    # Färbung: Histogramm
+    # Färbung: Histogramm (Sehr gute Farbverteilung, aber verwaschene Details und z.T. Artefakte)
     def apply_histogram(self,
-                        iterations: np.ndarray,
-                        escaped: np.ndarray,
-                        max_iterations: int) -> np.ndarray:
+                        iterations: np.ndarray,     # Iterationswerte (Im Rendering-Kernel berechnet)
+                        escaped: np.ndarray,        # Punkt divergiert oder nicht (binäre Unterscheidung)
+                        max_iterations: int         # Maximale Iterationszahl aus Rendering-Prozess
+                        ) -> np.ndarray:            # Rückgabe: RGB-Bild des Fraktal-Ausschnitts
 
+        # Initialisierung
         height, width = iterations.shape
         t_map = np.zeros((height, width), dtype=np.float64)
 
+        # Globale Analyse (CDF berechnen)
         cumulative = self._build_histogram_cdf(iterations, escaped, max_iterations)
         if cumulative is None:
             return np.zeros((height, width, 3), dtype=np.uint8)
 
+        # 2D-Loop (Pixelweise Verarbeitung)
         for y in range(height):
             for x in range(width):
                 if not escaped[y, x]:
@@ -257,36 +282,46 @@ class Colorizer():
 
                 t_map[y, x] = self._histogram_t(nu, cumulative, max_iterations)
 
+        # Farbzuweisung
         image = self._paint_from_t_map(t_map, escaped)
         return image
 
     # Färbung: Orbit-Trap (Sehr spezielle, experimentelle Färbung)
     def apply_orbit_trap(self,
-                        trap_dist: np.ndarray,
-                        escaped: np.ndarray) -> np.ndarray:
+                        trap_dist: np.ndarray,          # Für jeden Punkt: Abstand zu Trap-Objekt
+                        escaped: np.ndarray             # Punkt divergiert oder nicht (binäre Unterscheidung)
+                        ) -> np.ndarray:                # Rückgabe: RGB-Bild des Fraktal-Ausschnitts
 
+        # Initialisierung
         height, width = trap_dist.shape
         t_map = np.zeros((height, width), dtype=np.float64)
 
+        # Wertebereich vorbereiten
         prep = self._prepare_orbit_trap_range(trap_dist, escaped)
         if prep is None:
             return np.zeros((height, width, 3), dtype=np.uint8)
 
         _, _, log_min, log_max = prep
 
+        # 2D-Loop (Pixelweise Verarbeitung)
         for y in range(height):
             for x in range(width):
+
+                # Überspringen
                 if not escaped[y, x]:
                     continue
 
+                # Verarbeitung
                 d = trap_dist[y, x]
                 if not np.isfinite(d):
                     continue
 
                 t_map[y, x] = self._orbit_trap_t(d, log_min, log_max)
 
-        return self._paint_from_t_map(t_map, escaped)   
-     
+        # Farbzuweisung
+        image = self._paint_from_t_map(t_map, escaped)   
+        return image
+
     # Färbung: Basic und histogramm kombiniert
     def apply_hybrid(self,
                     iterations: np.ndarray,
@@ -315,14 +350,11 @@ class Colorizer():
                     image[y, x] = (0, 0, 0)
                     continue
 
-                # --- BASIC-KERN ---
                 base_index = int(nu) % palette_size
 
-                # --- HISTOGRAMM-SKALIERUNG ---
                 hist_t = self._histogram_t(nu, cumulative, max_iterations)
                 hist_index = int(hist_t * (palette_size - 1))
 
-                # --- KOMPOSITION ---
                 mixed_index = int(
                     (1.0 - hist_strength) * base_index +
                     hist_strength * hist_index

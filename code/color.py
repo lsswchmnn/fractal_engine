@@ -396,10 +396,14 @@ class Colorizer():
 
                 hist_t = self._histogram_t(nu, cumulative, max_iterations)
 
-                # symmetrische Modulation um 0
-                band = (frac - 0.5)
+                frequency = 1.0   # testen: 0.5, 1.0, 2.0
+                band = np.sin(2 * np.pi * frac * frequency) * 0.5
 
                 t = hist_t + hist_strength * band
+                t = 0.5 * t + 0.25 * (
+                    hist_t
+                )
+
                 t = max(0.0, min(1.0, t))
 
                 image[y, x] = self._sample_palette(t)

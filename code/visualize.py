@@ -5,7 +5,7 @@ from rendering  import Renderer
 from gui        import GUI
 from utils      import print_thin_separation
 from fractal    import Fractal, MandelbrotFractal
-from mapping    import PALETTES
+from mapping    import PALETTES, COLORING_NAMES
 from export     import PNGExporter
 #============================================================
 # VISUALIZER: Verbindet Komponenten und steuert Ablauf der Visualisierung
@@ -49,7 +49,7 @@ class Visualizer():
         self.gui.set_c_select_callback(self._handle_c_select)
         
         # Coloring initialisieren
-        self.coloring_modes = ["basic", "smooth", "histogram", "orbit trap", "hybrid"]              # Verfügbare Coloring-Methoden
+        self.coloring_modes = COLORING_NAMES                                # Verfügbare Coloring-Methoden
         self.coloring_index = 1
         self.coloring_mode = self.coloring_modes[self.coloring_index]       # Aktuelle Coloring-Methode
 

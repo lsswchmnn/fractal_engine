@@ -364,6 +364,48 @@ class Colorizer():
 
         return image
 
+    # Färbung: cyclic_banding (Supersampling empfohlen)
+    def apply_cyclic_banding(self,
+                    iterations: np.ndarray,
+                    escaped: np.ndarray,
+                    max_iterations: int,
+                    hist_strength: float = 0.7) -> np.ndarray:
+
+        height, width = iterations.shape
+        image = np.zeros((height, width, 3), dtype=np.uint8)
+
+        cumulative = self._build_histogram_cdf(iterations, escaped, max_iterations)
+        if cumulative is None:
+            return image
+
+        palette_size = len(self.palette)
+
+        for y in range(height):
+            for x in range(width):
+
+                if not escaped[y, x]:
+                    image[y, x] = (0, 0, 0)
+                    continue
+
+                nu = iterations[y, x]
+                if not np.isfinite(nu):
+                    image[y, x] = (0, 0, 0)
+                    continue
+
+                frac = nu - np.floor(nu)   # lokale Phase in [0,1)
+
+                hist_t = self._histogram_t(nu, cumulative, max_iterations)
+
+                # symmetrische Modulation um 0
+                band = (frac - 0.5)
+
+                t = hist_t + hist_strength * band
+                t = max(0.0, min(1.0, t))
+
+                image[y, x] = self._sample_palette(t)
+
+        return image
+
 #------------------------------------------------------------
 # POSTPROCESSING für Farbgebungsergebnisse
 

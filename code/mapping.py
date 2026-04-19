@@ -1,5 +1,3 @@
-
-#============================================================
 # Mapping für Fraktale
 FRACTALS_MAP =  {
     "MandelbrotFractal": {
@@ -47,7 +45,6 @@ FRACTALS_MAP =  {
 
 }
 
-#------------------------------------------------------------
 # Mapping für Orbit-Traps
 ORBIT_TRAP_MAP = {
     "point": {
@@ -71,7 +68,6 @@ ORBIT_TRAP_MAP = {
     },
 }
 
-#------------------------------------------------------------
 # Farbpaletten
 PALETTES = {
 
@@ -180,7 +176,16 @@ PALETTES = {
 
 }
 
-#------------------------------------------------------------
+# Namen der Farbmethoden
+COLORING_NAMES = [
+    "basic", 
+    "smooth", 
+    "histogram", 
+    "orbit trap", 
+    "hybrid", 
+    "apply_cyclic_banding"
+    ]
+
 # Mapping für GUI
 GUI_MAP = {
     # Farben für GUI-Elemente

@@ -234,6 +234,9 @@ class Renderer():
         elif coloring_mode == "hybrid":
             image = Colorizer.apply_hybrid(iterations, escaped, effective_max_iter)
 
+        elif coloring_mode == "apply_cyclic_banding":
+            image = Colorizer.apply_cyclic_banding(iterations, escaped, effective_max_iter)
+
         else:
             raise ValueError(f"Unknown coloring mode: {coloring_mode}")
         

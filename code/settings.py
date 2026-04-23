@@ -15,7 +15,4 @@ class RenderSettings:
     post_process_enabled    : bool  = True      # Postprocessing aktivieren/deaktivieren
     gamma_factor            : float = 1.2       # Gamma-Korrektur-Faktor für Postprocessing
     contrast_factor         : float = 1.2       # Kontrast-Faktor für Postprocessing
-
-#============================================================
-# Repository für das Speichern und Laden von RenderSettings als JSON-Dateien.
-# Temporär in cli.py erzeugtes Objekt.
+    inversion_enabled       : bool  = True     # Negativwert

@@ -369,7 +369,8 @@ class Colorizer():
                     iterations: np.ndarray,
                     escaped: np.ndarray,
                     max_iterations: int,
-                    hist_strength: float = 0.7) -> np.ndarray:
+                    hist_strength: float = 0.2
+                    ) -> np.ndarray:
 
         height, width = iterations.shape
         image = np.zeros((height, width, 3), dtype=np.uint8)
@@ -408,6 +409,49 @@ class Colorizer():
 
                 image[y, x] = self._sample_palette(t)
 
+        return image
+
+    # Färbung: Schachbrett Muster
+    def apply_chess(self,
+                    iterations: np.ndarray,
+                    escaped: np.ndarray,
+                    zr_final: np.ndarray,
+                    zi_final: np.ndarray,
+                    max_iterations: int) -> np.ndarray:
+        
+        sectors     = 14       # gerade Zahl!
+        stripe_width = 10
+
+        height, width = iterations.shape
+        image = np.zeros((height, width, 3), dtype=np.uint8)
+
+        palette = np.array(self.palette, dtype=np.uint8)
+        palette_size = len(palette)
+
+        valid = escaped.astype(bool) & np.isfinite(iterations)
+
+        nu  = iterations[valid]
+        zr  = zr_final[valid]
+        zi  = zi_final[valid]
+
+        # Achse 1: Iterationsband
+        nu_scaled = nu * (1.0 / stripe_width)
+        band_int  = np.floor(nu_scaled).astype(int)
+
+        # Achse 2: Winkelsektor (sectors muss gerade sein!)
+        angle      = np.arctan2(zi, zr)                              # -π … +π
+        angle_norm = (angle + np.pi) / (2 * np.pi)                  # 0..1
+        sector_int = np.floor(angle_norm * sectors).astype(int) % sectors
+
+        # XOR für saubere Übergänge an beiden Achsen
+        chess = (band_int ^ sector_int) % 2
+
+        # Farbindex
+        frac  = nu_scaled % 1.0
+        index = (np.floor(frac * palette_size).astype(int)
+                + chess * (palette_size // 2)) % palette_size
+
+        image[valid] = palette[index]
         return image
 
 #------------------------------------------------------------

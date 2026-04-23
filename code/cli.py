@@ -344,6 +344,7 @@ class CLI():
             print(f"1 - Toggle postprocessing (current: {'On' if self.visualizer.render_settings.post_process_enabled else 'Off'})")
             print(f"2 - Contrast factor for postprocessing (current: {self.visualizer.render_settings.contrast_factor})")
             print(f"3 - Gamma factor for postprocessing (current: {self.visualizer.render_settings.gamma_factor})")
+            print(f"4 - Toggle Color Inversion (current: {'On' if self.visualizer.render_settings.inversion_enabled else 'Off'})")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
@@ -377,6 +378,13 @@ class CLI():
                 gamma = input_float(0.1, 5.0, 1.5, msg="Enter new gamma factor for postprocessing", cli=True)
                 self.visualizer.render_settings.gamma_factor = gamma
                 enter_continue(f"Gamma factor changed to {gamma}. Press enter to continue", seperation=False)
+
+            if choice == "4":
+                print_heading("TOGGLE COLOR INVERSION")
+                current_state = self.visualizer.render_settings.inversion_enabled
+                new_state = not current_state
+                self.visualizer.render_settings.inversion_enabled = new_state
+                enter_continue(f"Color inversion turned {'On' if new_state else 'Off'}. Press enter to continue", seperation=False)
 
             elif choice == "h":
                 print_heading("HELP - POSTPROCESSING SETTINGS")

@@ -11,7 +11,7 @@ def render_tile_kernel(
     kernel, iterations, escaped, y0, y1, width, height,
     xmin, xmax, ymin, ymax, max_iter, escape_radius,
     pixel_is_c, c_real, c_imag, start_real, start_imag,
-    exp_real, exp_imag, 
+    exp_real, exp_imag, z_real, z_imag,
     trap, trap_type, trap_x, trap_y, trap_radius
     ):
     
@@ -55,6 +55,8 @@ def render_tile_kernel(
             iterations[y, x] = it           # Iterations (Geometrie)
             escaped[y, x] = esc             # Escaped (Topologie)
             trap[y, x] = trap_val           # Orbit-Trap-Wert
+            z_real[y, x] = zr
+            z_imag[y, x] = zi
 
 #============================================================
 # RENDERER (Berechnet die Iterationen, ruft Hilfsmethoden auf)
@@ -91,6 +93,8 @@ class Renderer():
         iterations = np.zeros((height, width), dtype=np.float64)
         escaped = np.zeros((height, width), dtype=np.uint8)
         trap = np.full((height, width), np.inf, dtype=np.float64)
+        z_real = np.zeros((height, width), dtype=np.float64)
+        z_imag = np.zeros((height, width), dtype=np.float64)
 
         tile_h = render_settings.tile_height
 
@@ -130,6 +134,8 @@ class Renderer():
                 fractal.start_imag,
                 fractal.exp_real,
                 fractal.exp_imag,
+                z_real,
+                z_imag,
 
                 # Orbit-Trap
                 trap,
@@ -149,7 +155,7 @@ class Renderer():
         fractal.max_iterations = original_iter  # Iterationszahl zurücksetzen
 
         # Farbzuweisung
-        image = self._apply_coloring(Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode)
+        image = self._apply_coloring(Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode, z_real, z_imag)
 
         return image
 
@@ -218,7 +224,7 @@ class Renderer():
         total_iterations = total_pixels * adaptive_iter
         return total_iterations, total_pixels
 
-    def _apply_coloring(self, Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode):
+    def _apply_coloring(self, Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode, zr, zi):
         if coloring_mode == "basic":
             image = Colorizer.apply_basic(iterations, escaped)   # max_iter nicht nötig
 
@@ -234,8 +240,11 @@ class Renderer():
         elif coloring_mode == "hybrid":
             image = Colorizer.apply_hybrid(iterations, escaped, effective_max_iter)
 
-        elif coloring_mode == "apply_cyclic_banding":
+        elif coloring_mode == "cyclic banding":
             image = Colorizer.apply_cyclic_banding(iterations, escaped, effective_max_iter)
+
+        elif coloring_mode == "chess pattern":
+            image = Colorizer.apply_chess(iterations, escaped, zr, zi, effective_max_iter)
 
         else:
             raise ValueError(f"Unknown coloring mode: {coloring_mode}")

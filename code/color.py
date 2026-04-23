@@ -471,3 +471,9 @@ class Colorizer():
         img = (img - 0.5) * contrast + 0.5
         img = np.clip(img, 0.0, 1.0)
         return (img * 255).astype(np.uint8)
+    
+    def apply_inversion(self, image: np.ndarray) -> np.ndarray:
+        img = image.astype(np.float32) / 255.0
+        img = 1.0 - img
+        img = (img * 255).astype(np.uint8)
+        return img

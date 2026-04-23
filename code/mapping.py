@@ -76,7 +76,7 @@ PALETTES = {
         (245,235,220),
         (215,190,150),
         (170,135,95),
-        (110,130,185),   # leichter Kaltkontrast
+        (110,130,185),
         (55,75,140),
         (15,15,30)
     ],
@@ -183,7 +183,8 @@ COLORING_NAMES = [
     "histogram", 
     "orbit trap", 
     "hybrid", 
-    "apply_cyclic_banding"
+    "cyclic banding",
+    "chess pattern"
     ]
 
 # Mapping für GUI

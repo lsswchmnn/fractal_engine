@@ -254,6 +254,11 @@ class Renderer():
     def _apply_postprocessing(self, colorizer, image, render_settings):
         if not render_settings.post_process_enabled:
             return image
+
+        if render_settings.inversion_enabled:
+            image = colorizer.apply_inversion(image)
+
         image = colorizer.apply_contrast(image, contrast=render_settings.contrast_factor)
         image = colorizer.apply_gamma(image, gamma=render_settings.gamma_factor)
+
         return image

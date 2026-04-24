@@ -153,11 +153,9 @@ class Renderer():
 
         # Progressbar entfernen
         finishProgressBar()
-        clear_cli
+        clear_cli()
 
         fractal.max_iterations = original_iter  # Iterationszahl zurücksetzen
-
-        print()
 
         # Farbzuweisung
         image = self._apply_coloring(Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode, z_real, z_imag)

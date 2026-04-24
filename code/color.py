@@ -1,5 +1,6 @@
 import  numpy as np
 from    mapping import PALETTES
+from    utils import printProgressBar
 #============================================================
 class Colorizer():
     def __init__(self):
@@ -44,6 +45,8 @@ class Colorizer():
         b = int(c0[2] + frac * (c1[2] - c0[2]))
 
         return (r, g, b)
+
+
 
     # sauber interpolieren
     def _interpolate_palette(self, key_colors, size):
@@ -196,130 +199,179 @@ class Colorizer():
 
     # Förbung: Basic (spezielle, kristalline Struktur, allerdings etwas pixelig)
     def apply_basic(self, 
-                    iterations: np.ndarray,     # Iterationswerte (Im Rendering-Kernel berechnet)
-                    escaped: np.ndarray         # Punkt divergiert oder nicht (binäre Unterscheidung)
-                    ) -> np.ndarray:            # Rückgabe: RGB-Bild des Fraktal-Ausschnitts
+                    iterations: np.ndarray,
+                    escaped: np.ndarray,
+                    progress_callback=None,
+                    chunk_size: int = 32
+                    ) -> np.ndarray:
 
-        # Bild initialisieren (leeres schwarzes RGB-Bild)
         height, width = iterations.shape
         image = np.zeros((height, width, 3), dtype=np.uint8)
 
-        # Palette vorbereiten
-        palette_size = len(self.palette)
+        palette = np.array(self.palette, dtype=np.uint8)
+        palette_size = len(palette)
 
-        # 2D-Loop (Pixelweise Verarbeitung)
-        for y in range(height):
-            for x in range(width):
+        for y0 in range(0, height, chunk_size):
+            y1 = min(y0 + chunk_size, height)
 
-                if not escaped[y, x]:
-                    image[y, x] = (0, 0, 0)           # Punkte innerhalb von Menge schwarz
-                else:
-                    iteration = iterations[y, x]      # Iterationswert extrahieren
+            # Chunk extrahieren
+            iter_chunk = iterations[y0:y1]
+            esc_chunk  = escaped[y0:y1]
 
-                    # Färbung
-                    index = int(iteration) % palette_size   # Banding durch Diskretisierung; zyklisches Wiederholen durch % (Beispiel: int(257.4)%256 = int(513.8)%256)
-                    image[y, x] = self.palette[index]       # Farbzuweisung
+            # Maske: nur gültige (escaped) Punkte
+            mask = esc_chunk.astype(bool)
+
+            if np.any(mask):
+                # Iterationswerte holen
+                nu = iter_chunk[mask]
+
+                # identische Logik wie vorher
+                index = (nu.astype(int) % palette_size)
+
+                # Farbzuweisung (vektorisiert)
+                image[y0:y1][mask] = palette[index]
+
+            # Innenpunkte bleiben automatisch schwarz (Initialisierung)
+
+            # Progress
+            if progress_callback:
+                progress_callback(y1 / height)
 
         return image
 
     # Färbung: Smooth (gut für mitteltiefe Zooms, stark abhängig von Iterationszahl, schlechter Kontrast in tiefen Zooms)
     def apply_smooth(self, 
-                    iterations: np.ndarray,     # Iterationswerte (Im Rendering-Kernel berechnet)
-                    escaped: np.ndarray,        # Punkt divergiert oder nicht (binäre Unterscheidung)
-                    max_iterations: int         # Maximale Iterationszahl aus Rendering-Prozess
-                    ) -> np.ndarray:            # Rückgabe: RGB-Bild des Fraktal-Ausschnitts
+                    iterations: np.ndarray,
+                    escaped: np.ndarray,
+                    max_iterations: int,
+                    progress_callback=None,
+                    chunk_size: int = 32
+                    ) -> np.ndarray:
 
-        # Initialisierung
         height, width = iterations.shape
         t_map = np.zeros((height, width), dtype=np.float64)
 
-        # 2D-Loop (Pixelweise Verarbeitung)
-        for y in range(height):
-            for x in range(width):
+        if max_iterations <= 0:
+            return np.zeros((height, width, 3), dtype=np.uint8)
 
-                # Innenpunkte überspringen
-                if not escaped[y, x]:
-                    continue
+        for y0 in range(0, height, chunk_size):
+            y1 = min(y0 + chunk_size, height)
 
-                nu = iterations[y, x]   # Iterationswert laden
+            iter_chunk = iterations[y0:y1]
+            esc_chunk  = escaped[y0:y1]
 
-                # Validitätsprüfung
-                if not np.isfinite(nu):
-                        continue
+            # gültige Punkte: escaped + finite
+            mask = esc_chunk.astype(bool) & np.isfinite(iter_chunk)
 
-                # Normierung (zentraler Schritt)
-                t_map[y, x] = self._smooth_t(nu, max_iterations)
+            if np.any(mask):
+                nu = iter_chunk[mask]
 
-        # Farbzuweisung (externalisiert)
+                # exakt gleiche Logik wie _smooth_t, nur vektorisiert
+                t = nu / max_iterations
+                t = np.clip(t, 0.0, 1.0)
+
+                t_map[y0:y1][mask] = t
+
+            if progress_callback:
+                progress_callback(y1 / height)
+
+        # unverändert: zentrale Farbabbildung
         image = self._paint_from_t_map(t_map, escaped)
         return image
 
     # Färbung: Histogramm (Sehr gute Farbverteilung, aber verwaschene Details und z.T. Artefakte)
     def apply_histogram(self,
-                        iterations: np.ndarray,     # Iterationswerte (Im Rendering-Kernel berechnet)
-                        escaped: np.ndarray,        # Punkt divergiert oder nicht (binäre Unterscheidung)
-                        max_iterations: int         # Maximale Iterationszahl aus Rendering-Prozess
-                        ) -> np.ndarray:            # Rückgabe: RGB-Bild des Fraktal-Ausschnitts
+                        iterations: np.ndarray,
+                        escaped: np.ndarray,
+                        max_iterations: int,
+                        progress_callback=None,
+                        chunk_size: int = 32
+                        ) -> np.ndarray:
 
-        # Initialisierung
         height, width = iterations.shape
         t_map = np.zeros((height, width), dtype=np.float64)
 
-        # Globale Analyse (CDF berechnen)
+        # Globale Analyse (unverändert)
         cumulative = self._build_histogram_cdf(iterations, escaped, max_iterations)
         if cumulative is None:
             return np.zeros((height, width, 3), dtype=np.uint8)
 
-        # 2D-Loop (Pixelweise Verarbeitung)
-        for y in range(height):
-            for x in range(width):
-                if not escaped[y, x]:
-                    continue
+        for y0 in range(0, height, chunk_size):
+            y1 = min(y0 + chunk_size, height)
 
-                nu = iterations[y, x]
-                if not np.isfinite(nu):
-                    continue
+            iter_chunk = iterations[y0:y1]
+            esc_chunk  = escaped[y0:y1]
 
-                t_map[y, x] = self._histogram_t(nu, cumulative, max_iterations)
+            # gültige Punkte
+            mask = esc_chunk.astype(bool) & np.isfinite(iter_chunk)
 
-        # Farbzuweisung
+            if np.any(mask):
+                nu = iter_chunk[mask]
+
+                # --- Vektorisierte Entsprechung von _histogram_t ---
+
+                i0 = np.floor(nu).astype(int)
+                i0 = np.clip(i0, 0, max_iterations)
+
+                i1 = np.minimum(i0 + 1, max_iterations)
+                f  = nu - i0
+
+                t0 = cumulative[i0]
+                t1 = cumulative[i1]
+
+                t = (1.0 - f) * t0 + f * t1
+                t = np.clip(t, 0.0, 1.0)
+
+                t_map[y0:y1][mask] = t
+
+            if progress_callback:
+                progress_callback(y1 / height)
+
         image = self._paint_from_t_map(t_map, escaped)
         return image
 
     # Färbung: Orbit-Trap (Sehr spezielle, experimentelle Färbung)
     def apply_orbit_trap(self,
-                        trap_dist: np.ndarray,          # Für jeden Punkt: Abstand zu Trap-Objekt
-                        escaped: np.ndarray             # Punkt divergiert oder nicht (binäre Unterscheidung)
-                        ) -> np.ndarray:                # Rückgabe: RGB-Bild des Fraktal-Ausschnitts
+                        trap_dist: np.ndarray,
+                        escaped: np.ndarray,
+                        progress_callback=None,
+                        chunk_size: int = 32
+                        ) -> np.ndarray:
 
-        # Initialisierung
         height, width = trap_dist.shape
         t_map = np.zeros((height, width), dtype=np.float64)
 
-        # Wertebereich vorbereiten
+        # Globaler Schritt (unverändert)
         prep = self._prepare_orbit_trap_range(trap_dist, escaped)
         if prep is None:
             return np.zeros((height, width, 3), dtype=np.uint8)
 
         _, _, log_min, log_max = prep
+        denom = (log_max - log_min)
 
-        # 2D-Loop (Pixelweise Verarbeitung)
-        for y in range(height):
-            for x in range(width):
+        for y0 in range(0, height, chunk_size):
+            y1 = min(y0 + chunk_size, height)
 
-                # Überspringen
-                if not escaped[y, x]:
-                    continue
+            dist_chunk = trap_dist[y0:y1]
+            esc_chunk  = escaped[y0:y1]
 
-                # Verarbeitung
-                d = trap_dist[y, x]
-                if not np.isfinite(d):
-                    continue
+            # gültige Punkte
+            mask = esc_chunk.astype(bool) & np.isfinite(dist_chunk)
 
-                t_map[y, x] = self._orbit_trap_t(d, log_min, log_max)
+            if np.any(mask):
+                d = dist_chunk[mask]
 
-        # Farbzuweisung
-        image = self._paint_from_t_map(t_map, escaped)   
+                # --- Vektorisierte Entsprechung von _orbit_trap_t ---
+                ld = np.log(d + 1e-12)
+                t = (ld - log_min) / denom
+                t = np.clip(t, 0.0, 1.0)
+
+                t_map[y0:y1][mask] = t
+
+            if progress_callback:
+                progress_callback(y1 / height)
+
+        image = self._paint_from_t_map(t_map, escaped)
         return image
 
     # Färbung: Basic und histogramm kombiniert
@@ -327,49 +379,9 @@ class Colorizer():
                     iterations: np.ndarray,
                     escaped: np.ndarray,
                     max_iterations: int,
-                    hist_strength: float = 0.45) -> np.ndarray:
-
-        height, width = iterations.shape
-        image = np.zeros((height, width, 3), dtype=np.uint8)
-
-        cumulative = self._build_histogram_cdf(iterations, escaped, max_iterations)
-        if cumulative is None:
-            return image
-
-        palette_size = len(self.palette)
-
-        for y in range(height):
-            for x in range(width):
-
-                if not escaped[y, x]:
-                    image[y, x] = (0, 0, 0)
-                    continue
-
-                nu = iterations[y, x]
-                if not np.isfinite(nu):
-                    image[y, x] = (0, 0, 0)
-                    continue
-
-                base_index = int(nu) % palette_size
-
-                hist_t = self._histogram_t(nu, cumulative, max_iterations)
-                hist_index = int(hist_t * (palette_size - 1))
-
-                mixed_index = int(
-                    (1.0 - hist_strength) * base_index +
-                    hist_strength * hist_index
-                ) % palette_size
-
-                image[y, x] = self.palette[mixed_index]
-
-        return image
-
-    # Färbung: cyclic_banding (Supersampling empfohlen)
-    def apply_cyclic_banding(self,
-                    iterations: np.ndarray,
-                    escaped: np.ndarray,
-                    max_iterations: int,
-                    hist_strength: float = 0.2
+                    hist_strength: float = 0.45,
+                    progress_callback=None,
+                    chunk_size: int = 32
                     ) -> np.ndarray:
 
         height, width = iterations.shape
@@ -379,35 +391,114 @@ class Colorizer():
         if cumulative is None:
             return image
 
-        palette_size = len(self.palette)
+        palette = np.array(self.palette, dtype=np.uint8)
+        palette_size = len(palette)
 
-        for y in range(height):
-            for x in range(width):
+        for y0 in range(0, height, chunk_size):
+            y1 = min(y0 + chunk_size, height)
 
-                if not escaped[y, x]:
-                    image[y, x] = (0, 0, 0)
-                    continue
+            iter_chunk = iterations[y0:y1]
+            esc_chunk  = escaped[y0:y1]
 
-                nu = iterations[y, x]
-                if not np.isfinite(nu):
-                    image[y, x] = (0, 0, 0)
-                    continue
+            mask = esc_chunk.astype(bool) & np.isfinite(iter_chunk)
 
-                frac = nu - np.floor(nu)   # lokale Phase in [0,1)
+            if np.any(mask):
+                nu = iter_chunk[mask]
 
-                hist_t = self._histogram_t(nu, cumulative, max_iterations)
+                # --- Base (diskret) ---
+                base_index = (nu.astype(int) % palette_size)
 
-                frequency = 1.0   # testen: 0.5, 1.0, 2.0
-                band = np.sin(2 * np.pi * frac * frequency) * 0.5
+                # --- Histogramm (kontinuierlich → Index) ---
+                i0 = np.floor(nu).astype(int)
+                i0 = np.clip(i0, 0, max_iterations)
 
+                i1 = np.minimum(i0 + 1, max_iterations)
+                f  = nu - i0
+
+                t0 = cumulative[i0]
+                t1 = cumulative[i1]
+
+                hist_t = (1.0 - f) * t0 + f * t1
+                hist_t = np.clip(hist_t, 0.0, 1.0)
+
+                hist_index = (hist_t * (palette_size - 1)).astype(int)
+
+                # --- Mischung im Indexraum ---
+                mixed_index = (
+                    (1.0 - hist_strength) * base_index +
+                    hist_strength * hist_index
+                ).astype(int) % palette_size
+
+                image[y0:y1][mask] = palette[mixed_index]
+
+            if progress_callback:
+                progress_callback(y1 / height)
+
+        return image
+
+    # Färbung: cyclic_banding (Supersampling empfohlen)
+    def apply_cyclic_banding(self,
+                    iterations: np.ndarray,
+                    escaped: np.ndarray,
+                    max_iterations: int,
+                    hist_strength: float = 0.4,
+                    progress_callback=None,
+                    chunk_size: int = 32
+                    ) -> np.ndarray:
+
+        height, width = iterations.shape
+        image = np.zeros((height, width, 3), dtype=np.uint8)
+
+        cumulative = self._build_histogram_cdf(iterations, escaped, max_iterations)
+        if cumulative is None:
+            return image
+
+        palette = np.array(self.palette, dtype=np.uint8)
+        palette_size = len(palette)
+
+        for y0 in range(0, height, chunk_size):
+            y1 = min(y0 + chunk_size, height)
+
+            iter_chunk = iterations[y0:y1]
+            esc_chunk  = escaped[y0:y1]
+
+            mask = esc_chunk.astype(bool) & np.isfinite(iter_chunk)
+
+            if np.any(mask):
+                nu = iter_chunk[mask]
+
+                # Phase
+                frac = nu - np.floor(nu)
+
+                # Histogramm (vektorisiert wie vorherige Methoden)
+                i0 = np.floor(nu).astype(int)
+                i0 = np.clip(i0, 0, max_iterations)
+
+                i1 = np.minimum(i0 + 1, max_iterations)
+                f  = nu - i0
+
+                t0 = cumulative[i0]
+                t1 = cumulative[i1]
+
+                hist_t = (1.0 - f) * t0 + f * t1
+
+                # Banding
+                frequency = 1.0
+                band = np.sin(2.0 * np.pi * frac * frequency) * 0.5
+
+                # Mischung (identisch zur Originallogik)
                 t = hist_t + hist_strength * band
-                t = 0.5 * t + 0.25 * (
-                    hist_t
-                )
+                t = 0.5 * t + 0.25 * hist_t
 
-                t = max(0.0, min(1.0, t))
+                # Clamp
+                t = np.clip(t, 0.0, 1.0)
 
-                image[y, x] = self._sample_palette(t)
+                # DIREKTER LUT-ZUGRIFF (kein _sample_palette)
+                idx = (t * (palette_size - 1)).astype(np.int32)
+                image[y0:y1][mask] = palette[idx]
+
+            if progress_callback:
+                progress_callback(y1 / height)
 
         return image
 
@@ -417,9 +508,12 @@ class Colorizer():
                     escaped: np.ndarray,
                     zr_final: np.ndarray,
                     zi_final: np.ndarray,
-                    max_iterations: int) -> np.ndarray:
-        
-        sectors     = 14       # gerade Zahl!
+                    max_iterations: int,
+                    progress_callback=None,
+                    chunk_size: int = 32
+                    ) -> np.ndarray:
+
+        sectors     = 14
         stripe_width = 10
 
         height, width = iterations.shape
@@ -428,30 +522,48 @@ class Colorizer():
         palette = np.array(self.palette, dtype=np.uint8)
         palette_size = len(palette)
 
-        valid = escaped.astype(bool) & np.isfinite(iterations)
+        for y0 in range(0, height, chunk_size):
+            y1 = min(y0 + chunk_size, height)
 
-        nu  = iterations[valid]
-        zr  = zr_final[valid]
-        zi  = zi_final[valid]
+            iter_chunk = iterations[y0:y1]
+            esc_chunk  = escaped[y0:y1]
+            zr_chunk   = zr_final[y0:y1]
+            zi_chunk   = zi_final[y0:y1]
 
-        # Achse 1: Iterationsband
-        nu_scaled = nu * (1.0 / stripe_width)
-        band_int  = np.floor(nu_scaled).astype(int)
+            valid = esc_chunk.astype(bool) & np.isfinite(iter_chunk)
 
-        # Achse 2: Winkelsektor (sectors muss gerade sein!)
-        angle      = np.arctan2(zi, zr)                              # -π … +π
-        angle_norm = (angle + np.pi) / (2 * np.pi)                  # 0..1
-        sector_int = np.floor(angle_norm * sectors).astype(int) % sectors
+            if np.any(valid):
 
-        # XOR für saubere Übergänge an beiden Achsen
-        chess = (band_int ^ sector_int) % 2
+                nu = iter_chunk[valid]
+                zr = zr_chunk[valid]
+                zi = zi_chunk[valid]
 
-        # Farbindex
-        frac  = nu_scaled % 1.0
-        index = (np.floor(frac * palette_size).astype(int)
-                + chess * (palette_size // 2)) % palette_size
+                # Achse 1: Iterationsband
+                nu_scaled = nu * (1.0 / stripe_width)
+                band_int  = np.floor(nu_scaled).astype(int)
 
-        image[valid] = palette[index]
+                # Achse 2: Winkel
+                angle      = np.arctan2(zi, zr)
+                angle_norm = (angle + np.pi) / (2 * np.pi)
+                sector_int = np.floor(angle_norm * sectors).astype(int) % sectors
+
+                # XOR Struktur
+                chess = (band_int ^ sector_int) % 2
+
+                # Fraktionaler Anteil
+                frac = nu_scaled % 1.0
+
+                # Palette-Index
+                index = (
+                    np.floor(frac * palette_size).astype(int)
+                    + chess * (palette_size // 2)
+                ) % palette_size
+
+                image[y0:y1][valid] = palette[index]
+
+            if progress_callback:
+                progress_callback(y1 / height)
+
         return image
 
 #------------------------------------------------------------

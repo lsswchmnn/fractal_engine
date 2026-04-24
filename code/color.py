@@ -1,6 +1,6 @@
 import  numpy as np
 from    mapping import PALETTES
-from    utils import printProgressBar
+from    utils import printProgressBar, clear_cli
 #============================================================
 class Colorizer():
     def __init__(self):
@@ -45,8 +45,6 @@ class Colorizer():
         b = int(c0[2] + frac * (c1[2] - c0[2]))
 
         return (r, g, b)
-
-
 
     # sauber interpolieren
     def _interpolate_palette(self, key_colors, size):
@@ -122,8 +120,8 @@ class Colorizer():
         cumulative /= total
         return cumulative
 
-    def _prepare_orbit_trap_range(self, 
-                                  trap_dist: np.ndarray, 
+    def _prepare_orbit_trap_range(self,
+                                  trap_dist: np.ndarray,
                                   escaped: np.ndarray
                                   ) -> tuple[float, float, float, float] | None:
 
@@ -237,6 +235,8 @@ class Colorizer():
             if progress_callback:
                 progress_callback(y1 / height)
 
+            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+
         return image
 
     # Färbung: Smooth (gut für mitteltiefe Zooms, stark abhängig von Iterationszahl, schlechter Kontrast in tiefen Zooms)
@@ -275,6 +275,8 @@ class Colorizer():
             if progress_callback:
                 progress_callback(y1 / height)
 
+            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+        
         # unverändert: zentrale Farbabbildung
         image = self._paint_from_t_map(t_map, escaped)
         return image
@@ -327,6 +329,8 @@ class Colorizer():
             if progress_callback:
                 progress_callback(y1 / height)
 
+            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+
         image = self._paint_from_t_map(t_map, escaped)
         return image
 
@@ -370,6 +374,8 @@ class Colorizer():
 
             if progress_callback:
                 progress_callback(y1 / height)
+
+            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
 
         image = self._paint_from_t_map(t_map, escaped)
         return image
@@ -433,6 +439,8 @@ class Colorizer():
 
             if progress_callback:
                 progress_callback(y1 / height)
+
+            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
 
         return image
 
@@ -500,6 +508,8 @@ class Colorizer():
             if progress_callback:
                 progress_callback(y1 / height)
 
+            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+
         return image
 
     # Färbung: Schachbrett Muster
@@ -564,6 +574,8 @@ class Colorizer():
             if progress_callback:
                 progress_callback(y1 / height)
 
+            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+
         return image
 
 #------------------------------------------------------------
@@ -577,13 +589,13 @@ class Colorizer():
         img = np.power(img, 1.0 / gamma)
         img = np.clip(img * 255.0, 0, 255).astype(np.uint8)
         return img
-    
+
     def apply_contrast(self, image: np.ndarray, contrast: float = 1.2) -> np.ndarray:
         img = image.astype(np.float64) / 255.0
         img = (img - 0.5) * contrast + 0.5
         img = np.clip(img, 0.0, 1.0)
         return (img * 255).astype(np.uint8)
-    
+
     def apply_inversion(self, image: np.ndarray) -> np.ndarray:
         img = image.astype(np.float32) / 255.0
         img = 1.0 - img

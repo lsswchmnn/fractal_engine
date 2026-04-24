@@ -2,7 +2,7 @@ import numpy    as     np
 from numba      import njit
 from time       import perf_counter
 from settings   import RenderSettings
-from utils      import printProgressBar, clear_cli, print_thin_separation
+from utils      import printProgressBar, clear_cli, print_thin_separation, finishProgressBar
 #============================================================
 # NUMBAR-RENDERING-Funktion (Unterscheidung zwischen zwei Typen, nötig für Julia)
 
@@ -147,15 +147,23 @@ class Renderer():
 
             printProgressBar(y1, height, prefix="Rendering:", suffix="Complete", length=50)
 
+        # Zeitmessung beenden
         end = perf_counter()
         length = round(number=end - start, ndigits=4)
 
-        self._print_debug_info(fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=render_settings)  # Debug-Info
+        # Progressbar entfernen
+        finishProgressBar()
+        clear_cli
 
         fractal.max_iterations = original_iter  # Iterationszahl zurücksetzen
 
+        print()
+
         # Farbzuweisung
         image = self._apply_coloring(Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode, z_real, z_imag)
+
+        # Debug-Info
+        self._print_debug_info(fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=render_settings)
 
         return image
 

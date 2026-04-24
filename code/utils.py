@@ -92,6 +92,10 @@ def enter_continue(msg: str="Press Enter to continue...", seperation: bool=True,
 # Leert das CLI komplett
 def clear_cli():
     os.system('cls' if os.name == 'nt' else 'clear')
+    sys.stdout.write("\r\033[2K")
+    sys.stdout.flush()
+    sys.stdout.write("\n")
+    sys.stdout.flush()
 
 # Fortschritts-Iterator mit tqdm; funktioniert bei for-Schleifen
 def printProgressBar(iteration, 
@@ -141,6 +145,10 @@ def printProgressBar(iteration,
     if iteration == total:
         sys.stdout.write("\n")
         sys.stdout.flush()
+
+def finishProgressBar():
+    sys.stdout.write("\r\033[2K\n")
+    sys.stdout.flush()
 
 #=========================================================================
 # Hardware-Utilities

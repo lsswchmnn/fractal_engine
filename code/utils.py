@@ -137,10 +137,10 @@ def printProgressBar(iteration,
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
     
-    
     sys.stdout.write(
         f"\r{prefix} |{bar}| {percent}% {suffix}"
     )
+    sys.stdout.flush()
 
     if iteration == total:
         sys.stdout.write("\n")

@@ -1,11 +1,10 @@
 import  numpy as np
 from    mapping import PALETTES
-from    utils import printProgressBar, clear_cli
 #============================================================
 class Colorizer():
     def __init__(self):
-        self.palette_name   = "default"
-        self.palette        = []
+        self.palette_name       = "default"
+        self.palette            = []
         self.set_palette("default")
 
 #------------------------------------------------------------
@@ -233,9 +232,7 @@ class Colorizer():
 
             # Progress
             if progress_callback:
-                progress_callback(y1 / height)
-
-            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+                progress_callback(y1, height)
 
         return image
 
@@ -273,9 +270,7 @@ class Colorizer():
                 t_map[y0:y1][mask] = t
 
             if progress_callback:
-                progress_callback(y1 / height)
-
-            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+                progress_callback(y1, height)
         
         # unverändert: zentrale Farbabbildung
         image = self._paint_from_t_map(t_map, escaped)
@@ -327,9 +322,7 @@ class Colorizer():
                 t_map[y0:y1][mask] = t
 
             if progress_callback:
-                progress_callback(y1 / height)
-
-            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+                progress_callback(y1, height)
 
         image = self._paint_from_t_map(t_map, escaped)
         return image
@@ -373,9 +366,7 @@ class Colorizer():
                 t_map[y0:y1][mask] = t
 
             if progress_callback:
-                progress_callback(y1 / height)
-
-            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+                progress_callback(y1, height)
 
         image = self._paint_from_t_map(t_map, escaped)
         return image
@@ -385,8 +376,8 @@ class Colorizer():
                     iterations: np.ndarray,
                     escaped: np.ndarray,
                     max_iterations: int,
-                    hist_strength: float = 0.45,
                     progress_callback=None,
+                    hist_strength: float = 0.45,
                     chunk_size: int = 32
                     ) -> np.ndarray:
 
@@ -438,9 +429,7 @@ class Colorizer():
                 image[y0:y1][mask] = palette[mixed_index]
 
             if progress_callback:
-                progress_callback(y1 / height)
-
-            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+                progress_callback(y1, height)
 
         return image
 
@@ -449,8 +438,8 @@ class Colorizer():
                     iterations: np.ndarray,
                     escaped: np.ndarray,
                     max_iterations: int,
-                    hist_strength: float = 0.4,
                     progress_callback=None,
+                    hist_strength: float = 0.4,
                     chunk_size: int = 32
                     ) -> np.ndarray:
 
@@ -506,9 +495,7 @@ class Colorizer():
                 image[y0:y1][mask] = palette[idx]
 
             if progress_callback:
-                progress_callback(y1 / height)
-
-            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+                progress_callback(y1, height)
 
         return image
 
@@ -572,9 +559,7 @@ class Colorizer():
                 image[y0:y1][valid] = palette[index]
 
             if progress_callback:
-                progress_callback(y1 / height)
-
-            printProgressBar(y1, height, prefix="Coloring", suffix="Complete", length=50)
+                progress_callback(y1, height)
 
         return image
 

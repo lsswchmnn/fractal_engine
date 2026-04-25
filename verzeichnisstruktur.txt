@@ -1,0 +1,24 @@
+fractal/
+README.md
+verzeichnisstruktur.txt
+├── code/
+│   cli.py
+│   color.py
+│   export.py
+│   fractal.py
+│   gui.py
+│   main.py
+│   mapping.py
+│   rendering.py
+│   repositorys.py
+│   settings.py
+│   utils.py
+│   viewport.py
+│   visualize.py
+│   ├── settings/
+│   │   hyper_settings.json
+│   │   temp_ultra.json
+│   ├── viewports/
+│   │   deformed_mini_mandelbrot.json
+│   │   mandelbrot_elephant_valley.json
+│   │   mandelbrot_seahorse_valley.json

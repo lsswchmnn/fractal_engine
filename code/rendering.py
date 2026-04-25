@@ -3,6 +3,7 @@ from numba      import njit
 from time       import perf_counter
 from settings   import RenderSettings
 from utils      import printProgressBar, clear_cli, print_thin_separation, finishProgressBar
+from postprocess import PostProcesser
 #============================================================
 # NUMBAR-RENDERING-Funktion (Unterscheidung zwischen zwei Typen, nötig für Julia)
 
@@ -75,8 +76,9 @@ class Renderer():
 
             image = self._render_single(fractal, high_res_viewport, colorizer, coloring_mode, render_settings)
             image = self._downsample(image, factor=render_settings.supersampling_factor)
-                
-        image = self._apply_postprocessing(colorizer, image, render_settings)
+
+        postprocesser = PostProcesser()
+        image = postprocesser.process(render_settings, image)
 
         return image
 
@@ -289,14 +291,14 @@ class Renderer():
         
         return image
 
-    def _apply_postprocessing(self, colorizer, image, render_settings):
-        if not render_settings.post_process_enabled:
-            return image
+    # def _apply_postprocessing(self, colorizer, image, render_settings):
+    #     if not render_settings.post_process_enabled:
+    #         return image
 
-        if render_settings.inversion_enabled:
-            image = colorizer.apply_inversion(image)
+    #     if render_settings.inversion_enabled:
+    #         image = colorizer.apply_inversion(image)
 
-        image = colorizer.apply_contrast(image, contrast=render_settings.contrast_factor)
-        image = colorizer.apply_gamma(image, gamma=render_settings.gamma_factor)
+    #     image = colorizer.apply_contrast(image, contrast=render_settings.contrast_factor)
+    #     image = colorizer.apply_gamma(image, gamma=render_settings.gamma_factor)
 
-        return image
+    #     return image

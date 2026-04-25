@@ -231,26 +231,58 @@ class Renderer():
         return total_iterations, total_pixels
 
     def _apply_coloring(self, Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode, zr, zi):
+        
+        # Progressbar als callback festlegen
+        progress_callback = lambda i, t: printProgressBar(i, t, prefix="Coloring", suffix="Complete", length=50)
+
+        # Unterscheidung nach aktivem Coloring-Mode
         if coloring_mode == "basic":
-            image = Colorizer.apply_basic(iterations, escaped)   # max_iter nicht nötig
+            image = Colorizer.apply_basic(
+                iterations, 
+                escaped, 
+                progress_callback)   # max_iter nicht nötig
 
         elif coloring_mode == "histogram":
-            image = Colorizer.apply_histogram(iterations, escaped, effective_max_iter)
+            image = Colorizer.apply_histogram(
+                iterations, 
+                escaped, 
+                effective_max_iter,
+                progress_callback)
 
         elif coloring_mode == "smooth":
-            image = Colorizer.apply_smooth(iterations, escaped, effective_max_iter)
+            image = Colorizer.apply_smooth(
+                iterations, 
+                escaped, 
+                effective_max_iter,
+                progress_callback)
 
         elif coloring_mode == "orbit trap":
-            image = Colorizer.apply_orbit_trap(trap, escaped)
+            image = Colorizer.apply_orbit_trap(
+                trap, 
+                escaped,
+                progress_callback)
 
         elif coloring_mode == "hybrid":
-            image = Colorizer.apply_hybrid(iterations, escaped, effective_max_iter)
+            image = Colorizer.apply_hybrid(
+                iterations, 
+                escaped, 
+                effective_max_iter,
+                progress_callback)
 
         elif coloring_mode == "cyclic banding":
-            image = Colorizer.apply_cyclic_banding(iterations, escaped, effective_max_iter)
+            image = Colorizer.apply_cyclic_banding(
+                iterations, 
+                escaped, 
+                effective_max_iter,
+                progress_callback)
 
         elif coloring_mode == "chess pattern":
-            image = Colorizer.apply_chess(iterations, escaped, zr, zi, effective_max_iter)
+            image = Colorizer.apply_chess(
+                iterations, 
+                escaped, 
+                zr, zi, 
+                effective_max_iter,
+                progress_callback)
 
         else:
             raise ValueError(f"Unknown coloring mode: {coloring_mode}")

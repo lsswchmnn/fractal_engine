@@ -1,11 +1,84 @@
 import  numpy as np
 from    mapping import PALETTES
+from utils import printProgressBar
 #============================================================
 class Colorizer():
     def __init__(self):
         self.palette_name       = "default"
         self.palette            = []
         self.set_palette("default")
+
+#------------------------------------------------------------
+
+    def apply(
+            self,
+            result,
+            coloring_mode: str
+            ) -> np.ndarray:
+        
+        iterations = result.iterations
+        escaped = result.escaped
+        trap = result.trap
+        zr = result.z_real
+        zi = result.z_imag
+        max_iter = result.max_iter
+
+        # Progressbar als callback festlegen
+        progress_callback = lambda i, t: printProgressBar(i, t, prefix="Coloring", suffix="Complete", length=50)
+
+        # Unterscheidung nach aktivem Coloring-Mode
+        if coloring_mode == "basic":
+            image = self.apply_basic(
+                iterations, 
+                escaped, 
+                progress_callback)   # max_iter nicht nötig
+
+        elif coloring_mode == "histogram":
+            image = self.apply_histogram(
+                iterations, 
+                escaped, 
+                max_iter,
+                progress_callback)
+
+        elif coloring_mode == "smooth":
+            image = self.apply_smooth(
+                iterations, 
+                escaped, 
+                max_iter,
+                progress_callback)
+
+        elif coloring_mode == "orbit trap":
+            image = self.apply_orbit_trap(
+                trap, 
+                escaped,
+                progress_callback)
+
+        elif coloring_mode == "hybrid":
+            image = self.apply_hybrid(
+                iterations, 
+                escaped, 
+                max_iter,
+                progress_callback)
+
+        elif coloring_mode == "cyclic banding":
+            image = self.apply_cyclic_banding(
+                iterations, 
+                escaped, 
+                max_iter,
+                progress_callback)
+
+        elif coloring_mode == "chess pattern":
+            image = self.apply_chess(
+                iterations, 
+                escaped, 
+                zr, zi, 
+                max_iter,
+                progress_callback)
+
+        else:
+            raise ValueError(f"Unknown coloring mode: {coloring_mode}")
+        
+        return image
 
 #------------------------------------------------------------
 # PALETTE-MANAGEMENT (definieren, interpolieren, sampeln)

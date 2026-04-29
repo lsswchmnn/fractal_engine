@@ -1,4 +1,5 @@
 from color      import Colorizer
+from postprocess import PostProcesser
 from settings   import RenderSettings
 from viewport   import Viewport
 from rendering  import Renderer
@@ -7,10 +8,13 @@ from utils      import print_thin_separation
 from fractal    import Fractal, MandelbrotFractal
 from mapping    import PALETTES, COLORING_NAMES
 from export     import PNGExporter
+from debug      import print_debug_info
 #============================================================
 # VISUALIZER: Verbindet Komponenten und steuert Ablauf der Visualisierung
 class Visualizer():
+    
     def __init__(self, fractal, fractal_name=None):
+
         # Klasseninstanzen
         self.fractal        : Fractal           = fractal                                  # Aktuelles Fraktal
         self.colorizer      : Colorizer         = Colorizer()                              # Management der Färbung
@@ -19,6 +23,7 @@ class Visualizer():
         self.exporter       : PNGExporter       = PNGExporter()                            # Export-Funktionalität
         self.gui            : GUI               = None                                     # Graphische Schnittstelle zum User
         self.render_settings: RenderSettings    = RenderSettings()                         # Alle einstellbaren Parameter für Rendering und Postprocessing
+        self.postprocesser  : PostProcesser     = PostProcesser()                          # Management der Postprocessing-Effekte
 
         # Zustände und Settings
         self.fractal_name     : str          = fractal_name                                # Name des Fraktals für Anzeige und Export
@@ -88,16 +93,39 @@ class Visualizer():
 
         self._rerender()
 
-    # Hilfsfunktion: Aktuelles Bild rendern und in GUI anzeigen
+    # Render-Pipeline Entry Point
     def _rerender(self):
-        pixels = self.renderer.render(
+
+        result = self.renderer.render(
+            self.fractal,
+            self.viewport,
+            self.render_settings
+        )
+
+        image = self.colorizer.apply(
+            result,
+            self.coloring_mode
+        )
+
+        image = self.postprocesser.process(
+            self.render_settings,
+            image
+        )
+
+        print_debug_info(
             self.fractal,
             self.viewport,
             self.colorizer,
-            coloring_mode=self.coloring_mode,
-            render_settings=self.render_settings
+            self.coloring_mode,
+            adaptive_iter=result.max_iter,
+            original_iter=self.fractal.max_iterations,
+            span=self.viewport.width,
+            render_time=result.render_time,
+            palette_name=self.colorizer.palette_name,
+            settings=self.render_settings
         )
-        self.gui.display_image(pixels)
+        
+        self.gui.display_image(image)
 
 #------------------------------------------------------------
 # HANDLING 

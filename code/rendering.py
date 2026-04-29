@@ -1,9 +1,9 @@
-import numpy    as     np
-from numba      import njit
-from time       import perf_counter
-from settings   import RenderSettings
-from utils      import printProgressBar, clear_cli, print_thin_separation, finishProgressBar
-from postprocess import PostProcesser
+import numpy        as     np
+from numba          import njit
+from time           import perf_counter
+from settings       import RenderSettings
+from utils          import printProgressBar, clear_cli, print_thin_separation, finishProgressBar
+from results        import RenderResult
 #============================================================
 # NUMBAR-RENDERING-Funktion (Unterscheidung zwischen zwei Typen, nötig für Julia)
 
@@ -63,26 +63,28 @@ def render_tile_kernel(
 # RENDERER (Berechnet die Iterationen, ruft Hilfsmethoden auf)
 class Renderer():
 
-    # Hauptfunktion: unterscheidet zwischen normalem Rendering und Supersampling
-    def render(self, fractal, viewport, colorizer, coloring_mode="smooth", render_settings=RenderSettings()):
+    def render(
+            self, 
+            fractal, 
+            viewport, 
+            colorizer, 
+            coloring_mode="smooth", 
+            render_settings=RenderSettings()
+            ) -> np.ndarray:
             
         if not render_settings.supersampling_enabled:
-            image = self._render_single(fractal, viewport, colorizer, coloring_mode, render_settings)
+            result = self._render_single(fractal, viewport, colorizer, coloring_mode, render_settings)
         
         else:
             high_res_viewport = viewport.copy()
             high_res_viewport.width_px *= render_settings.supersampling_factor
             high_res_viewport.height_px *= render_settings.supersampling_factor
 
-            image = self._render_single(fractal, high_res_viewport, colorizer, coloring_mode, render_settings)
-            image = self._downsample(image, factor=render_settings.supersampling_factor)
+            result = self._render_single(fractal, high_res_viewport, colorizer, coloring_mode, render_settings)
+            #result = self._downsample(result, factor=render_settings.supersampling_factor)  # anpassen
 
-        postprocesser = PostProcesser()
-        image = postprocesser.process(render_settings, image)
+        return result
 
-        return image
-
-    # Normales tile-basiertes Rendering
     def _render_single(self, fractal, viewport, Colorizer, coloring_mode="smooth", render_settings=None):
         start = perf_counter()
 
@@ -151,7 +153,7 @@ class Renderer():
 
         # Zeitmessung beenden
         end = perf_counter()
-        length = round(number=end - start, ndigits=4)
+        render_time = round(number=end - start, ndigits=4)
 
         # Progressbar entfernen
         finishProgressBar()
@@ -159,13 +161,10 @@ class Renderer():
 
         fractal.max_iterations = original_iter  # Iterationszahl zurücksetzen
 
-        # Farbzuweisung
-        image = self._apply_coloring(Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode, z_real, z_imag)
-
         # Debug-Info
-        self._print_debug_info(fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=render_settings)
+        #self._print_debug_info(fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=render_settings)
 
-        return image
+        return RenderResult(iterations, escaped, trap, z_real, z_imag, effective_max_iter, render_time)
 
 #------------------------------------------------------------
 # PRIVATE HILFSMETHODEN für Renderer
@@ -197,30 +196,30 @@ class Renderer():
 
         return adaptive_iter, original_iter, span
 
-    def _print_debug_info(self, fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=None):
-        clear_cli()
-        total_iter, total_pixels = self._estimate_workload(viewport, adaptive_iter, settings, render_settings=RenderSettings())
+    # def _print_debug_info(self, fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=None):
+    #     clear_cli()
+    #     total_iter, total_pixels = self._estimate_workload(viewport, adaptive_iter, settings, render_settings=RenderSettings())
 
-        print_thin_separation(linebreak=False)
-        print("FRACTAL")
-        print(f"Fractal:                {fractal._name}")
-        print(f"Formula:                {fractal._formula}")
-        print(f"Startvalue:             {fractal.start_real} + {fractal.start_imag}i")
-        print(f"Exponent:               {fractal.exp_real} + {fractal.exp_imag}i")
-        print("\nCOLORING")
-        print(f"Coloring mode:          {coloring_mode}")
-        if coloring_mode == "orbit trap":
-            print(f"Orbit-Trap type:        {fractal.trap_type_name}")
-        print(f"Palette:                {Colorizer.palette_name}")
-        print("\nRENDERING")
-        if settings:
-            print(f"Supersampling:          {f'Enabled (factor: {settings.supersampling_factor})' if settings.supersampling_enabled else 'Disabled'}")
-        print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
-        print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
-        print(f"Rendering-Time:         {length} sec")
-        print(f"Estimated workload:     {total_iter:.2e} iterations ({total_pixels:.2e} pixels)")
-        print_thin_separation(linebreak=False)
-        print()
+    #     print_thin_separation(linebreak=False)
+    #     print("FRACTAL")
+    #     print(f"Fractal:                {fractal._name}")
+    #     print(f"Formula:                {fractal._formula}")
+    #     print(f"Startvalue:             {fractal.start_real} + {fractal.start_imag}i")
+    #     print(f"Exponent:               {fractal.exp_real} + {fractal.exp_imag}i")
+    #     print("\nCOLORING")
+    #     print(f"Coloring mode:          {coloring_mode}")
+    #     if coloring_mode == "orbit trap":
+    #         print(f"Orbit-Trap type:        {fractal.trap_type_name}")
+    #     print(f"Palette:                {Colorizer.palette_name}")
+    #     print("\nRENDERING")
+    #     if settings:
+    #         print(f"Supersampling:          {f'Enabled (factor: {settings.supersampling_factor})' if settings.supersampling_enabled else 'Disabled'}")
+    #     print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
+    #     print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
+    #     print(f"Rendering-Time:         {length} sec")
+    #     print(f"Estimated workload:     {total_iter:.2e} iterations ({total_pixels:.2e} pixels)")
+    #     print_thin_separation(linebreak=False)
+    #     print()
 
     def _estimate_workload(self, viewport, adaptive_iter, settings, render_settings):
         if settings.supersampling_enabled:
@@ -231,74 +230,3 @@ class Renderer():
         
         total_iterations = total_pixels * adaptive_iter
         return total_iterations, total_pixels
-
-    def _apply_coloring(self, Colorizer, iterations, escaped, effective_max_iter, trap, coloring_mode, zr, zi):
-        
-        # Progressbar als callback festlegen
-        progress_callback = lambda i, t: printProgressBar(i, t, prefix="Coloring", suffix="Complete", length=50)
-
-        # Unterscheidung nach aktivem Coloring-Mode
-        if coloring_mode == "basic":
-            image = Colorizer.apply_basic(
-                iterations, 
-                escaped, 
-                progress_callback)   # max_iter nicht nötig
-
-        elif coloring_mode == "histogram":
-            image = Colorizer.apply_histogram(
-                iterations, 
-                escaped, 
-                effective_max_iter,
-                progress_callback)
-
-        elif coloring_mode == "smooth":
-            image = Colorizer.apply_smooth(
-                iterations, 
-                escaped, 
-                effective_max_iter,
-                progress_callback)
-
-        elif coloring_mode == "orbit trap":
-            image = Colorizer.apply_orbit_trap(
-                trap, 
-                escaped,
-                progress_callback)
-
-        elif coloring_mode == "hybrid":
-            image = Colorizer.apply_hybrid(
-                iterations, 
-                escaped, 
-                effective_max_iter,
-                progress_callback)
-
-        elif coloring_mode == "cyclic banding":
-            image = Colorizer.apply_cyclic_banding(
-                iterations, 
-                escaped, 
-                effective_max_iter,
-                progress_callback)
-
-        elif coloring_mode == "chess pattern":
-            image = Colorizer.apply_chess(
-                iterations, 
-                escaped, 
-                zr, zi, 
-                effective_max_iter,
-                progress_callback)
-
-        else:
-            raise ValueError(f"Unknown coloring mode: {coloring_mode}")
-        
-        return image
-
-    # def _apply_postprocessing(self, colorizer, image, render_settings):
-    #     if not render_settings.post_process_enabled:
-    #         return image
-
-    #     if render_settings.inversion_enabled:
-    #         image = colorizer.apply_inversion(image)
-
-    #     image = colorizer.apply_contrast(image, contrast=render_settings.contrast_factor)
-    #     image = colorizer.apply_gamma(image, gamma=render_settings.gamma_factor)
-
-    #     return image

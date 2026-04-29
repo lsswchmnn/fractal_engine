@@ -67,25 +67,23 @@ class Renderer():
             self, 
             fractal, 
             viewport, 
-            colorizer, 
-            coloring_mode="smooth", 
             render_settings=RenderSettings()
             ) -> np.ndarray:
             
         if not render_settings.supersampling_enabled:
-            result = self._render_single(fractal, viewport, colorizer, coloring_mode, render_settings)
-        
+            result = self._render_single(fractal, viewport, render_settings)
+
         else:
             high_res_viewport = viewport.copy()
             high_res_viewport.width_px *= render_settings.supersampling_factor
             high_res_viewport.height_px *= render_settings.supersampling_factor
 
-            result = self._render_single(fractal, high_res_viewport, colorizer, coloring_mode, render_settings)
-            #result = self._downsample(result, factor=render_settings.supersampling_factor)  # anpassen
+            result = self._render_single(fractal, high_res_viewport, render_settings)
+            result = self._downsample(result, factor=render_settings.supersampling_factor)
 
         return result
 
-    def _render_single(self, fractal, viewport, Colorizer, coloring_mode="smooth", render_settings=None):
+    def _render_single(self, fractal, viewport, render_settings=None):
         start = perf_counter()
 
         # Adaptive Iterationsberechnung
@@ -161,13 +159,10 @@ class Renderer():
 
         fractal.max_iterations = original_iter  # Iterationszahl zurücksetzen
 
-        # Debug-Info
-        #self._print_debug_info(fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=render_settings)
-
         return RenderResult(iterations, escaped, trap, z_real, z_imag, effective_max_iter, render_time)
 
 #------------------------------------------------------------
-# PRIVATE HILFSMETHODEN für Renderer
+# HILFSMETHODEN für Renderer
 
     def _downsample(self, image: np.ndarray, factor: int=2) -> np.ndarray:
         if factor <= 1:
@@ -195,31 +190,6 @@ class Renderer():
         adaptive_iter = max(original_iter, adaptive_iter)
 
         return adaptive_iter, original_iter, span
-
-    # def _print_debug_info(self, fractal, viewport, Colorizer, coloring_mode, adaptive_iter, original_iter, span, length, settings=None):
-    #     clear_cli()
-    #     total_iter, total_pixels = self._estimate_workload(viewport, adaptive_iter, settings, render_settings=RenderSettings())
-
-    #     print_thin_separation(linebreak=False)
-    #     print("FRACTAL")
-    #     print(f"Fractal:                {fractal._name}")
-    #     print(f"Formula:                {fractal._formula}")
-    #     print(f"Startvalue:             {fractal.start_real} + {fractal.start_imag}i")
-    #     print(f"Exponent:               {fractal.exp_real} + {fractal.exp_imag}i")
-    #     print("\nCOLORING")
-    #     print(f"Coloring mode:          {coloring_mode}")
-    #     if coloring_mode == "orbit trap":
-    #         print(f"Orbit-Trap type:        {fractal.trap_type_name}")
-    #     print(f"Palette:                {Colorizer.palette_name}")
-    #     print("\nRENDERING")
-    #     if settings:
-    #         print(f"Supersampling:          {f'Enabled (factor: {settings.supersampling_factor})' if settings.supersampling_enabled else 'Disabled'}")
-    #     print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
-    #     print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
-    #     print(f"Rendering-Time:         {length} sec")
-    #     print(f"Estimated workload:     {total_iter:.2e} iterations ({total_pixels:.2e} pixels)")
-    #     print_thin_separation(linebreak=False)
-    #     print()
 
     def _estimate_workload(self, viewport, adaptive_iter, settings, render_settings):
         if settings.supersampling_enabled:

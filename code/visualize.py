@@ -107,6 +107,9 @@ class Visualizer():
             self.coloring_mode
         )
 
+        if self.render_settings.supersampling_enabled:
+            image = self.renderer._downsample(image, factor=self.render_settings.supersampling_factor)
+
         image = self.postprocesser.process(
             self.render_settings,
             image
@@ -124,7 +127,7 @@ class Visualizer():
             palette_name=self.colorizer.palette_name,
             settings=self.render_settings
         )
-        
+
         self.gui.display_image(image)
 
 #------------------------------------------------------------
@@ -159,7 +162,8 @@ class Visualizer():
         self._rerender()
 
     def _handle_export(self):
-        # Hochauflösende Größe definieren (z.B. 4K)
+
+        # Hochauflösende Größe definieren
         highres_width = self.viewport.width_px * self.render_settings.export_factor
         highres_height = self.viewport.height_px * self.render_settings.export_factor
 
@@ -176,13 +180,31 @@ class Visualizer():
         self.fractal.max_iterations = max_iter
 
         try:
-            pixels = self.renderer.render(
+            # 1. RAW RENDERING
+            result = self.renderer.render(
                 self.fractal,
                 export_viewport,
-                self.colorizer,
-                coloring_mode=self.coloring_mode,
-                render_settings=self.render_settings
+                self.render_settings
             )
+
+            # 2. COLORING
+            image = self.colorizer.apply(
+                self.colorizer,
+                result.iterations,
+                result.escaped,
+                result.max_iter,
+                result.trap,
+                self.coloring_mode,
+                result.z_real,
+                result.z_imag
+            )
+
+            # 3. POSTPROCESSING
+            image = self.postprocesser.process(
+                self.render_settings,
+                image
+            )
+
         finally:
             self.fractal.max_iterations = original_iter
 
@@ -191,7 +213,7 @@ class Visualizer():
         path = self.gui.ask_save_path(default_name)
 
         if path:
-            self.exporter.save(pixels, path)
+            self.exporter.save(image, path)
             print(f"Image ({highres_height} x {highres_width} px) exported to {path}")
             print_thin_separation()
             print()

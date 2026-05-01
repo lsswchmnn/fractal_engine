@@ -79,7 +79,6 @@ class Renderer():
             high_res_viewport.height_px *= render_settings.supersampling_factor
 
             result = self._render_single(fractal, high_res_viewport, render_settings)
-            result = self._downsample(result, factor=render_settings.supersampling_factor)
 
         return result
 

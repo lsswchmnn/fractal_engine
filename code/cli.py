@@ -341,10 +341,10 @@ class CLI():
         while True:
 
             print_heading("CHANGE POSTPROCESSING SETTINGS")
-            print(f"1 - Toggle postprocessing (current: {'On' if self.visualizer.render_settings.post_process_enabled else 'Off'})")
-            print(f"2 - Contrast factor for postprocessing (current: {self.visualizer.render_settings.contrast_factor})")
-            print(f"3 - Gamma factor for postprocessing (current: {self.visualizer.render_settings.gamma_factor})")
-            print(f"4 - Toggle Color Inversion (current: {'On' if self.visualizer.render_settings.inversion_enabled else 'Off'})")
+            print(f"1 - Toggle postprocessing   (current: {'On' if self.visualizer.render_settings.post_process_enabled else 'Off'})")
+            print(f"2 - Contrast factor         (current: {self.visualizer.render_settings.contrast_factor})")
+            print(f"3 - Gamma factor            (current: {self.visualizer.render_settings.gamma_factor})")
+            print(f"4 - Toggle Color Inversion  (current: {'On' if self.visualizer.render_settings.inversion_enabled else 'Off'})")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)

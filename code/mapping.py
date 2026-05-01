@@ -93,33 +93,42 @@ PALETTES = {
     ],
 
     "fire": [
-        (255,255,255),
-        (255,240,180),
-        (255,170,40),
-        (255,80,10),
-        (180,20,0),
-        (90,0,20),       # dunkles Rot-Violett statt nur Braun
-        (15,0,10)
+        (255, 255, 255),   # weißer Kern
+        (255, 245, 200),   # heißes, leicht gelbliches Weiß
+        (255, 200, 90),    # Goldton
+        (255, 140, 30),    # kräftiges Orange
+        (255, 90, 10),     # Flammenorange
+        (200, 50, 0),      # dunkleres Rot
+        (120, 20, 10),     # Glutkern
+        (160, 60, 20),     # Rückkehr zu Wärme (zyklisch, Glühen)
+        (80, 10, 20),      # abkühlend, violetter Stich
+        (20, 0, 10)        # fast schwarz
     ],
 
     "ice": [
-        (255,255,255),
-        (220,245,255),
-        (150,210,255),
-        (80,170,230),
-        (90,110,220),    # leichter Blau-Violett-Shift
-        (30,40,140),
-        (5,10,40)
+        (255, 255, 255),   # Eisweiß
+        (235, 250, 255),   # kaltes Licht
+        (180, 225, 255),   # klares Eisblau
+        (120, 190, 245),   # tieferes Blau
+        (140, 210, 255),   # Rückhellung (Reflexion, zyklisch)
+        (90, 150, 230),    # wieder kühler
+        (70, 110, 210),    # dichteres Blau
+        (40, 70, 160),     # Tiefe
+        (60, 100, 200),    # leichter Rücksprung (Schimmer)
+        (10, 20, 60)       # dunkler Kern
     ],
 
     "forest": [
-        (255,255,255),
-        (210,235,200),
-        (130,190,110),
-        (60,140,80),
-        (30,100,90),     # mehr Türkis im Schatten
-        (10,55,60),
-        (0,15,20)
+        (255, 252, 245),   # sehr helles, warmes Licht (nicht reinweiß)
+        (235, 240, 210),   # blasses Blattgrün, leicht gelblich
+        (190, 210, 140),   # junges Grün
+        (140, 170, 100),   # mittleres Waldgrün
+        (110, 120, 85),    # entsättigt, birkenrindenartig
+        (120, 90, 60),     # warmes Holzbraun (wichtiger Kontrastanker)
+        (70, 110, 75),     # zurück ins Grün, aber dunkler und gedämpft
+        (40, 80, 70),      # feucht-kühles Waldgrün
+        (20, 50, 55),      # tiefer Schatten, leicht blaugrün
+        (5, 20, 25)        # fast schwarz, aber mit Farbrest
     ],
 
     "sunset": [
@@ -154,15 +163,16 @@ PALETTES = {
     ],
 
     "baroque": [
-        (255,255,255),
-        (255,245,220),   # warmes Kerzenlicht / Elfenbein
-        (240,210,120),   # Blattgold
-        (200,60,60),     # Karminrot
-        (120,30,90),     # Purpur
-        (40,60,160),     # Ultramarin
-        (10,100,70),     # Smaragdgrün
-        (8,6,20)         # tiefer barocker Schatten
+        (255, 252, 240),   # Kerzenlicht, fast weiß, warm
+        (245, 225, 170),   # gedämpftes Blattgold
+        (210, 160, 80),    # tieferes Gold, erdig
+        (170, 60, 60),     # Karmin (gedämpft)
+        (110, 40, 80),     # Purpur, entsättigt
+        (60, 50, 100),     # kühler Schatten (blauviolett)
+        (140, 100, 60),    # Rückkehr zu warmem Braun/Gold (zyklisch)
+        (20, 15, 35)       # tiefer Schatten, nicht rein schwarz
     ],
+
 
     "grayscale": [
         (255,255,255),

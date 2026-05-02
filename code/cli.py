@@ -219,10 +219,9 @@ class CLI():
         while True:
 
             print_heading("MANIPULATE FORMULA")
-            print(f"Current formula: {self.fractal._formula}")
-            print("\nAvailable manipulations:")
-            print(f"1 - Change startvalue (current: {self.fractal.start_real} + {self.fractal.start_imag}i)")
-            print(f"2 - Change exponent (current: {self.fractal.exp_real} + {self.fractal.exp_imag}i)")
+            print(f"Fractal formula: {self.fractal._formula}\n")
+            print(f"1 - Change startvalue   (current: {self.fractal.start_real} + {self.fractal.start_imag}i)")
+            print(f"2 - Change exponent     (current: {self.fractal.exp_real} + {self.fractal.exp_imag}i)")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
@@ -235,8 +234,9 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                real = input_float(-100.0, 100.0, 0.0, msg="Enter real part of startvalue z0", cli=True, loop=True)
-                imag = input_float(-100.0, 100.0, 0.0, msg="Enter imaginary part of startvalue z0", cli=True, loop=True)
+                real = input_float(-100.0, 100.0, 0.0, msg="Enter real part of startvalue z0",      cli=True, loop=True, error=False)
+                print()
+                imag = input_float(-100.0, 100.0, 0.0, msg="Enter imaginary part of startvalue z0", cli=True, loop=True, error=False)
                 self.fractal.start_real = real
                 self.fractal.start_imag = imag
                 enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue", seperation=False)
@@ -253,8 +253,9 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                real = input_float(-20.0, 20.0, 2.0, [1], msg="Enter real part of Exponent",      cli=True, loop=False)
-                imag = input_float(-20.0, 20.0, 0.0,      msg="Enter imaginary part of Exponent", cli=True, loop=False)
+                real = input_float(-20.0, 20.0, 2.0, [1], msg="Enter real part of Exponent",      cli=True, loop=False, error=False)
+                print()
+                imag = input_float(-20.0, 20.0, 0.0,      msg="Enter imaginary part of Exponent", cli=True, loop=False, error=False)
                 self.fractal.exp_real = real
                 self.fractal.exp_imag = imag
                 enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue", seperation=False)
@@ -278,10 +279,10 @@ class CLI():
         while True:
 
             print_heading("CHANGE RENDERING SETTINGS")
-            print(f"1 - Base Iterations (current: {self.fractal.max_iterations})")
-            print(f"2 - Factor for adaptive iteration depth (current: {self.visualizer.render_settings.iterate_factor_k})")
-            print(f"3 - Toggle Supersampling (current: {'On' if self.visualizer.render_settings.supersampling_enabled else 'Off'})")
-            print(f"4 - Supersampling factor (current: {self.visualizer.render_settings.supersampling_factor}x)")
+            print(f"1 - Base Iterations             (current: {self.fractal.max_iterations})")
+            print(f"2 - Adaptive Iteration factor   (current: {self.visualizer.render_settings.iterate_factor_k})")
+            print(f"3 - Toggle Supersampling        (current: {'On' if self.visualizer.render_settings.supersampling_enabled else 'Off'})")
+            print(f"4 - Supersampling factor        (current: {self.visualizer.render_settings.supersampling_factor}x)")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
@@ -293,7 +294,7 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                max_iter = input_int(10, 10000, 100, msg="Enter new base iterations", cli=True)
+                max_iter = input_int(10, 10000, 100, msg="Enter new base iterations", cli=True, error=False)
                 self.fractal.max_iterations = max_iter
                 enter_continue(f"Base iterations changed to {max_iter}. Press enter to continue", seperation=False)
 
@@ -303,7 +304,7 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                k = input_int(1, 1000, 100, msg="Enter new adaptive iteration factor k", cli=True)
+                k = input_int(1, 1000, 100, msg="Enter new adaptive iteration factor k", cli=True, error=False)
                 self.visualizer.render_settings.iterate_factor_k = k
                 enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue", seperation=False)
 
@@ -320,7 +321,7 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                factor = input_int(1, 10, 2, msg="Enter new supersampling factor", cli=True)
+                factor = input_int(1, 10, 2, msg="Enter new supersampling factor", cli=True, error=False)
                 self.visualizer.render_settings.supersampling_factor = factor
                 enter_continue(f"Supersampling factor changed to {factor}x. Press enter to continue", seperation=False)
 
@@ -364,7 +365,7 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                contrast = input_float(0.1, 5.0, 1.2, msg="Enter new contrast factor for postprocessing", cli=True)
+                contrast = input_float(0.1, 5.0, 1.2, msg="Enter new contrast factor for postprocessing", cli=True, error=False)
                 self.visualizer.render_settings.contrast_factor = contrast
                 enter_continue(f"Contrast factor changed to {contrast}. Press enter to continue", seperation=False)
 
@@ -375,7 +376,7 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                gamma = input_float(0.1, 5.0, 1.5, msg="Enter new gamma factor for postprocessing", cli=True)
+                gamma = input_float(0.1, 5.0, 1.5, msg="Enter new gamma factor for postprocessing", cli=True, error=False)
                 self.visualizer.render_settings.gamma_factor = gamma
                 enter_continue(f"Gamma factor changed to {gamma}. Press enter to continue", seperation=False)
 
@@ -407,10 +408,10 @@ class CLI():
                 "Unknown")
 
             print_heading("CHANGE ORBIT-TRAP SETTINGS")
-            print(f"1 - Change Type (current: {current_label})")
-            print(f"2 - Change X-Offset (current: {self.fractal.trap_x})")
-            print(f"3 - Change Y-Offset (current: {self.fractal.trap_y})")
-            print(f"4 - Change trap radius (current: {self.fractal.trap_radius})")
+            print(f"1 - Change Type         (current: {current_label})")
+            print(f"2 - Change X-Offset     (current: {self.fractal.trap_x})")
+            print(f"3 - Change Y-Offset     (current: {self.fractal.trap_y})")
+            print(f"4 - Change trap radius  (current: {self.fractal.trap_radius})")
             print("H - Help")
             print("C - Cancel")
             print_thin_separation(linebreak=False)
@@ -454,7 +455,7 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                x_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
+                x_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True, error=False)
                 self.fractal.trap_x = x_offset
                 enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_x}. Press enter to continue", seperation=False)
 
@@ -464,7 +465,7 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                y_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
+                y_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True, error=False)
                 self.fractal.trap_y = y_offset
                 enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_y}. Press enter to continue", seperation=False)
 
@@ -474,7 +475,7 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                radius = input_float(0.0, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True)
+                radius = input_float(0.0, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True, error=False)
                 self.fractal.trap_radius = radius
                 enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_radius}. Press enter to continue", seperation=False)
 
@@ -509,7 +510,7 @@ class CLI():
                 print_thin_separation()
                 print()
 
-                factor = input_int(1, 10, 4, msg="Enter new export resolution factor", cli=True)
+                factor = input_int(1, 10, 4, msg="Enter new export resolution factor", cli=True, error=False)
                 self.visualizer.render_settings.export_factor = factor
                 enter_continue(f"Export resolution factor changed to {factor}. Press enter to continue", seperation=False)
 
@@ -627,8 +628,9 @@ class CLI():
     def _menu_load_viewport_settings(self):
         while True:
             print_heading("VIEWPORT")
-            print("1 - Save")
-            print("2 - Load")
+            print("1 - Save Template")
+            print("2 - Load Template")
+            print("3 - Input Coordinates Manually")
             print("C - Close")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()
@@ -639,6 +641,10 @@ class CLI():
 
             elif choice == "2":
                 self._load_viewport()
+                continue
+
+            elif choice == "3":
+                self._input_viewport_coordinates()
                 continue
 
             elif choice == "c":

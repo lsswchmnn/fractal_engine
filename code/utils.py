@@ -216,7 +216,8 @@ def estimate_power() -> int:
 
 # Um Integer abzufragen
 def input_int(min_value: int=0, max_value: int=10000, default: int=100, 
-        forbidden: list = [], msg: str="value", cli: bool=True, loop: bool = True) -> int | None:
+        forbidden: list = [], msg: str="value", cli: bool=True, loop: bool = True,
+        error: bool=True) -> int | None:
     
     if forbidden is None:
         forbidden = []
@@ -240,7 +241,8 @@ def input_int(min_value: int=0, max_value: int=10000, default: int=100,
 
         # Input leer?
         if raw == '':
-            show_error(True, "InputError", "Input is empty. Returning Default")
+            if error:
+                show_error(True, "InputError", "Input is empty. Returning Default")
             return default
 
         # Ist Input ein integer?
@@ -248,44 +250,53 @@ def input_int(min_value: int=0, max_value: int=10000, default: int=100,
             value = int(raw)
         except ValueError:
             if not loop:
-                show_error(True, "Input Error", f"'{raw}' is not a valid Integer. Returning Default")
+                if error:
+                    show_error(True, "Input Error", f"'{raw}' is not a valid Integer. Returning Default")
                 return default
             else:
-                show_error(True, "Input Error", f"'{raw}' is not a valid Integer.")
+                if error:
+                    show_error(True, "Input Error", f"'{raw}' is not a valid Integer.")
                 continue
 
         # Ist der Wert erlaubt?
         if value in forbidden:
             if not loop:
-                show_error(True, "InputError", f"'{raw} is not allowed. Returning Default")
+                if error:
+                    show_error(True, "InputError", f"'{raw} is not allowed. Returning Default")
                 return default
             else:
-                show_error(True, "InputError", f"'{raw} is not allowed.")
+                if error:
+                    show_error(True, "InputError", f"'{raw} is not allowed.")
                 continue
 
         # Wert klein genug?
         if value > max_value:
             if not loop:
-                show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}. Returning {max_value}")
+                if error:
+                    show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}. Returning {max_value}")
                 return max_value
             else:
-                show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}.")
+                if error:
+                    show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}.")
                 continue
 
         # Wert groß genug?
         elif value < min_value:
             if not loop:
-                show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
+                if error:
+                    show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
                 return min_value
             else:
-                show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
+                if error:
+                    show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
                 continue
 
         return value
 
 # Um Float abzufragen
 def input_float(min_value: float=0, max_value: float=10000, default: float=100, 
-                forbidden: list = [], msg: str="value", cli: bool=True, loop: bool=True) -> float:
+                forbidden: list = [], msg: str="value", cli: bool=True, loop: bool=True,
+                error: bool=True) -> float:
     
     if forbidden is None:
         forbidden = []
@@ -309,7 +320,8 @@ def input_float(min_value: float=0, max_value: float=10000, default: float=100,
 
         # Input leer?
         if raw == '':
-            show_error(True, "InputError", "Input is empty. Returning Default")
+            if error:
+                show_error(True, "InputError", "Input is empty. Returning Default")
             return default
 
         # "," durch "." ersetzen
@@ -320,37 +332,45 @@ def input_float(min_value: float=0, max_value: float=10000, default: float=100,
             value = float(raw)
         except ValueError:
             if not loop:
-                show_error(True, "Input Error", f"'{raw}' is not a valid Float. Returning Default")
+                if error:
+                    show_error(True, "Input Error", f"'{raw}' is not a valid Float. Returning Default")
                 return default
             else:
-                show_error(True, "Input Error", f"'{raw}' is not a valid Float.")
+                if error:
+                    show_error(True, "Input Error", f"'{raw}' is not a valid Float.")
                 continue
 
         # Ist der Wert erlaubt?
         if value in forbidden:
             if not loop:
-                show_error(True, "InputError", f"'{raw} is not allowed. Returning Default")
+                if error:
+                    show_error(True, "InputError", f"'{raw} is not allowed. Returning Default")
                 return default
             else:
-                show_error(True, "InputError", f"'{raw} is not allowed.")
+                if error:
+                    show_error(True, "InputError", f"'{raw} is not allowed.")
                 continue
 
         # Wert klein genug?
         if value > max_value:
             if not loop:
-                show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}. Returning {max_value}")
+                if error:
+                    show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}. Returning {max_value}")
                 return max_value
             else:
-                show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}.")
+                if error:
+                    show_error(True, "Input Error", f"{value} is to big, maximal value is {max_value}.")
                 continue
 
         # Wert groß genug?
         elif value < min_value:
             if not loop:
-                show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
+                if error:
+                    show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
                 return min_value
             else:
-                show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
+                if error:
+                    show_error(True, "Input Error", f"{value} is to small, minimal value is {min_value}. Retruning {min_value}")
                 continue
 
         return value

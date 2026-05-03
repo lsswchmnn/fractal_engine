@@ -15,10 +15,12 @@ class Visualizer():
     
     def __init__(self, fractal, fractal_name=None):
 
+        cr, ci, w = self.convert_bonds_to_center_width(fractal._default_bounds)
+
         # Klasseninstanzen
         self.fractal        : Fractal           = fractal                                  # Aktuelles Fraktal
         self.colorizer      : Colorizer         = Colorizer()                              # Management der Färbung
-        self.viewport       : Viewport          = Viewport(self.fractal._default_bounds)   # Aktueller Ausschnitt, mit dem gearbeitet wird
+        self.viewport       : Viewport          = Viewport(cr, ci, w)                      # Aktueller Ausschnitt, mit dem gearbeitet wird
         self.renderer       : Renderer          = Renderer()                               # Numerische Berechnung
         self.exporter       : PNGExporter       = PNGExporter()                            # Export-Funktionalität
         self.gui            : GUI               = None                                     # Graphische Schnittstelle zum User
@@ -34,7 +36,18 @@ class Visualizer():
 
 # ------------------------------------------------------------
 
-    # STARTING POINT
+    # Fraktal-Definitionen umformen
+    def convert_bonds_to_center_width(self, bounds):
+        xmin, xmax, ymin, ymax = bounds
+
+        center_real = (xmin + xmax) / 2
+        center_imag = (ymin + ymax) / 2
+
+        width = xmax - xmin  # oder alternativ x-span als Basis
+
+        return center_real, center_imag, width
+
+    # Starting Point Rendering-Prozess
     def start(self):
         # GUI erzeugen (Unterscheidung für Julia-Set, da hier zusätzliches Feature "C ändern" im GUI benötigt wird)
         if self.fractal._name == "Julia-Set":
@@ -69,8 +82,19 @@ class Visualizer():
 
     # Callback: Für Zoom in GUI
     def _handle_zoom(self, x0, y0, x1, y1):
-        self.viewport.zoom_to_pixels(x0, y0, x1, y1)
-        self._push_history()    # Aktuellen Viewport in History speichern
+
+        c1 = self.viewport.pixel_to_complex(x0, y0)
+        c2 = self.viewport.pixel_to_complex(x1, y1)
+
+        center = (c1 + c2) / 2
+
+        width = abs(c2.real - c1.real)
+
+        self.viewport.center_real = center.real
+        self.viewport.center_imag = center.imag
+        self.viewport.width = width
+
+        self._push_history()
         self._rerender()
 
 #------------------------------------------------------------
@@ -78,18 +102,19 @@ class Visualizer():
 
     # Callback: Für Zoom-History
     def _push_history(self):
-        bounds = (self.viewport.xmin, self.viewport.xmax, self.viewport.ymin, self.viewport.ymax)
+        bounds = self.viewport.bounds
         self.history = self.history[:self.history_index + 1]  # Alle "vorwärts"-Einträge löschen
-        self.history.append(bounds)
+        
+        self.history.append((self.viewport.center_real, self.viewport.center_imag, self.viewport.width))
+
         self.history_index += 1
 
     # Hilfsfunktion: Aktuellen Viewport aus History anwenden
     def _apply_history(self):
-        xmin, xmax, ymin, ymax = self.history[self.history_index]
-        self.viewport.xmin = xmin
-        self.viewport.xmax = xmax
-        self.viewport.ymin = ymin
-        self.viewport.ymax = ymax
+        center_real, center_imag, width = self.history[self.history_index]
+        self.viewport.center_real = center_real
+        self.viewport.center_imag = center_imag
+        self.viewport.width = width
 
         self._rerender()
 
@@ -134,7 +159,10 @@ class Visualizer():
 # HANDLING 
 
     def _handle_reset(self):
-        self.viewport.reset()
+        self.viewport.center_real = 0
+        self.viewport.center_imag = 0
+        self.viewport.width = 3.0  # oder dein Default
+
         self._push_history()
         self._rerender()
 
@@ -189,14 +217,8 @@ class Visualizer():
 
             # 2. COLORING
             image = self.colorizer.apply(
-                self.colorizer,
-                result.iterations,
-                result.escaped,
-                result.max_iter,
-                result.trap,
-                self.coloring_mode,
-                result.z_real,
-                result.z_imag
+                result,
+                self.coloring_mode
             )
 
             # 3. POSTPROCESSING

@@ -2,7 +2,7 @@
 #===================================================s=========
 # VIEWPORT: Definiert den sichtbaren Ausschnitt der komplexen Zahlenebene
 class Viewport():
-    def __init__(self, bounds:tuple[float, float, float, float],
+    def __init__(self, center_real, center_imag, width,
                  width_px:int=800, height_px:int=600):
         
         '''
@@ -10,8 +10,10 @@ class Viewport():
         width_px, height_px: Auflösung des Viewports in Pixeln
         '''
 
-        self.bounds = bounds
-        self.reset()
+        self.center_real = center_real
+        self.center_imag = center_imag
+        self.width = width
+
         self.width_px  : int    = width_px
         self.height_px : int    = height_px
 
@@ -19,37 +21,59 @@ class Viewport():
 # Properties: Berechnung von Breite, Höhe und Zentrum des Viewports
 
     @property
-    def width(self) -> float:
-        return self.xmax - self.xmin
+    def aspect(self) -> float:
+        return self.width_px / self.height_px
 
     @property
     def height(self) -> float:
-        return self.ymax - self.ymin
+        return self.width / self.aspect
 
     @property
-    def center(self) -> complex:
-        real = 0.5 * (self.xmin + self.xmax)
-        imag = 0.5 * (self.ymin + self.ymax)
-        return complex(real, imag)
+    def xmin(self):
+        return self.center_real - self.width / 2
+
+    @property
+    def xmax(self):
+        return self.center_real + self.width / 2
+
+    @property
+    def ymin(self):
+        return self.center_imag - self.height / 2
+
+    @property
+    def ymax(self):
+        return self.center_imag + self.height / 2
+
+    @property
+    def bounds(self):
+        return (self.xmin, self.xmax, self.ymin, self.ymax)
+
+    @property
+    def center(self):
+        return complex(self.center_real, self.center_imag)
 
 #------------------------------------------------------------
-# Methoden
+# Setzen der Eigenschaften des Viewports
 
-    def reset(self):
-        self.xmin, self.xmax, self.ymin, self.ymax = self.bounds
+    def set_center(self, real, imag):
+        self.center_real = real
+        self.center_imag = imag
+
+    def set_zoom(self, width):
+        self.width = width
+
+#------------------------------------------------------------
+# Methoden zur Umrechnung von Pixelkoordinaten in komplexe Zahlen und zum Zoomen
 
     def pixel_to_complex(self, x, y) -> complex:
-        # Vermeidung von Division durch Null
-        width_den = max(self.width_px - 1, 1)
-        height_den = max(self.height_px - 1, 1)
+        dx = self.width / max(self.width_px - 1, 1)
+        dy = self.height / max(self.height_px - 1, 1)
 
-        real = self.xmin + (x / width_den) * (self.xmax - self.xmin)
-        imag = self.ymax - (y / height_den) * (self.ymax - self.ymin)
+        real = self.xmin + x * dx
+        imag = self.ymax - y * dy
 
-        num = complex(real, imag)
-        return num
-    
-    # Für Zoom in GUI
+        return complex(real, imag)
+
     def zoom_to_pixels(self, x0, y0, x1, y1):
         x_min_px = min(x0, x1)
         x_max_px = max(x0, x1)
@@ -59,52 +83,17 @@ class Viewport():
         c1 = self.pixel_to_complex(x_min_px, y_min_px)
         c2 = self.pixel_to_complex(x_max_px, y_max_px)
 
-        self.xmin = c1.real
-        self.xmax = c2.real
-        self.ymin = c2.imag
-        self.ymax = c1.imag
+        self.center_real = (c1.real + c2.real) / 2
+        self.center_imag = (c1.imag + c2.imag) / 2
 
-    # Für Export: Kopie des Viewports mit neuer Pixelgröße, um GUI nicht zu beeinflussen
+        self.width = abs(c2.real - c1.real)
+
     def copy(self):
-        new_vp = Viewport(
-            bounds=self.bounds,
+        return Viewport(
+            center_real=self.center_real,
+            center_imag=self.center_imag,
+            width=self.width,
             width_px=self.width_px,
             height_px=self.height_px
         )
-        new_vp.xmin = self.xmin
-        new_vp.xmax = self.xmax
-        new_vp.ymin = self.ymin
-        new_vp.ymax = self.ymax
-        return new_vp
-
-#------------------------------------------------------------
-# Speichern/Laden
-
-    # Für Speichern als Template
-    def to_dict(self) -> dict:
-        return {
-            "xmin": self.xmin,
-            "xmax": self.xmax,
-            "ymin": self.ymin,
-            "ymax": self.ymax,
-            "width_px": self.width_px,
-            "height_px": self.height_px,
-            "bounds": self.bounds
-        }
-
-    # Für Laden
-    @classmethod
-    def from_dict(cls, data: dict) -> "Viewport":
-        vp = cls(
-            bounds=tuple(data["bounds"]),
-            width_px=data["width_px"],
-            height_px=data["height_px"]
-        )
-
-        vp.xmin = data["xmin"]
-        vp.xmax = data["xmax"]
-        vp.ymin = data["ymin"]
-        vp.ymax = data["ymax"]
-
-        return vp
     

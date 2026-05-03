@@ -725,6 +725,29 @@ class CLI():
 
             break
 
+    def _input_viewport_coordinates(self):
+        print_heading("INPUT VIEWPORT COORDINATES")
+        print("Enter the coordinates for the viewport manually.")
+        print_thin_separation()
+        print()
+
+        xmin = input_float(-2.0, 2.0, -2.0, msg="Enter minimum x-coordinate", cli=True, loop=True, error=False)
+        xmax = input_float(-2.0, 2.0, 1.0, msg="Enter maximum x-coordinate", cli=True, loop=True, error=False)
+
+        ymin = input_float(-2.0, 2.0, -1.2, msg="Enter minimum y-coordinate", cli=True, loop=True, error=False)
+        ymax = input_float(-2.0, 2.0, 1.2, msg="Enter maximum y-coordinate", cli=True, loop=True, error=False)
+
+        center_real = (xmin + xmax) / 2
+        center_imag = (ymin + ymax) / 2
+        width = xmax - xmin
+
+        self.visualizer.viewport.center_real = center_real
+        self.visualizer.viewport.center_imag = center_imag
+        self.visualizer.viewport.width = width
+        self.visualizer.viewport.reset()
+
+        enter_continue(f"Viewport updated to {self.visualizer.viewport.bounds}. Press enter to continue", seperation=False)
+
 #------------------------------------------------------------
 # HILFS- UND WEITERE FUNKTIONEN
 

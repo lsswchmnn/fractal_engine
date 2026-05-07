@@ -1,4 +1,5 @@
 from color          import Colorizer
+import fractal
 from postprocess    import PostProcesser
 from results        import ProcessingTimes
 from settings       import RenderSettings
@@ -171,9 +172,10 @@ class Visualizer():
 # HANDLING 
 
     def _handle_reset(self):
-        self.viewport.center_real = 0
-        self.viewport.center_imag = 0
-        self.viewport.width = 3.0  # oder dein Default
+        cr, ci, w = self.convert_bonds_to_center_width(self.fractal._default_bounds)
+        self.viewport.center_real = cr
+        self.viewport.center_imag = ci
+        self.viewport.width = w
 
         self._push_history()
         self._rerender()

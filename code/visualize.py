@@ -1,14 +1,16 @@
-from color      import Colorizer
-from postprocess import PostProcesser
-from settings   import RenderSettings
-from viewport   import Viewport
-from rendering  import Renderer
-from gui        import GUI
-from utils      import print_thin_separation
-from fractal    import Fractal, MandelbrotFractal
-from mapping    import PALETTES, COLORING_NAMES
-from export     import PNGExporter
-from debug      import print_debug_info
+from color          import Colorizer
+from postprocess    import PostProcesser
+from results        import ProcessingTimes
+from settings       import RenderSettings
+from viewport       import Viewport
+from rendering      import Renderer
+from gui            import GUI
+from utils          import print_thin_separation
+from fractal        import Fractal, MandelbrotFractal
+from mapping        import PALETTES, COLORING_NAMES
+from export         import PNGExporter
+from debug          import print_debug_info
+from time           import perf_counter
 #============================================================
 # VISUALIZER: Verbindet Komponenten und steuert Ablauf der Visualisierung
 class Visualizer():
@@ -121,34 +123,44 @@ class Visualizer():
     # Render-Pipeline Entry Point
     def _rerender(self):
 
+        start = perf_counter()
         result = self.renderer.render(
             self.fractal,
             self.viewport,
             self.render_settings
         )
+        end = perf_counter()
+        render_time = round(number=end - start, ndigits=4)
 
+        start = perf_counter()
         image = self.colorizer.apply(
             result,
             self.coloring_mode
         )
+        end = perf_counter()
+        coloring_time = round(number=end - start, ndigits=4)
 
+        start = perf_counter()
         if self.render_settings.supersampling_enabled:
             image = self.renderer._downsample(image, factor=self.render_settings.supersampling_factor)
+        end = perf_counter()
+        downsample_time = round(number=end - start, ndigits=4)
 
         image = self.postprocesser.process(
             self.render_settings,
             image
         )
 
+        render_times = ProcessingTimes(render_time, coloring_time, downsample_time)     # Objekt mit Zeitangaben für Debug-Info
+
         print_debug_info(
             self.fractal,
             self.viewport,
-            self.colorizer,
             self.coloring_mode,
             adaptive_iter=result.max_iter,
             original_iter=self.fractal.max_iterations,
             span=self.viewport.width,
-            render_time=result.render_time,
+            times=render_times,
             palette_name=self.colorizer.palette_name,
             settings=self.render_settings
         )

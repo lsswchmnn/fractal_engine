@@ -1,5 +1,4 @@
 from color          import Colorizer
-import fractal
 from postprocess    import PostProcesser
 from results        import ProcessingTimes
 from settings       import RenderSettings

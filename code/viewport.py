@@ -1,5 +1,5 @@
 
-#===================================================s=========
+#============================================================
 # VIEWPORT: Definiert den sichtbaren Ausschnitt der komplexen Zahlenebene
 class Viewport():
     def __init__(self, center_real, center_imag, width,
@@ -50,7 +50,7 @@ class Viewport():
 
     @property
     def center(self):
-        return complex(self.center_real, self.center_imag)
+        return self.center_real, self.center_imag
 
 #------------------------------------------------------------
 # Setzen der Eigenschaften des Viewports

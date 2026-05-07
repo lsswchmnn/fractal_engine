@@ -5,7 +5,9 @@ from mapping        import FRACTALS_MAP, ORBIT_TRAP_MAP
 from repositorys    import SettingsRepository, ViewportRepository
 #============================================================
 class CLI():
+
     def __init__(self):
+
         self.fractal                 = None
         self.visualizer              = None
         self.fractal_loaded : bool   = False
@@ -99,10 +101,6 @@ class CLI():
                 except AttributeError:
                     show_error(True, "TransitionError", f"Function {class_name} not found in Dictionary.")
                     continue
-            
-            # Lesbare Namen und Formeln aus Mapping
-            self.fractal._name = FRACTALS_MAP[class_name]["name"]
-            self.fractal._formula = FRACTALS_MAP[class_name]["formula"]
 
             self.visualizer = Visualizer(self.fractal, self.fractal._name)  # Visualizer erstellen
 
@@ -725,26 +723,21 @@ class CLI():
 
             break
 
+    # Viewport-Koordinaten manuell eingeben
     def _input_viewport_coordinates(self):
         print_heading("INPUT VIEWPORT COORDINATES")
         print("Enter the coordinates for the viewport manually.")
         print_thin_separation()
         print()
 
-        xmin = input_float(-2.0, 2.0, -2.0, msg="Enter minimum x-coordinate", cli=True, loop=True, error=False)
-        xmax = input_float(-2.0, 2.0, 1.0, msg="Enter maximum x-coordinate", cli=True, loop=True, error=False)
+        center_real = input_float(-2.0, 2.0, 0.0, msg="Enter real part of viewport center", cli=True, loop=True, error=False)
+        print()
+        center_imag = input_float(-2.0, 2.0, 0.0, msg="Enter imaginary part of viewport center", cli=True, loop=True, error=False)
+        print()
+        width = input_float(0.1, 4.0, 4.0, msg="Enter viewport width (real axis)", cli=True, loop=True, error=False)
 
-        ymin = input_float(-2.0, 2.0, -1.2, msg="Enter minimum y-coordinate", cli=True, loop=True, error=False)
-        ymax = input_float(-2.0, 2.0, 1.2, msg="Enter maximum y-coordinate", cli=True, loop=True, error=False)
-
-        center_real = (xmin + xmax) / 2
-        center_imag = (ymin + ymax) / 2
-        width = xmax - xmin
-
-        self.visualizer.viewport.center_real = center_real
-        self.visualizer.viewport.center_imag = center_imag
-        self.visualizer.viewport.width = width
-        self.visualizer.viewport.reset()
+        self.visualizer.viewport.set_center(center_real, center_imag)
+        self.visualizer.viewport.set_zoom(width)
 
         enter_continue(f"Viewport updated to {self.visualizer.viewport.bounds}. Press enter to continue", seperation=False)
 

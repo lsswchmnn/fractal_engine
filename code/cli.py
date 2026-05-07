@@ -715,7 +715,7 @@ class CLI():
                 self.visualizer.viewport = viewport
 
             except Exception as e:
-                show_error(True, "SaveError", f"Failed to load viewport: {e}")
+                show_error(True, "LoadingError", f"Failed to load viewport: {e}")
 
             print_heading(f"TEMPLATE LOADED")
             print(f"Loaded '{name}'")

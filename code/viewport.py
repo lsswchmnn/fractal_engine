@@ -96,4 +96,25 @@ class Viewport():
             width_px=self.width_px,
             height_px=self.height_px
         )
-    
+
+# ------------------------------------------------------------
+# Speichern / Laden
+
+    def to_dict(self) -> dict:
+        return {
+            "center_real": self.center_real,
+            "center_imag": self.center_imag,
+            "width": self.width,
+            "width_px": self.width_px,
+            "height_px": self.height_px
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Viewport":
+        return cls(
+            center_real=data["center_real"],
+            center_imag=data["center_imag"],
+            width=data["width"],
+            width_px=data["width_px"],
+            height_px=data["height_px"]
+        )

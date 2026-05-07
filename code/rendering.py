@@ -1,6 +1,5 @@
 import numpy        as     np
 from numba          import njit
-from time           import perf_counter
 from settings       import RenderSettings
 from utils          import printProgressBar, clear_cli, print_thin_separation, finishProgressBar
 from results        import RenderResult
@@ -83,7 +82,6 @@ class Renderer():
         return result
 
     def _render_single(self, fractal, viewport, render_settings=None):
-        start = perf_counter()
 
         # Adaptive Iterationsberechnung
         adaptive_iter, original_iter, span = self._compute_adaptive_iterations(fractal, viewport, k=render_settings.iterate_factor_k)
@@ -148,17 +146,13 @@ class Renderer():
 
             printProgressBar(y1, height, prefix="Rendering:", suffix="Complete", length=50)
 
-        # Zeitmessung beenden
-        end = perf_counter()
-        render_time = round(number=end - start, ndigits=4)
-
         # Progressbar entfernen
         finishProgressBar()
         clear_cli()
 
         fractal.max_iterations = original_iter  # Iterationszahl zurücksetzen
 
-        return RenderResult(iterations, escaped, trap, z_real, z_imag, effective_max_iter, render_time)
+        return RenderResult(iterations, escaped, trap, z_real, z_imag, effective_max_iter)
 
 #------------------------------------------------------------
 # HILFSMETHODEN für Renderer

@@ -5,7 +5,7 @@ from settings       import RenderSettings
 from viewport       import Viewport
 from rendering      import Renderer
 from gui            import GUI
-from utils          import print_thin_separation
+from utils          import clear_cli, print_thin_separation
 from fractal        import Fractal, MandelbrotFractal
 from mapping        import PALETTES, COLORING_NAMES
 from export         import PNGExporter
@@ -17,7 +17,7 @@ class Visualizer():
     
     def __init__(self, fractal, fractal_name=None):
 
-        cr, ci, w = self.convert_bonds_to_center_width(fractal._default_bounds)
+        cr, ci, w = self.convert_bonds_to_center_width(fractal._default_bounds)            # Start-Viewport aus Fraktal-Definition ableiten
 
         # Klasseninstanzen
         self.fractal        : Fractal           = fractal                                  # Aktuelles Fraktal
@@ -37,6 +37,7 @@ class Visualizer():
         self.palette_index    : int          = self.palette_names.index("default")         # Start mit "default"-Palette                                   # Höhe der Kacheln für das tile-basierte Rendering (Performance-Optimierung)
 
 # ------------------------------------------------------------
+# Start und Setup
 
     # Fraktal-Definitionen umformen
     def convert_bonds_to_center_width(self, bounds):
@@ -53,9 +54,9 @@ class Visualizer():
     def start(self):
         # GUI erzeugen (Unterscheidung für Julia-Set, da hier zusätzliches Feature "C ändern" im GUI benötigt wird)
         if self.fractal._name == "Julia-Set":
-            self.gui = GUI(self.viewport.width_px, self.viewport.height_px, julia=True)             # GUI erzeugen
+            self.gui = GUI(self.viewport.width_px, self.viewport.height_px, julia=True)
         else:
-            self.gui = GUI(self.viewport.width_px, self.viewport.height_px, julia=False)             # GUI erzeugen
+            self.gui = GUI(self.viewport.width_px, self.viewport.height_px, julia=False)
 
         # Callbacks setzen
         self.gui.set_zoom_callback(self._handle_zoom)                               # Zoom
@@ -69,35 +70,71 @@ class Visualizer():
         self.gui.set_c_select_callback(self._handle_c_select)
         
         # Coloring initialisieren
-        self.coloring_modes = COLORING_NAMES                                # Verfügbare Coloring-Methoden
-        self.coloring_index = 1
-        self.coloring_mode = self.coloring_modes[self.coloring_index]       # Aktuelle Coloring-Methode
-
+        self.coloring_modes = COLORING_NAMES                                        # Verfügbare Coloring-Methoden
+        self.coloring_index = 4                                                     # Default-Coloring
+        self.coloring_mode = self.coloring_modes[self.coloring_index]               # Aktuelle Coloring-Methode
+                    
         # Dropdown-Menüs
         self.gui.set_coloring_menu(self.coloring_modes, self._handle_change_coloring)    # Coloring-Method Dropdown-Menü
-        self.gui.set_palette_menu(self.palette_names, self._handle_palette_select)      # Farbpalette Dropdown-Menü
+        self.gui.set_palette_menu(self.palette_names, self._handle_palette_select)       # Farbpalette Dropdown-Menü
 
         # Methoden aufrufen
-        self._push_history()                # Start-Viewport in History speichern                   
-        self._rerender()                    # Erstes Bild rendern (inkl. Anzeige)
-        self.gui.run()                      # Eventloop starten
+        self._push_history()    # Start-Viewport in History speichern                   
+        self._rerender()        # Erstes Bild rendern (inkl. Anzeige)
+        self.gui.run()          # Eventloop starten
 
-    # Callback: Für Zoom in GUI
-    def _handle_zoom(self, x0, y0, x1, y1):
+#------------------------------------------------------------
+# Orchestrierung
 
-        c1 = self.viewport.pixel_to_complex(x0, y0)
-        c2 = self.viewport.pixel_to_complex(x1, y1)
+    def _rerender(self):
 
-        center = (c1 + c2) / 2
+        # Rendering
+        start = perf_counter()
+        result = self.renderer.render(
+            self.fractal,
+            self.viewport,
+            self.render_settings
+        )
+        end = perf_counter()
+        render_time = round(number=end - start, ndigits=4)
 
-        width = abs(c2.real - c1.real)
+        # Coloring
+        start = perf_counter()
+        image = self.colorizer.apply(
+            result,
+            self.coloring_mode
+        )
+        end = perf_counter()
+        coloring_time = round(number=end - start, ndigits=4)
 
-        self.viewport.center_real = center.real
-        self.viewport.center_imag = center.imag
-        self.viewport.width = width
+        # Downsampling
+        start = perf_counter()
+        if self.render_settings.supersampling_enabled:
+            image = self.renderer._downsample(image, factor=self.render_settings.supersampling_factor)
+        end = perf_counter()
+        downsample_time = round(number=end - start, ndigits=4)
 
-        self._push_history()
-        self._rerender()
+        # Postprocessing        
+        image = self.postprocesser.process(
+            self.render_settings,
+            image
+        )
+
+        # Debug-Info
+        render_times = ProcessingTimes(render_time, coloring_time, downsample_time)     # Objekt mit Zeitangaben für Debug-Info
+        print_debug_info(
+            self.fractal,
+            self.viewport,
+            self.coloring_mode,
+            adaptive_iter=result.max_iter,
+            original_iter=self.fractal.max_iterations,
+            span=self.viewport.width,
+            times=render_times,
+            palette_name=self.colorizer.palette_name,
+            settings=self.render_settings
+        )
+
+        self.gui.display_image(image)
 
 #------------------------------------------------------------
 # Hilfsfunktionen
@@ -120,55 +157,24 @@ class Visualizer():
 
         self._rerender()
 
-    # Render-Pipeline Entry Point
-    def _rerender(self):
-
-        start = perf_counter()
-        result = self.renderer.render(
-            self.fractal,
-            self.viewport,
-            self.render_settings
-        )
-        end = perf_counter()
-        render_time = round(number=end - start, ndigits=4)
-
-        start = perf_counter()
-        image = self.colorizer.apply(
-            result,
-            self.coloring_mode
-        )
-        end = perf_counter()
-        coloring_time = round(number=end - start, ndigits=4)
-
-        start = perf_counter()
-        if self.render_settings.supersampling_enabled:
-            image = self.renderer._downsample(image, factor=self.render_settings.supersampling_factor)
-        end = perf_counter()
-        downsample_time = round(number=end - start, ndigits=4)
-
-        image = self.postprocesser.process(
-            self.render_settings,
-            image
-        )
-
-        render_times = ProcessingTimes(render_time, coloring_time, downsample_time)     # Objekt mit Zeitangaben für Debug-Info
-
-        print_debug_info(
-            self.fractal,
-            self.viewport,
-            self.coloring_mode,
-            adaptive_iter=result.max_iter,
-            original_iter=self.fractal.max_iterations,
-            span=self.viewport.width,
-            times=render_times,
-            palette_name=self.colorizer.palette_name,
-            settings=self.render_settings
-        )
-
-        self.gui.display_image(image)
-
 #------------------------------------------------------------
-# HANDLING 
+# Handling der GUI-Events
+
+    def _handle_zoom(self, x0, y0, x1, y1):
+
+        c1 = self.viewport.pixel_to_complex(x0, y0)
+        c2 = self.viewport.pixel_to_complex(x1, y1)
+
+        center = (c1 + c2) / 2
+
+        width = abs(c2.real - c1.real)
+
+        self.viewport.center_real = center.real
+        self.viewport.center_imag = center.imag
+        self.viewport.width = width
+
+        self._push_history()
+        self._rerender()
 
     def _handle_reset(self):
         cr, ci, w = self.convert_bonds_to_center_width(self.fractal._default_bounds)
@@ -221,20 +227,20 @@ class Visualizer():
         self.fractal.max_iterations = max_iter
 
         try:
-            # 1. RAW RENDERING
+            # Rendering
             result = self.renderer.render(
                 self.fractal,
                 export_viewport,
                 self.render_settings
             )
 
-            # 2. COLORING
+            # Coloring
             image = self.colorizer.apply(
                 result,
                 self.coloring_mode
             )
 
-            # 3. POSTPROCESSING
+            # Postprocessing
             image = self.postprocesser.process(
                 self.render_settings,
                 image
@@ -249,6 +255,7 @@ class Visualizer():
 
         if path:
             self.exporter.save(image, path)
+            clear_cli()
             print(f"Image ({highres_height} x {highres_width} px) exported to {path}")
             print_thin_separation()
             print()

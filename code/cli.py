@@ -1,8 +1,8 @@
-import fractal
-from utils          import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int, input_confirm
-from visualize      import Visualizer
-from mapping        import FRACTALS_MAP, ORBIT_TRAP_MAP
-from repositorys    import SettingsRepository, ViewportRepository
+import  fractal
+from    utils          import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int, input_confirm
+from    visualize      import Visualizer
+from    mapping        import FRACTALS_MAP, ORBIT_TRAP_MAP
+from    repositorys    import SettingsRepository, ViewportRepository
 #============================================================
 class CLI():
 
@@ -237,12 +237,11 @@ class CLI():
                 imag = input_float(-100.0, 100.0, 0.0, msg="Enter imaginary part of startvalue z0", cli=True, loop=True, error=False)
                 self.fractal.start_real = real
                 self.fractal.start_imag = imag
-                enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue", seperation=False)
+                enter_continue(f"Startvalue changed to z0 = {real} + {imag}i. Press enter to continue")
 
                 # Warnungen für potenziell instabile Einstellungen
                 if imag != 0 or real != 2:
                     self._menu_settings_warning(imag, real, "startvalue")
-                    break
             
             elif choice == "2":
                 print_heading("CHANGE EXPONENT")
@@ -256,12 +255,11 @@ class CLI():
                 imag = input_float(-20.0, 20.0, 0.0,      msg="Enter imaginary part of Exponent", cli=True, loop=False, error=False)
                 self.fractal.exp_real = real
                 self.fractal.exp_imag = imag
-                enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue", seperation=False)
+                enter_continue(f"Exponent changed to {real} + {imag}i. Press enter to continue")
 
                 # Warnungen für potenziell instabile Einstellungen
                 if imag != 0 or real != 2:
                     self._menu_settings_warning(imag, real, "exponent")
-                    break
 
             elif choice == "h":
                 print_heading("HELP - MANIPULATE FORMULA")
@@ -294,7 +292,7 @@ class CLI():
 
                 max_iter = input_int(10, 10000, 100, msg="Enter new base iterations", cli=True, error=False)
                 self.fractal.max_iterations = max_iter
-                enter_continue(f"Base iterations changed to {max_iter}. Press enter to continue", seperation=False)
+                enter_continue(f"Base iterations changed to {max_iter}. Press enter to continue")
 
             elif choice == "2":
                 print_heading("CHANGE ADAPTIVE ITERATION FACTOR")
@@ -304,7 +302,7 @@ class CLI():
 
                 k = input_int(1, 1000, 100, msg="Enter new adaptive iteration factor k", cli=True, error=False)
                 self.visualizer.render_settings.iterate_factor_k = k
-                enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue", seperation=False)
+                enter_continue(f"Adaptive iteration factor changed to {k}. Press enter to continue")
 
             elif choice == "3":
                 print_heading("TOGGLE SUPERSAMPLING")
@@ -321,14 +319,14 @@ class CLI():
 
                 factor = input_int(1, 10, 2, msg="Enter new supersampling factor", cli=True, error=False)
                 self.visualizer.render_settings.supersampling_factor = factor
-                enter_continue(f"Supersampling factor changed to {factor}x. Press enter to continue", seperation=False)
+                enter_continue(f"Supersampling factor changed to {factor}x. Press enter to continue")
 
             elif choice == "h":
                 print_heading("HELP - RENDERING SETTINGS")
                 print("Base iterations: Number of iterations used as a baseline for the adaptive iteration depth.")
                 print("Adaptive iteration factor (k): Tuning for quantitative improvement of detail accuracy at strong zooms. Higher k means more iterations added as you zoom in.")
                 print("Supersampling: When enabled, the visualizer renders at a higher internal resolution and then downsamples the image for smoother results, especially at high zoom levels. This can significantly improve image quality but also increases rendering time.")
-                enter_continue("Press enter to return to settings menu.", seperation=False)
+                enter_continue("Press enter to return to settings menu.")
 
             elif choice == "c":
                 if self.visualizer.render_settings.supersampling_enabled and self.visualizer.render_settings.supersampling_factor >= 4:
@@ -365,7 +363,7 @@ class CLI():
 
                 contrast = input_float(0.1, 5.0, 1.2, msg="Enter new contrast factor for postprocessing", cli=True, error=False)
                 self.visualizer.render_settings.contrast_factor = contrast
-                enter_continue(f"Contrast factor changed to {contrast}. Press enter to continue", seperation=False)
+                enter_continue(f"Contrast factor changed to {contrast}. Press enter to continue")
 
             elif choice == "3":
                 print_heading("CHANGE GAMMA FACTOR")
@@ -376,7 +374,7 @@ class CLI():
 
                 gamma = input_float(0.1, 5.0, 1.5, msg="Enter new gamma factor for postprocessing", cli=True, error=False)
                 self.visualizer.render_settings.gamma_factor = gamma
-                enter_continue(f"Gamma factor changed to {gamma}. Press enter to continue", seperation=False)
+                enter_continue(f"Gamma factor changed to {gamma}. Press enter to continue")
 
             if choice == "4":
                 print_heading("TOGGLE COLOR INVERSION")
@@ -390,7 +388,7 @@ class CLI():
                 print("Postprocessing: Toggle the application of postprocessing effects on the rendered image.")
                 print("Contrast factor: Adjusts the contrast of the image. A value of 1 means no change, less than 1 reduces contrast, and greater than 1 increases contrast.")
                 print("Gamma factor: Adjusts the gamma correction applied to the image. A value of 1 means no correction, less than 1 brightens the image, and greater than 1 darkens the image.")
-                enter_continue("Press enter to return to settings menu.", seperation=False)
+                enter_continue("Press enter to return to settings menu.")
 
             elif choice == "c":
                 break
@@ -444,8 +442,8 @@ class CLI():
                     self.fractal.trap_type = trap_info["idx"]
                     self.fractal.trap_type_name = trap_info["label"]
 
-                    enter_continue(f"\nOrbit trap set to: {trap_info['label']}. Press Enter to continue")
-                    break
+                    print_heading("TYPE CHANGED")
+                    enter_continue(f"\nOrbit trap set to: {trap_info['label']}. Press Enter to continue", seperation=False)
 
             elif choice == "2":     # X-Offset
                 print_heading("CHANGE X-OFFSET")
@@ -455,7 +453,7 @@ class CLI():
 
                 x_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True, error=False)
                 self.fractal.trap_x = x_offset
-                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_x}. Press enter to continue", seperation=False)
+                enter_continue(f"X-Offset changed to {self.fractal.trap_x}. Press enter to continue")
 
             elif choice == "3":     # Y-Offset
                 print_heading("CHANGE Y-OFFSET")
@@ -465,7 +463,7 @@ class CLI():
 
                 y_offset = input_float(-5, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True, error=False)
                 self.fractal.trap_y = y_offset
-                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_y}. Press enter to continue", seperation=False)
+                enter_continue(f"Y-Offset changed to {self.fractal.trap_y}. Press enter to continue")
 
             elif choice == "4":     # Radius
                 print_heading("CHANGE RADIUS")
@@ -475,14 +473,14 @@ class CLI():
 
                 radius = input_float(0.0, 5, 0.2, forbidden=[0], msg="Enter new adaptive iteration factor k", cli=True, error=False)
                 self.fractal.trap_radius = radius
-                enter_continue(f"Adaptive iteration factor changed to {self.fractal.trap_radius}. Press enter to continue", seperation=False)
+                enter_continue(f"Radius changed to {self.fractal.trap_radius}. Press enter to continue")
 
             elif choice == "h":
                 print_heading("HELP - ORBIT TRAP SETTINGS")
                 print("Type: Choose the method used for orbit trap coloring. Different methods can produce very different visual effects.")
                 print("X-Offset and Y-Offset: Adjust the position of the trap in the complex plane. This can create interesting variations in the resulting image.")
                 print("Trap Radius: The radius around the trap point that determines how close an orbit must come to be affected by the trap. Smaller radii create sharper features, while larger radii produce softer effects.")
-                enter_continue("Press enter to return to settings menu.", seperation=False)
+                enter_continue("Press enter to return to settings menu.")
 
             elif choice == "c":
                 break
@@ -510,12 +508,12 @@ class CLI():
 
                 factor = input_int(1, 10, 4, msg="Enter new export resolution factor", cli=True, error=False)
                 self.visualizer.render_settings.export_factor = factor
-                enter_continue(f"Export resolution factor changed to {factor}. Press enter to continue", seperation=False)
+                enter_continue(f"Export resolution factor changed to {factor}. Press enter to continue")
 
             elif choice == "h":
                 print_heading("HELP - EXPORT SETTINGS")
                 print("Export resolution factor: This factor determines how much the resolution is increased when exporting the fractal image. For example, a factor of 4 means that the exported image will have 4 times the width and height of the current viewport, resulting in a much higher resolution suitable for printing or detailed viewing.")
-                enter_continue("Press enter to return to settings menu.", seperation=False)
+                enter_continue("Press enter to return to settings menu.")
 
             elif choice == "c":
                 break
@@ -626,9 +624,9 @@ class CLI():
     def _menu_load_viewport_settings(self):
         while True:
             print_heading("VIEWPORT")
-            print("1 - Save Template")
-            print("2 - Load Template")
-            print("3 - Input Coordinates Manually")
+            print("1 - Save current viewport")
+            print("2 - Load template")
+            print("3 - Input coordinates manually")
             print("C - Close")
             print_thin_separation(linebreak=False)
             choice = input("> ").strip().lower()

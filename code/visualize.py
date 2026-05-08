@@ -4,12 +4,12 @@ from results        import ProcessingTimes
 from settings       import RenderSettings
 from viewport       import Viewport
 from rendering      import Renderer
-from gui            import GUI
+from ui.gui         import GUI
 from utils          import clear_cli, print_thin_separation
 from fractal        import Fractal, MandelbrotFractal
 from mapping        import PALETTES, COLORING_NAMES
 from export         import PNGExporter
-from debug          import print_debug_info
+from ui.debug       import print_debug_info
 from time           import perf_counter
 #============================================================
 # VISUALIZER: Verbindet Komponenten und steuert Ablauf der Visualisierung

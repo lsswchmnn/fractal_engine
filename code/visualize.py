@@ -46,7 +46,7 @@ class Visualizer():
         center_real = (xmin + xmax) / 2
         center_imag = (ymin + ymax) / 2
 
-        width = xmax - xmin  # oder alternativ x-span als Basis
+        width = xmax - xmin
 
         return center_real, center_imag, width
 

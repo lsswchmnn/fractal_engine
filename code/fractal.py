@@ -684,7 +684,6 @@ class Fractal(ABC):
 
         # Anzeige (wird überschrieben)
         self._name = "Fractal"
-        self._formula = None
 
         # Startwert
         self.start_real = 0.0
@@ -705,14 +704,21 @@ class Fractal(ABC):
         self.trap_y = 0.2
         self.trap_radius = 0.05
 
+    @property
+    def formula(self):
+        return None
+
 #------------------------------------------------------------
 class MandelbrotFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2.0, 1.0, -1.2, 1.2)
         self._name = "Mandelbrot-Set"
-        self._formula = f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + c"
         self.kernel = mandelbrot_kernel
+
+    @property
+    def formula(self):
+        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + c"
 
 #------------------------------------------------------------
 class InvertedMandelbrotFractal(Fractal):
@@ -720,8 +726,11 @@ class InvertedMandelbrotFractal(Fractal):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2, 4.5, -2.4, 2.4)   # zu Fraktal
         self._name = "Inverted Mandelbrot-Set"
-        self._formula = f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + 1/c"
         self.kernel = inverted_mandelbrot_kernel
+
+    @property
+    def formula(self):
+        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + 1/c"
 
 #------------------------------------------------------------
 class JuliaFractal(Fractal):
@@ -729,11 +738,14 @@ class JuliaFractal(Fractal):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2.0, 1.0, -1.2, 1.2)
         self._name = "Julia-Set"
-        self._formula = f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + c"
         self.c_real = c_real
         self.c_imag = c_imag
         self.kernel = julia_kernel
         self.pixel_is_c = False     # Pixel repräsentiert z (nur bei Julia!)
+
+    @property
+    def formula(self):
+        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + {self.c_real} + {self.c_imag}i"
 
 #------------------------------------------------------------
 class BurningShipFractal(Fractal):
@@ -741,9 +753,12 @@ class BurningShipFractal(Fractal):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2.2, 1.2, -2.5, 1.5)
         self._name = "Burning Ship"
-        self._formula = f"z_{{n+1}} = (|Re(z_n)| + i|Im(z_n)|)^({self.exp_real}+{self.exp_imag}i) + c"
         self.kernel = burning_ship_kernel
     
+    @property
+    def formula(self):
+        return f"z_{{n+1}} = (|Re(z_n)| + |Im(z_n)|i)^({self.exp_real}+{self.exp_imag}i) + c"
+
 #------------------------------------------------------------
 class TricornFractal(Fractal):
     def __init__(self, max_iterations: int = 100, escape_radius: float = 2.0):
@@ -751,7 +766,10 @@ class TricornFractal(Fractal):
         self._default_bounds = (-2.0, 2.0, -1.5, 1.5)
         self.kernel = tricorn_kernel
         self._name = "Tricorn"
-        self._formula = f"z_{{n+1}} = conjugate(z_n)^({self.exp_real}+{self.exp_imag}i) + c"
+        
+    @property
+    def formula(self):
+        return f"z_{{n+1}} = (conj(z_n))^({self.exp_real}+{self.exp_imag}i) + c"
 
 #------------------------------------------------------------
 class PhoenixFractal(Fractal):
@@ -759,12 +777,15 @@ class PhoenixFractal(Fractal):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2.0, 2.0, -1.5, 1.5)
         self._name = "Phoenix"
-        self._formula = f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + c_real + c_imag · z_{{n-1}}"
         self.kernel = phoenix_kernel
 
         # Klassische Phoenix-Startparameter
         self.c_real =  0.5667
         self.c_imag = -0.5
+
+    @property
+    def formula(self):
+        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + {self.c_real} + {self.c_imag} · z_{{n-1}}"
 
 #------------------------------------------------------------
 class PhoenixJuliaFractal(Fractal):
@@ -772,6 +793,9 @@ class PhoenixJuliaFractal(Fractal):
         super().__init__(max_iterations, escape_radius)
         self._default_bounds = (-2.0, 2.0, -1.5, 1.5)
         self._name = "Phoenix Julia"
-        self._formula = f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + c_real + c_imag · z_{{n-1}}"
         self.kernel = phoenix_julia_kernel
         self.pixel_is_c = False     # Pixel → z_0, c ist fest
+
+    @property
+    def formula(self):
+        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + {self.c_real} + {self.c_imag} · z_{{n-1}}"

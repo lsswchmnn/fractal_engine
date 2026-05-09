@@ -17,7 +17,7 @@ def print_debug_info(
 
     print("FRACTAL")
     print(f"Fractal:                {fractal._name}")
-    print(f"Formula:                {fractal._formula}")
+    print(f"Formula:                {fractal.formula}")
     print(f"Startvalue:             {fractal.start_real} + {fractal.start_imag}i")
     print(f"Exponent:               {fractal.exp_real} + {fractal.exp_imag}i")
 

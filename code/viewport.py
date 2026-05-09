@@ -6,7 +6,8 @@ class Viewport():
                  width_px:int=800, height_px:int=600):
         
         '''
-        bounds: (xmin, xmax, ymin, ymax)
+        center_real, center_imag: Mittelpunkt des Viewports in der komplexen Ebene
+        width: Breite des Viewports in der komplexen Ebene (Höhe wird automatisch angepasst)
         width_px, height_px: Auflösung des Viewports in Pixeln
         '''
 

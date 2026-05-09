@@ -217,7 +217,7 @@ class CLI():
         while True:
 
             print_heading("MANIPULATE FORMULA")
-            print(f"Fractal formula: {self.fractal._formula}\n")
+            print(f"Fractal formula: {self.fractal.formula}\n")
             print(f"1 - Change startvalue   (current: {self.fractal.start_real} + {self.fractal.start_imag}i)")
             print(f"2 - Change exponent     (current: {self.fractal.exp_real} + {self.fractal.exp_imag}i)")
             print("H - Help")

@@ -25,7 +25,11 @@ def print_debug_info(
     if settings:
         print(f"Supersampling:          {f'Enabled (factor: {settings.supersampling_factor})' if settings.supersampling_enabled else 'Disabled'}")
     print(f"Viewport:               x[{viewport.xmin:.2e}, {viewport.xmax:.2e}] y[{viewport.ymin:.2e}, {viewport.ymax:.2e}]")
+    print(f"Center:                 {viewport.center_real:.2e} + {viewport.center_imag:.2e}i")
+    print(f"Width:                  {viewport.width:.2e}")
     print(f"Adaptive iterations:    {adaptive_iter:.0f} (base: {original_iter}, span: {span:.2e})")
+    if viewport.width < 1e-14:
+        print("Warning: Numerical instability likely")
 
     print("\nCOLORING")
     print(f"Coloring mode:          {coloring_mode}")
@@ -38,10 +42,10 @@ def print_debug_info(
         print(f"Contrast adjustment:    {f'Enabled (factor: {settings.contrast_factor}'})" if settings.post_process_enabled else "Disabled")
 
     print("\nPROCESSING-TIMES")
-    print(f"Render time:            {times.render_time:.2f} sec")
-    print(f"Coloring time:          {times.coloring_time:.2f} sec")
-    print(f"Downsample time:        {times.downsample_time:.2f} sec")
-    print(f"Total time:             {times.render_time + times.coloring_time + times.downsample_time:.2f} sec")
+    print(f"Rendering:              {times.render_time:.2f} sec")
+    print(f"Coloring:               {times.coloring_time:.2f} sec")
+    print(f"Downsampling:           {times.downsample_time:.2f} sec")
+    print(f"Total:                  {times.render_time + times.coloring_time + times.downsample_time:.2f} sec")
 
     print_thin_separation(linebreak=False)
     print()

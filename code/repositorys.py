@@ -5,7 +5,7 @@ from dataclasses import dataclass, asdict
 from viewport import Viewport
 #============================================================
 class SettingsRepository:
-    def __init__(self, directory: str = "settings"):
+    def __init__(self, directory: str = "../data/settings"):
         self.directory = directory
         os.makedirs(self.directory, exist_ok=True)
 
@@ -34,7 +34,7 @@ class SettingsRepository:
 
 #============================================================
 class ViewportRepository:
-    def __init__(self, directory: str = "viewports"):
+    def __init__(self, directory: str = "../data/viewports"):
         self.directory = directory
         os.makedirs(self.directory, exist_ok=True)
 

@@ -1,16 +1,16 @@
-from color          import Colorizer
-from postprocess    import PostProcesser
-from results        import ProcessingTimes
-from settings       import RenderSettings
-from viewport       import Viewport
-from rendering      import Renderer
-from ui.gui         import GUI
-from utils          import clear_cli, print_thin_separation
-from fractal        import Fractal, MandelbrotFractal
-from mapping        import PALETTES, COLORING_NAMES
-from export         import PNGExporter
-from ui.debug       import print_debug_info
-from time           import perf_counter
+from pipeline.color         import Colorizer
+from pipeline.postprocess   import PostProcesser
+from core.results           import ProcessingTimes
+from core.settings          import RenderSettings
+from core.viewport          import Viewport
+from core.rendering         import Renderer
+from ui.gui                 import GUI
+from utils                  import clear_cli, print_thin_separation
+from core.fractal           import Fractal, MandelbrotFractal
+from mapping                import PALETTES, COLORING_NAMES
+from storage.export         import PNGExporter
+from ui.debug               import print_debug_info
+from time                   import perf_counter
 #============================================================
 # VISUALIZER: Verbindet Komponenten und steuert Ablauf der Visualisierung
 class Visualizer():

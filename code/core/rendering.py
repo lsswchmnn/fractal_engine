@@ -1,8 +1,8 @@
 import numpy        as     np
 from numba          import njit
-from settings       import RenderSettings
+from core.settings  import RenderSettings
 from utils          import printProgressBar, clear_cli, print_thin_separation, finishProgressBar
-from results        import RenderResult
+from core.results   import RenderResult
 #============================================================
 # NUMBAR-RENDERING-Funktion (Unterscheidung zwischen zwei Typen, nötig für Julia)
 

@@ -1,8 +1,8 @@
-import  fractal
-from    utils          import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int, input_confirm
-from    visualize      import Visualizer
-from    mapping        import FRACTALS_MAP, ORBIT_TRAP_MAP
-from    repositorys    import SettingsRepository, ViewportRepository
+from core                import fractal
+from utils               import print_heading, enter_continue, clear_cli, print_thin_separation, show_error, input_float, input_int, input_confirm
+from pipeline.visualize  import Visualizer
+from mapping             import FRACTALS_MAP, ORBIT_TRAP_MAP
+from storage.repositorys import SettingsRepository, ViewportRepository
 #============================================================
 class CLI():
 

@@ -1,8 +1,8 @@
 import json
 import os
-from settings import RenderSettings
+from core.settings import RenderSettings
 from dataclasses import dataclass, asdict
-from viewport import Viewport
+from core.viewport import Viewport
 #============================================================
 class SettingsRepository:
     def __init__(self, directory: str = "../data/settings"):

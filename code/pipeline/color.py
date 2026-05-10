@@ -1,6 +1,6 @@
-import  numpy as np
-from    mapping import PALETTES
-from utils import printProgressBar
+import  numpy       as     np
+from    mapping     import PALETTES
+from    utils       import printProgressBar
 #============================================================
 class Colorizer():
     def __init__(self):

@@ -35,6 +35,7 @@ class Visualizer():
         self.history_index    : int          = -1                                          # Aktuelle Position in der Zoom-History
         self.palette_names    : list         = list(PALETTES.keys())                       # Verfügbare Paletten
         self.palette_index    : int          = self.palette_names.index("default")         # Start mit "default"-Palette                                   # Höhe der Kacheln für das tile-basierte Rendering (Performance-Optimierung)
+        self.overlay_viewport : Viewport      = None                                       # Für Julia-Set: Temporärer Viewport für die C-Auswahl
 
 # ------------------------------------------------------------
 # Start und Setup
@@ -263,21 +264,35 @@ class Visualizer():
     def _handle_change_c(self):
         mandelbrot = MandelbrotFractal()
     
-        pixels = self.renderer.render(
-            mandelbrot,
-            self.viewport,
-            self.colorizer,
-            coloring_mode=self.coloring_mode
-        )
+        cr, ci, w = self.convert_bonds_to_center_width(mandelbrot._default_bounds)
 
-        self.gui.show_overlay(pixels)
+        self.overlay_viewport = Viewport(
+            cr, ci, w, 
+            width_px=self.viewport.width_px, 
+            height_px=self.viewport.height_px)
+
+        overlay_settings = RenderSettings()
+        overlay_settings.supersampling_enabled = False
+
+        result = self.renderer.render(
+            mandelbrot,
+            self.overlay_viewport,
+            overlay_settings
+            )
+        
+        image = self.colorizer.apply(
+            result,
+            self.coloring_mode
+            )
+        
+        self.gui.show_overlay(image)
 
     def _handle_c_select(self, x, y):
-        real = self.viewport.xmin + (x / (self.viewport.width_px - 1)) * \
-            (self.viewport.xmax - self.viewport.xmin)
+        real = self.overlay_viewport.xmin + (x / (self.overlay_viewport.width_px - 1)) * \
+            (self.overlay_viewport.xmax - self.overlay_viewport.xmin)
 
-        imag = self.viewport.ymax - (y / (self.viewport.height_px - 1)) * \
-            (self.viewport.ymax - self.viewport.ymin)
+        imag = self.overlay_viewport.ymax - (y / (self.overlay_viewport.height_px - 1)) * \
+            (self.overlay_viewport.ymax - self.overlay_viewport.ymin)
 
         self.fractal.c_real = real
         self.fractal.c_imag = imag

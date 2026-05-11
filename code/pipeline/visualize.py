@@ -280,10 +280,9 @@ class Visualizer():
             overlay_settings
             )
         
-        image = self.colorizer.apply(
-            result,
-            self.coloring_mode
-            )
+        image = self.colorizer.apply_overlay(
+            result.iterations, result.escaped, result.max_iter
+        )
         
         self.gui.show_overlay(image)
 

@@ -745,7 +745,7 @@ class JuliaFractal(Fractal):
 
     @property
     def formula(self):
-        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + {self.c_real} + {self.c_imag}i"
+        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + ({self.c_real:.2f} + {self.c_imag:.2f}i)"
 
 #------------------------------------------------------------
 class BurningShipFractal(Fractal):
@@ -785,7 +785,7 @@ class PhoenixFractal(Fractal):
 
     @property
     def formula(self):
-        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + {self.c_real} + {self.c_imag} · z_{{n-1}}"
+        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + ({self.c_real:.2f} + {self.c_imag:.2f}i) · z_{{n-1}}"
 
 #------------------------------------------------------------
 class PhoenixJuliaFractal(Fractal):
@@ -798,4 +798,4 @@ class PhoenixJuliaFractal(Fractal):
 
     @property
     def formula(self):
-        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + {self.c_real} + {self.c_imag} · z_{{n-1}}"
+        return f"z_{{n+1}} = z_n^({self.exp_real}+{self.exp_imag}i) + ({self.c_real:.2f} + {self.c_imag:.2f}i) · z_{{n-1}}"

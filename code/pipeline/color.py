@@ -267,6 +267,27 @@ class Colorizer():
 #------------------------------------------------------------
 # FÄRBUNGSMETHODEN als Kompositionsmethoden
 
+    def apply_overlay(self,
+                    iterations: np.ndarray,
+                    escaped: np.ndarray,
+                    max_iterations: int
+                    ) -> np.ndarray:
+        
+        height, width = iterations.shape
+        image = np.zeros((height, width, 3), dtype=np.uint8)
+
+        mask = escaped.astype(bool)
+        
+        if np.any(mask):
+            t = iterations[mask] / max_iterations
+            t = np.clip(t, 0.0, 1.0)
+            val = (t * 255).astype(np.uint8)
+            image[mask, 0] = val
+            image[mask, 1] = val
+            image[mask, 2] = val
+
+        return image
+
     # Förbung: Basic (spezielle, kristalline Struktur, allerdings etwas pixelig)
     def apply_basic(self, 
                     iterations: np.ndarray,

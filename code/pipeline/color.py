@@ -267,6 +267,7 @@ class Colorizer():
 #------------------------------------------------------------
 # FÄRBUNGSMETHODEN als Kompositionsmethoden
 
+    # Färbung: Overlay (nur zur Visualisierung der Struktur)
     def apply_overlay(self,
                     iterations: np.ndarray,
                     escaped: np.ndarray,

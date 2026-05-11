@@ -126,6 +126,9 @@ class GUI():
         self._c_callback            = None
         self._mandelbrot_overlay    = None
 
+        self._image_id = None
+        self._overlay_id = None
+
 # ------------------------------------------------------------
 # BUTTONS in der Control Bar (Zoom-Interaktion links, Farbwechsel rechts)
 
@@ -215,11 +218,18 @@ class GUI():
     def run(self):
         self.root.mainloop()
 
-    # Bild anzeigen
     def display_image(self, pixel_array):
-        image = Image.fromarray(pixel_array, "RGB")                     # numpy -> PIL
-        self._photo = ImageTk.PhotoImage(image)                         # PIL -> Tkinter-Image
-        self.canvas.create_image(0, 0, anchor="nw", image=self._photo)  # Bild anzeigen
+        image = Image.fromarray(pixel_array, "RGB")
+        self._photo = ImageTk.PhotoImage(image)
+
+        if self._image_id is None:
+            self._image_id = self.canvas.create_image(
+                0, 0,
+                anchor="nw",
+                image=self._photo
+            )
+        else:
+            self.canvas.itemconfig(self._image_id, image=self._photo)
 
 #------------------------------------------------------------
 # ZOOM-FUNKTIONALITÄT
@@ -440,24 +450,29 @@ class GUI():
         if self._change_c_callback:
             self._change_c_callback()
 
-    # Overlay
     def show_overlay(self, pixel_array, alpha=120):
         image = Image.fromarray(pixel_array, "RGB").convert("RGBA")
 
         overlay = np.array(image)
-        overlay[:,:,3] = alpha
+        overlay[:, :, 3] = alpha
 
         image = Image.fromarray(overlay, "RGBA")
 
         self._mandelbrot_overlay = ImageTk.PhotoImage(image)
-        self.canvas.create_image(
-            0,0,
-            anchor="nw",
-            image=self._mandelbrot_overlay
-        )
+
+        if self._overlay_id is None:
+            self._overlay_id = self.canvas.create_image(
+                0, 0,
+                anchor="nw",
+                image=self._mandelbrot_overlay
+            )
+        else:
+            self.canvas.itemconfig(
+                self._overlay_id,
+                image=self._mandelbrot_overlay
+            )
 
     def clear_overlay(self):
-        self.canvas.delete("all")
-
-        if self._photo:
-            self.canvas.create_image(0,0,anchor="nw",image=self._photo)
+        if self._overlay_id is not None:
+            self.canvas.delete(self._overlay_id)
+            self._overlay_id = None

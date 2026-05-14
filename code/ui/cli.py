@@ -424,8 +424,12 @@ class CLI():
                         label = ORBIT_TRAP_MAP[key]["label"]
                         print(f"{i} - {label}")
 
+                    print("C - Cancel")
                     print_thin_separation(linebreak=False)
                     choice = input("> ").strip().lower()
+
+                    if choice == "c":
+                        break
 
                     if not choice.isdigit():
                         continue
@@ -443,7 +447,8 @@ class CLI():
                     self.fractal.trap_type_name = trap_info["label"]
 
                     print_heading("TYPE CHANGED")
-                    enter_continue(f"\nOrbit trap set to: {trap_info['label']}. Press Enter to continue", seperation=False)
+                    enter_continue(f"Orbit trap set to: {trap_info['label']}. Press Enter to continue", seperation=False)
+                    break
 
             elif choice == "2":     # X-Offset
                 print_heading("CHANGE X-OFFSET")
